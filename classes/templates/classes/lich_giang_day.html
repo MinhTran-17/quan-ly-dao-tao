@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Lịch giảng dạy{% endblock %}
+{% block noi_dung %}
+<h1>Lịch giảng dạy</h1>
+{% if not co_ho_so %}
+<p class="loi-truong">Tài khoản của bạn chưa gắn hồ sơ giảng viên. Liên hệ Phòng Đào tạo để được hỗ trợ.</p>
+{% endif %}
+
+{% if xem_luoi %}
+<p><a class="nut nut-phu nut-nho" href="?">Xem dạng danh sách</a></p>
+{% if luoi_tuan %}
+<div class="khung-bang">
+<table class="bang-luoi-tuan">
+    <thead><tr><th class="so">Tiết</th>{% for thu, ten in cac_thu %}<th>{{ ten }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for dong in luoi_tuan %}
+    <tr>
+        <td class="so">{{ dong.tiet }}</td>
+        {% for o in dong.o %}
+        <td>
+            {% for lich in o %}
+            <div class="o-lich-hoc">
+                {{ lich.ma_lop_hoc_phan_id }}
+                <small>{{ lich.ma_lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }} — {{ lich.phong_hoc }}</small>
+            </div>
+            {% endfor %}
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p class="ghi-chu-truong">Chưa có lịch giảng dạy nào.</p>
+{% endif %}
+{% else %}
+<p><a class="nut nut-phu nut-nho" href="?xem=luoi">Xem dạng lưới tuần</a></p>
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Lớp học phần</th><th>Thứ</th><th>Tiết bắt đầu</th><th>Số tiết</th><th>Phòng học</th></tr></thead>
+    <tbody>
+    {% for lich in danh_sach %}
+    <tr>
+        <td>{{ lich.ma_lop_hoc_phan.ma_lop_hoc_phan }} - {{ lich.ma_lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</td>
+        <td>{{ lich.thu }}</td>
+        <td>{{ lich.tiet_bat_dau }}</td>
+        <td>{{ lich.so_tiet }}</td>
+        <td>{{ lich.phong_hoc }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Chưa có lịch giảng dạy nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

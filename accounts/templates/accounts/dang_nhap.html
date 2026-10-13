@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Đăng nhập{% endblock %}
+{% block lop_body %}trang-dang-nhap{% endblock %}
+{% block noi_dung %}
+<div class="the-dang-nhap">
+    <div class="the-dang-nhap__logo">{% include '_logo.html' %}</div>
+    <h1>Đăng nhập</h1>
+    <p class="the-dang-nhap__phu-de">Tài khoản do Phòng Đào tạo cấp.</p>
+
+    {% if form.non_field_errors %}
+    <p class="thong-bao--error">{{ form.non_field_errors.0 }}</p>
+    {% endif %}
+
+    <form method="post" id="form-dang-nhap">
+        {% csrf_token %}
+        <div class="truong-dang-nhap">
+            <label for="{{ form.username.id_for_label }}">Tên đăng nhập <span class="dau-bat-buoc">*</span></label>
+            {{ form.username }}
+            {% if form.username.errors %}<span class="loi-truong">{{ form.username.errors.0 }}</span>{% endif %}
+        </div>
+        <div class="truong-dang-nhap">
+            <label for="{{ form.password.id_for_label }}">Mật khẩu <span class="dau-bat-buoc">*</span></label>
+            <div class="o-mat-khau">
+                {{ form.password }}
+                <button type="button" class="nut-hien-mat-khau" id="nut-hien-mat-khau" aria-label="Hiện mật khẩu">
+                    <svg class="icon-mat-mo" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#65676B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg class="icon-mat-dong" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#65676B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;">
+                        <path d="M3 3l18 18"/>
+                        <path d="M10.6 10.6a3 3 0 0 0 4.2 4.2"/>
+                        <path d="M9.9 5.1A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-3.1 3.9M6.6 6.6C3.7 8.4 1 12 1 12s4 7 11 7a10.5 10.5 0 0 0 4.2-.9"/>
+                    </svg>
+                </button>
+            </div>
+            {% if form.password.errors %}<span class="loi-truong">{{ form.password.errors.0 }}</span>{% endif %}
+        </div>
+        <button type="submit" class="nut nut-chinh nut-day-du nut-lon" id="nut-dang-nhap">Đăng nhập</button>
+    </form>
+</div>
+<p class="chan-trang-dang-nhap">© {% now "Y" %} {{ TEN_TRUONG }}. {{ TEN_HE_THONG }}.</p>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var nutMat = document.getElementById('nut-hien-mat-khau');
+    var oMatKhau = document.getElementById('{{ form.password.id_for_label }}');
+    if (nutMat && oMatKhau) {
+        var matMo = nutMat.querySelector('.icon-mat-mo');
+        var matDong = nutMat.querySelector('.icon-mat-dong');
+        nutMat.addEventListener('click', function () {
+            var dangAn = oMatKhau.type === 'password';
+            oMatKhau.type = dangAn ? 'text' : 'password';
+            nutMat.setAttribute('aria-label', dangAn ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+            matMo.style.display = dangAn ? 'none' : '';
+            matDong.style.display = dangAn ? '' : 'none';
+        });
+    }
+
+    var formDangNhap = document.getElementById('form-dang-nhap');
+    var nutDangNhap = document.getElementById('nut-dang-nhap');
+    if (formDangNhap && nutDangNhap) {
+        formDangNhap.addEventListener('submit', function () {
+            nutDangNhap.disabled = true;
+            nutDangNhap.textContent = 'Đang đăng nhập...';
+        });
+    }
+});
+</script>
+{% endblock %}

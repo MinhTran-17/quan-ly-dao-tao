@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Lịch sử điểm danh{% endblock %}
+{% block noi_dung %}
+<h1>Lịch sử điểm danh lớp {{ lop_hoc_phan.ma_lop_hoc_phan }} - {{ lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</h1>
+<p><a class="nut nut-phu nut-nho" href="{% url 'diem_danh:diem_danh_lop' lop_hoc_phan.pk %}">« Điểm danh ngày mới</a></p>
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Ngày</th><th class="so">Sĩ số điểm danh</th><th class="so">Có mặt</th><th class="so">Tỷ lệ (%)</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for muc in danh_sach %}
+    <tr>
+        <td>{{ muc.ngay_diem_danh|date:"d/m/Y" }}</td>
+        <td class="so">{{ muc.tong }}</td>
+        <td class="so">{{ muc.so_co_mat }}</td>
+        <td class="so">{{ muc.ty_le }}</td>
+        <td><a class="nut nut-nhe nut-nho" href="{% url 'diem_danh:diem_danh_lop' lop_hoc_phan.pk %}?ngay={{ muc.ngay_diem_danh|date:'Y-m-d' }}">Sửa</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Chưa có buổi điểm danh nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

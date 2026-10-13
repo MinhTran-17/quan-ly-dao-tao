@@ -1,0 +1,99 @@
+{% comment %}
+Banner + thanh menu + breadcrumb của vai trò Sinh viên — xem docs/thiet_ke_giao_dien.md.
+Icon (menu/_bieu_tuong.html) và JS mở/đóng dropdown (menu/_js.html) dùng chung với nhan_vien/_khung_dau.html.
+Chỉ liệt kê các trang Sinh viên đã có thật; trạng thái "đang chọn" xác định bằng
+request.resolver_match (app_name + url_name) ngay trong template, không cần sửa view.
+{% endcomment %}
+{% include 'menu/_bieu_tuong.html' %}
+
+{% with u=request.resolver_match.url_name a=request.resolver_match.app_name %}
+<header class="sv-banner">
+    <div class="sv-container">
+        <a class="sv-banner__logo" href="{% url 'accounts:trang_chu' %}">{% include '_logo.html' %}</a>
+    </div>
+</header>
+
+<div class="sv-thanh-menu" id="sv-thanh-menu">
+    <div class="sv-container">
+        <button type="button" class="sv-hamburger" id="sv-hamburger" aria-label="Mở menu" aria-controls="sv-menu" aria-expanded="false">
+            <svg class="sv-icon" aria-hidden="true"><use href="#sv-i-menu"/></svg>
+        </button>
+
+        <nav class="sv-menu" id="sv-menu" aria-label="Menu chính">
+            <a class="sv-menu__muc{% if u == 'trang_chu' %} sv-menu__muc--chon{% endif %}" href="{% url 'accounts:trang_chu' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-home"/></svg><span>Trang chủ</span></a>
+
+            <div class="sv-nhom{% if a == 'enrollment' and u != 'lich_thi' and u != 'lich_thi_xuat_pdf' %} sv-nhom--chon{% endif %}">
+                <button type="button" class="sv-menu__muc sv-nhom__nut" aria-haspopup="true" aria-expanded="false"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-dang-ky"/></svg><span>Đăng ký học phần</span><svg class="sv-icon sv-icon--mui" aria-hidden="true"><use href="#sv-i-mui"/></svg></button>
+                <div class="sv-nhom__xo">
+                    <a class="sv-nhom__muc{% if a == 'enrollment' and u == 'lop_dang_mo' or a == 'enrollment' and u == 'dang_ky' %} sv-nhom__muc--chon{% endif %}" href="{% url 'enrollment:lop_dang_mo' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-dang-ky"/></svg>Đăng ký học phần</a>
+                    <a class="sv-nhom__muc{% if a == 'enrollment' and u == 'thoi_khoa_bieu' %} sv-nhom__muc--chon{% endif %}" href="{% url 'enrollment:thoi_khoa_bieu' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-lich"/></svg>Thời khóa biểu</a>
+                    <a class="sv-nhom__muc{% if a == 'enrollment' and u == 'lich_su_dang_ky' %} sv-nhom__muc--chon{% endif %}" href="{% url 'enrollment:lich_su_dang_ky' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-lich-su"/></svg>Lịch sử đăng ký</a>
+                </div>
+            </div>
+
+            <div class="sv-nhom{% if a == 'tien_do_hoc_tap' or a == 'grades' or a == 'diem_danh' or a == 'enrollment' and u == 'lich_thi' or a == 'enrollment' and u == 'lich_thi_xuat_pdf' %} sv-nhom--chon{% endif %}">
+                <button type="button" class="sv-menu__muc sv-nhom__nut" aria-haspopup="true" aria-expanded="false"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-hoc-tap"/></svg><span>Học tập</span><svg class="sv-icon sv-icon--mui" aria-hidden="true"><use href="#sv-i-mui"/></svg></button>
+                <div class="sv-nhom__xo">
+                    <a class="sv-nhom__muc{% if a == 'tien_do_hoc_tap' %} sv-nhom__muc--chon{% endif %}" href="{% url 'tien_do_hoc_tap:cua_toi' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-tien-do"/></svg>Tiến độ chương trình đào tạo</a>
+                    <a class="sv-nhom__muc{% if a == 'grades' %} sv-nhom__muc--chon{% endif %}" href="{% url 'grades:bang_diem_cua_toi' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-bang-diem"/></svg>Bảng điểm</a>
+                    <a class="sv-nhom__muc{% if a == 'enrollment' and u == 'lich_thi' %} sv-nhom__muc--chon{% endif %}" href="{% url 'enrollment:lich_thi' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-lich-thi"/></svg>Lịch thi</a>
+                    <a class="sv-nhom__muc{% if a == 'diem_danh' %} sv-nhom__muc--chon{% endif %}" href="{% url 'diem_danh:lich_su_cua_toi' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-diem-danh"/></svg>Điểm danh</a>
+                </div>
+            </div>
+
+            <div class="sv-nhom{% if a == 'tu_van_dang_ky' or a == 'tom_tat_ket_qua' or a == 'hoi_dap_quy_che' %} sv-nhom--chon{% endif %}">
+                <button type="button" class="sv-menu__muc sv-nhom__nut" aria-haspopup="true" aria-expanded="false"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-ai"/></svg><span>Trợ lý AI</span><svg class="sv-icon sv-icon--mui" aria-hidden="true"><use href="#sv-i-mui"/></svg></button>
+                <div class="sv-nhom__xo">
+                    <a class="sv-nhom__muc{% if a == 'tu_van_dang_ky' %} sv-nhom__muc--chon{% endif %}" href="{% url 'tu_van_dang_ky:trang_tu_van' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-tu-van"/></svg>Tư vấn đăng ký học phần</a>
+                    <a class="sv-nhom__muc{% if a == 'tom_tat_ket_qua' %} sv-nhom__muc--chon{% endif %}" href="{% url 'tom_tat_ket_qua:toi' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-tom-tat"/></svg>Tóm tắt kết quả học tập</a>
+                    <a class="sv-nhom__muc{% if a == 'hoi_dap_quy_che' %} sv-nhom__muc--chon{% endif %}" href="{% url 'hoi_dap_quy_che:trang_chat' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-hoi-dap"/></svg>Hỏi đáp quy chế đào tạo</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="sv-phai">
+            <a class="sv-chip sv-chuong{% if a == 'thong_bao' %} sv-chuong--chon{% endif %}" href="{% url 'thong_bao:danh_sach' %}" aria-label="Thông báo{% if SO_THONG_BAO_CHUA_DOC %}, {{ SO_THONG_BAO_CHUA_DOC }} chưa đọc{% endif %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-chuong"/></svg>{% if SO_THONG_BAO_CHUA_DOC %}<span class="chip-thong-bao">{% if SO_THONG_BAO_CHUA_DOC > 99 %}99+{% else %}{{ SO_THONG_BAO_CHUA_DOC }}{% endif %}</span>{% endif %}</a>
+
+            <div class="sv-nhom">
+                <button type="button" class="sv-chip sv-nhom__nut" aria-haspopup="true" aria-expanded="false">{{ user.ten_dang_nhap }}<span class="sv-chip__vai-tro"> · {{ user.get_vai_tro_display }}</span><svg class="sv-icon sv-icon--mui" aria-hidden="true"><use href="#sv-i-mui"/></svg></button>
+                <div class="sv-nhom__xo sv-nhom__xo--phai">
+                    <a class="sv-nhom__muc{% if a == 'accounts' and u == 'thong_tin_ca_nhan' %} sv-nhom__muc--chon{% endif %}" href="{% url 'accounts:thong_tin_ca_nhan' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-nguoi-dung"/></svg>Thông tin cá nhân</a>
+                    <a class="sv-nhom__muc{% if a == 'accounts' and u == 'doi_mat_khau' %} sv-nhom__muc--chon{% endif %}" href="{% url 'accounts:doi_mat_khau' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-khoa"/></svg>Đổi mật khẩu</a>
+                    <form method="post" action="{% url 'accounts:dang_xuat' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="sv-nhom__muc"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-dang-xuat"/></svg>Đăng xuất</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<nav class="sv-breadcrumb" aria-label="Đường dẫn trang">
+    <div class="sv-container">
+        {% if u == 'trang_chu' %}
+        <span aria-current="page">Trang chủ</span>
+        {% else %}
+        <a href="{% url 'accounts:trang_chu' %}">Trang chủ</a>
+        {% if a == 'enrollment' and u == 'lop_dang_mo' or a == 'enrollment' and u == 'dang_ky' %}<span class="sv-breadcrumb__buoc" aria-current="page">Đăng ký học phần</span>
+        {% elif a == 'enrollment' and u == 'huy_dang_ky' %}<span class="sv-breadcrumb__buoc" aria-current="page">Hủy đăng ký học phần</span>
+        {% elif a == 'enrollment' and u == 'thoi_khoa_bieu' %}<span class="sv-breadcrumb__buoc" aria-current="page">Thời khóa biểu</span>
+        {% elif a == 'enrollment' and u == 'lich_su_dang_ky' %}<span class="sv-breadcrumb__buoc" aria-current="page">Lịch sử đăng ký</span>
+        {% elif a == 'enrollment' and u == 'lich_thi' %}<span class="sv-breadcrumb__buoc" aria-current="page">Lịch thi</span>
+        {% elif a == 'tien_do_hoc_tap' %}<span class="sv-breadcrumb__buoc" aria-current="page">Tiến độ chương trình đào tạo</span>
+        {% elif a == 'grades' %}<span class="sv-breadcrumb__buoc" aria-current="page">Bảng điểm</span>
+        {% elif a == 'diem_danh' %}<span class="sv-breadcrumb__buoc" aria-current="page">Điểm danh</span>
+        {% elif a == 'tu_van_dang_ky' %}<span class="sv-breadcrumb__buoc" aria-current="page">Tư vấn đăng ký học phần</span>
+        {% elif a == 'tom_tat_ket_qua' %}<span class="sv-breadcrumb__buoc" aria-current="page">Tóm tắt kết quả học tập</span>
+        {% elif a == 'hoi_dap_quy_che' %}<span class="sv-breadcrumb__buoc" aria-current="page">Hỏi đáp quy chế đào tạo</span>
+        {% elif a == 'thong_bao' and u == 'danh_sach' %}<span class="sv-breadcrumb__buoc" aria-current="page">Thông báo</span>
+        {% elif a == 'thong_bao' and u == 'chi_tiet' %}<a class="sv-breadcrumb__buoc" href="{% url 'thong_bao:danh_sach' %}">Thông báo</a><span class="sv-breadcrumb__buoc" aria-current="page">Chi tiết</span>
+        {% elif a == 'accounts' and u == 'thong_tin_ca_nhan' %}<span class="sv-breadcrumb__buoc" aria-current="page">Thông tin cá nhân</span>
+        {% elif a == 'accounts' and u == 'doi_mat_khau' %}<span class="sv-breadcrumb__buoc" aria-current="page">Đổi mật khẩu</span>
+        {% endif %}
+        {% endif %}
+    </div>
+</nav>
+{% endwith %}
+
+{% include 'menu/_js.html' %}

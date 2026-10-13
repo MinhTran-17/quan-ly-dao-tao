@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Tóm tắt kết quả học tập sinh viên (AI){% endblock %}
+{% block noi_dung %}
+<h1>Tóm tắt kết quả học tập sinh viên</h1>
+<p>AI chỉ diễn giải số liệu do hệ thống tính sẵn, không tự tính điểm và không thay quyết định của Phòng Đào tạo.</p>
+
+<div class="khung" style="max-width:480px;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="truong">
+            <label for="id_ma_sinh_vien">Chọn sinh viên phụ trách</label>
+            <select name="ma_sinh_vien" id="id_ma_sinh_vien" required>
+                <option value="">-- Chọn --</option>
+                {% for sv in danh_sach_sinh_vien %}
+                <option value="{{ sv.pk }}" {% if sinh_vien_chon.pk == sv.pk %}selected{% endif %}>{{ sv.ma_sinh_vien }} - {{ sv.ho_ten }}</option>
+                {% empty %}
+                <option value="" disabled>Chưa phụ trách sinh viên nào</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="nut nut-chinh">Yêu cầu tóm tắt</button>
+    </form>
+</div>
+
+{% if sinh_vien_chon %}
+<h2>Sinh viên: {{ sinh_vien_chon.ma_sinh_vien }} - {{ sinh_vien_chon.ho_ten }}</h2>
+{% endif %}
+
+{% include 'tom_tat_ket_qua/_ket_qua.html' %}
+{% endblock %}

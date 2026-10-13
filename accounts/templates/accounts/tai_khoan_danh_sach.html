@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Danh sách tài khoản{% endblock %}
+{% block noi_dung %}
+<h1>Danh sách tài khoản</h1>
+<p><a class="nut nut-chinh" href="{% url 'accounts:tai_khoan_tao' %}">+ Tạo tài khoản</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Tên đăng nhập</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo tên đăng nhập">
+    </div>
+    <div class="truong">
+        <label>Vai trò</label>
+        <select name="vai_tro">
+            <option value="">-- Tất cả --</option>
+            {% for gia_tri, nhan in vai_tro_choices %}
+            <option value="{{ gia_tri }}" {% if gia_tri == vai_tro_loc %}selected{% endif %}>{{ nhan }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="truong">
+        <label>Trạng thái</label>
+        <select name="trang_thai">
+            <option value="">-- Tất cả --</option>
+            <option value="1" {% if trang_thai_loc == '1' %}selected{% endif %}>Đang hoạt động</option>
+            <option value="0" {% if trang_thai_loc == '0' %}selected{% endif %}>Đã khóa</option>
+        </select>
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Lọc</button>
+        <a class="nut nut-phu" href="{% url 'accounts:tai_khoan_danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead>
+    <tr>
+        <th>Tên đăng nhập</th>
+        <th>Vai trò</th>
+        <th>Trạng thái</th>
+        <th>Thao tác</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for tai_khoan in danh_sach_tai_khoan %}
+    <tr>
+        <td>{{ tai_khoan.ten_dang_nhap }}</td>
+        <td>{{ tai_khoan.get_vai_tro_display }}</td>
+        <td>{% if tai_khoan.is_active %}<span class="chip chip--dang-hoat-dong">Đang hoạt động</span>{% else %}<span class="chip chip--da-khoa">Đã khóa</span>{% endif %}</td>
+        <td>
+            <div class="nhom-nut">
+                <a class="nut nut-nhe nut-nho" href="{% url 'accounts:tai_khoan_sua' tai_khoan.pk %}">Sửa</a>
+                {% if tai_khoan.pk != user.pk %}
+                <form class="noi-tuyen" method="post" action="{% url 'accounts:tai_khoan_dat_lai_mat_khau' tai_khoan.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nut nut-phu nut-nho">Đặt lại mật khẩu</button>
+                </form>
+                {% endif %}
+                {% if tai_khoan.is_active and tai_khoan.pk != user.pk %}
+                <form class="noi-tuyen" method="post" action="{% url 'accounts:tai_khoan_khoa' tai_khoan.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nut nut-nguy-hiem nut-nho">Khóa</button>
+                </form>
+                {% elif not tai_khoan.is_active %}
+                <form class="noi-tuyen" method="post" action="{% url 'accounts:tai_khoan_mo_khoa' tai_khoan.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nut nut-chinh nut-nho">Mở khóa</button>
+                </form>
+                {% endif %}
+                {% if tai_khoan.pk != user.pk %}
+                <a class="nut nut-nguy-hiem nut-nho" href="{% url 'accounts:tai_khoan_xoa' tai_khoan.pk %}">Xóa</a>
+                {% endif %}
+            </div>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Không có tài khoản nào khớp điều kiện lọc.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% if is_paginated %}
+<div class="phan-trang">
+    {% if page_obj.has_previous %}
+        <a class="nut nut-phu nut-nho" href="?page={{ page_obj.previous_page_number }}&q={{ q }}&vai_tro={{ vai_tro_loc }}&trang_thai={{ trang_thai_loc }}">« Trước</a>
+    {% endif %}
+    <span>Trang {{ page_obj.number }}/{{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+        <a class="nut nut-phu nut-nho" href="?page={{ page_obj.next_page_number }}&q={{ q }}&vai_tro={{ vai_tro_loc }}&trang_thai={{ trang_thai_loc }}">Sau »</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

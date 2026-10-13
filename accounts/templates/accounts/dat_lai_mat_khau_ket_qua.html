@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Mật khẩu tạm{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Đã đặt lại mật khẩu</h1>
+    <p>Mật khẩu tạm cho tài khoản "<strong>{{ tai_khoan.ten_dang_nhap }}</strong>" là:</p>
+    <p style="font-size:20px; font-weight:800; letter-spacing:1px; background:var(--mau-nen-trang); padding:12px 16px; border-radius:6px;">{{ mat_khau_tam }}</p>
+    <p class="thong-bao--warning" style="padding:12px 16px; border-radius:6px; border-left:4px solid var(--mau-vang); background:var(--mau-vang-nhat);">
+        Mật khẩu này chỉ hiển thị <strong>một lần duy nhất</strong> ngay bây giờ, hệ thống không lưu lại
+        ở bất kỳ đâu khác. Hãy sao chép và gửi cho người dùng ngay — họ sẽ phải đổi mật khẩu này
+        ngay khi đăng nhập lần đầu.
+    </p>
+    <a class="nut nut-phu" href="{% url 'accounts:tai_khoan_danh_sach' %}">Quay lại danh sách tài khoản</a>
+</div>
+{% endblock %}

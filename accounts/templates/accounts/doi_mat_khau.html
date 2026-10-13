@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Đổi mật khẩu{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Đổi mật khẩu</h1>
+    <form method="post">
+        {% csrf_token %}
+        {% include '_truong_form.html' %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-chinh">Đổi mật khẩu</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

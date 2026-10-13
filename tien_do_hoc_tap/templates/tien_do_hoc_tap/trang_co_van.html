@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Tiến độ học tập sinh viên{% endblock %}
+{% block noi_dung %}
+<h1>Tiến độ học tập sinh viên</h1>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label for="id_ma_sinh_vien">Chọn sinh viên phụ trách</label>
+        <select name="ma_sinh_vien" id="id_ma_sinh_vien" required>
+            <option value="">-- Chọn --</option>
+            {% for sv in danh_sach_sinh_vien %}
+            <option value="{{ sv.pk }}" {% if sinh_vien_chon.pk == sv.pk %}selected{% endif %}>{{ sv.ma_sinh_vien }} - {{ sv.ho_ten }}</option>
+            {% empty %}
+            <option value="" disabled>Chưa phụ trách sinh viên nào</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Xem tiến độ</button>
+    </div>
+</form>
+
+{% if sinh_vien_chon %}
+<h2>Sinh viên: {{ sinh_vien_chon.ma_sinh_vien }} - {{ sinh_vien_chon.ho_ten }}</h2>
+{% endif %}
+
+{% include 'tien_do_hoc_tap/_ket_qua.html' %}
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Lớp phụ trách{% endblock %}
+{% block noi_dung %}
+<h1>Lớp phụ trách</h1>
+{% if not co_ho_so %}
+<p class="loi-truong">Tài khoản của bạn chưa gắn hồ sơ giảng viên. Liên hệ Phòng Đào tạo để được hỗ trợ.</p>
+{% endif %}
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Mã lớp học phần</th><th>Học phần</th><th>Học kỳ</th><th>Năm học</th><th class="so">Sĩ số tối đa</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for lop in danh_sach %}
+    <tr>
+        <td>{{ lop.ma_lop_hoc_phan }}</td>
+        <td>{{ lop.ma_hoc_phan.ten_hoc_phan }}</td>
+        <td>{{ lop.hoc_ky }}</td>
+        <td>{{ lop.nam_hoc }}</td>
+        <td class="so">{{ lop.si_so_toi_da }}</td>
+        <td>
+            <div class="nhom-nut">
+                <a class="nut nut-nhe nut-nho" href="{% url 'enrollment:danh_sach_sinh_vien_lop' lop.pk %}">Danh sách sinh viên</a>
+                <a class="nut nut-phu nut-nho" href="{% url 'grades:bang_diem_lop' lop.pk %}">Bảng điểm</a>
+                <a class="nut nut-phu nut-nho" href="{% url 'diem_danh:diem_danh_lop' lop.pk %}">Điểm danh</a>
+            </div>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">Chưa phụ trách lớp học phần nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

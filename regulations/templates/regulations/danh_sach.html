@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Tài liệu quy chế{% endblock %}
+{% block noi_dung %}
+<h1>Tài liệu quy chế</h1>
+<p><a class="nut nut-chinh" href="{% url 'regulations:tao' %}">+ Tải lên tài liệu</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Tên tài liệu</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo tên tài liệu">
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Tìm</button>
+        <a class="nut nut-phu" href="{% url 'regulations:danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Tên tài liệu</th><th>Ngày tải lên</th><th>Ngày cập nhật</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for tl in danh_sach %}
+    <tr>
+        <td>{{ tl.ten_tai_lieu }}</td>
+        <td>{{ tl.ngay_tai_len|date:"d/m/Y" }}</td>
+        <td>{{ tl.ngay_cap_nhat|date:"d/m/Y" }}</td>
+        <td>
+            <div class="nhom-nut">
+                <a class="nut nut-phu nut-nho" href="{% url 'regulations:tai_ve' tl.pk %}">Tải về</a>
+                <a class="nut nut-nhe nut-nho" href="{% url 'regulations:sua' tl.pk %}">Sửa</a>
+                <a class="nut nut-nguy-hiem nut-nho" href="{% url 'regulations:xoa' tl.pk %}">Xóa</a>
+            </div>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Không có tài liệu nào khớp điều kiện tìm kiếm.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

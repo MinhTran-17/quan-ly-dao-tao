@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Xóa tài khoản{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Xóa tài khoản</h1>
+    <p>Bạn có chắc muốn xóa tài khoản "{{ tai_khoan.ten_dang_nhap }}" ({{ tai_khoan.get_vai_tro_display }})?</p>
+    {% if ly_do %}
+    <p>Tài khoản này {{ ly_do|join:", " }} nên chưa thể xóa. Nếu không còn dùng, hãy khóa tài khoản thay vì xóa.</p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Xóa</button>
+            <a class="nut nut-phu" href="{% url 'accounts:tai_khoan_danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

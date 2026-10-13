@@ -1,0 +1,15 @@
+{% if form.non_field_errors %}
+<p class="loi-truong">{{ form.non_field_errors.0 }}</p>
+{% endif %}
+{% for field in form %}
+{% if field.is_hidden %}
+    {{ field }}
+{% else %}
+<div class="truong">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {% if field.help_text %}<small class="ghi-chu-truong">{{ field.help_text }}</small>{% endif %}
+    {% if field.errors %}<span class="loi-truong">{{ field.errors.0 }}</span>{% endif %}
+</div>
+{% endif %}
+{% endfor %}

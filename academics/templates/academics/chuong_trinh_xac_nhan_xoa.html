@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Xóa chương trình đào tạo{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Xóa chương trình đào tạo</h1>
+    <p>Bạn có chắc muốn xóa chương trình "{{ chuong_trinh.ten_chuong_trinh }}" ({{ chuong_trinh.nganh.ten_nganh }}, {{ chuong_trinh.khoa_hoc }})?</p>
+    {% if so_lop_hanh_chinh %}
+    <p>Chương trình này đang được gán cho {{ so_lop_hanh_chinh }} lớp hành chính nên chưa thể xóa. Hãy gán chương trình khác (hoặc bỏ gán) ở trang sửa lớp hành chính trước.</p>
+    {% elif so_hoc_phan %}
+    <p>{{ so_hoc_phan }} học phần trong lộ trình của chương trình này cũng sẽ bị xóa khỏi lộ trình (bản thân các học phần vẫn còn nguyên).</p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Xóa</button>
+            <a class="nut nut-phu" href="{% url 'academics:chuong_trinh_danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

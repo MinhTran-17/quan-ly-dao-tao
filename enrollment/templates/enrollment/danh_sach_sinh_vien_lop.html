@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Sinh viên lớp {{ lop_hoc_phan.ma_lop_hoc_phan }}{% endblock %}
+{% block noi_dung %}
+<h1>Sinh viên đã đăng ký lớp {{ lop_hoc_phan.ma_lop_hoc_phan }} - {{ lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</h1>
+<p><a class="nut nut-chinh nut-nho" href="{% url 'enrollment:xuat_excel_sinh_vien_lop' lop_hoc_phan.pk %}">Xuất Excel</a></p>
+<div class="khung-bang">
+<table>
+    <thead>
+    <tr>
+        <th>Mã sinh viên</th><th>Họ tên</th><th>Thời gian đăng ký</th>
+        {% if hien_trang_thai %}<th>Trạng thái</th>{% endif %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for dk in danh_sach %}
+    <tr>
+        <td>{{ dk.ma_sinh_vien.ma_sinh_vien }}</td>
+        <td>{{ dk.ma_sinh_vien.ho_ten }}</td>
+        <td>{{ dk.thoi_gian_dang_ky|date:"d/m/Y H:i" }}</td>
+        {% if hien_trang_thai %}
+        <td>
+            {% if dk.trang_thai == 'CON_HIEU_LUC' %}
+            <span class="chip chip--con_hieu_luc">Còn hiệu lực</span>
+            {% else %}
+            <span class="chip chip--da_huy">Đã hủy</span>
+            {% endif %}
+        </td>
+        {% endif %}
+    </tr>
+    {% empty %}
+    <tr><td colspan="{% if hien_trang_thai %}4{% else %}3{% endif %}">Chưa có sinh viên nào đăng ký.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

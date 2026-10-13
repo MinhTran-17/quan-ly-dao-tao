@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Nhập điểm{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:420px;">
+    <h1>Điểm của sinh viên {{ dang_ky.ma_sinh_vien.ma_sinh_vien }} - {{ dang_ky.ma_sinh_vien.ho_ten }}</h1>
+    <p>Lớp học phần: {{ dang_ky.ma_lop_hoc_phan.ma_lop_hoc_phan }} - {{ dang_ky.ma_lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</p>
+    <form method="post">
+        {% csrf_token %}
+        {% include '_truong_form.html' %}
+        <button type="submit" class="nut nut-chinh">Lưu</button>
+    </form>
+</div>
+{% endblock %}

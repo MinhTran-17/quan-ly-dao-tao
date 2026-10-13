@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Không tìm thấy trang{% endblock %}
+{% block noi_dung %}
+<div class="khung the-loi">
+    <h1>404</h1>
+    <h2>Không tìm thấy trang</h2>
+    <p>Trang bạn yêu cầu không tồn tại hoặc đã bị xóa.</p>
+    <a class="nut nut-chinh" href="{% url 'accounts:trang_chu' %}">Về trang chủ</a>
+</div>
+{% endblock %}

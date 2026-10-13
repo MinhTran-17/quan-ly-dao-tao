@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Danh sách cảnh báo học vụ{% endblock %}
+{% block noi_dung %}
+<h1>Danh sách cảnh báo học vụ</h1>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Học kỳ</label>
+        <select name="hoc_ky">
+            <option value="">-- Chọn --</option>
+            {% for hk in cac_hoc_ky %}
+            <option value="{{ hk }}" {% if hoc_ky_loc == hk %}selected{% endif %}>{{ hk }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="truong">
+        <label>Năm học</label>
+        <select name="nam_hoc">
+            <option value="">-- Chọn --</option>
+            {% for nh in cac_nam_hoc %}
+            <option value="{{ nh }}" {% if nam_hoc_loc == nh %}selected{% endif %}>{{ nh }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="truong">
+        <label>Lớp hành chính</label>
+        <select name="ma_lop">
+            <option value="">-- Tất cả --</option>
+            {% for lop in danh_sach_lop %}
+            <option value="{{ lop.pk }}" {% if lop.pk == ma_lop_loc %}selected{% endif %}>{{ lop.ten_lop }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Lọc</button>
+        <a class="nut nut-phu" href="{% url 'grades:canh_bao_phong_dao_tao' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Mã sinh viên</th><th>Họ tên</th><th>Lớp hành chính</th><th class="so">Điểm trung bình</th><th>Lý do</th></tr></thead>
+    <tbody>
+    {% for muc in danh_sach %}
+    <tr>
+        <td>{{ muc.sinh_vien.ma_sinh_vien }}</td>
+        <td><a class="lien-ket-van-ban" href="{% url 'grades:bang_diem_sinh_vien' muc.sinh_vien.pk %}">{{ muc.sinh_vien.ho_ten }}</a></td>
+        <td>{{ muc.sinh_vien.ma_lop.ten_lop }}</td>
+        <td class="so">{{ muc.diem_trung_binh }}</td>
+        <td><ul>{% for ly_do in muc.ly_do %}<li>{{ ly_do }}</li>{% endfor %}</ul></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">{% if hoc_ky_loc and nam_hoc_loc %}Không có sinh viên nào đang bị cảnh báo học vụ theo điều kiện lọc.{% else %}Chọn học kỳ và năm học để xem danh sách cảnh báo.{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

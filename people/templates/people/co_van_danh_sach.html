@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Danh sách cố vấn học tập{% endblock %}
+{% block noi_dung %}
+<h1>Danh sách cố vấn học tập</h1>
+<p><a class="nut nut-chinh" href="{% url 'people:co_van_tao' %}">+ Tạo cố vấn học tập</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Mã/họ tên</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo mã hoặc họ tên">
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Tìm</button>
+        <a class="nut nut-phu" href="{% url 'people:co_van_danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead>
+    <tr>
+        <th>Mã cố vấn</th>
+        <th>Họ tên</th>
+        <th>Email</th>
+        <th>Thao tác</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for cv in danh_sach %}
+    <tr>
+        <td>{{ cv.ma_co_van }}</td>
+        <td>{{ cv.ho_ten }}</td>
+        <td>{{ cv.email }}</td>
+        <td>
+            <a class="nut nut-nhe nut-nho" href="{% url 'people:co_van_sua' cv.pk %}">Sửa</a>
+            <a class="nut nut-nguy-hiem nut-nho" href="{% url 'people:co_van_xoa' cv.pk %}">Xóa</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Không có cố vấn nào khớp điều kiện tìm kiếm.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

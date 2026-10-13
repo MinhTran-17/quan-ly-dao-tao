@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Trang chủ{% endblock %}
+{% block noi_dung %}
+{% if user.vai_tro == 'SINH_VIEN' %}
+{% include 'accounts/_trang_chu_sinh_vien.html' %}
+{% else %}
+<div class="khung">
+    <h1>Xin chào, {{ user.ten_dang_nhap }}</h1>
+    <p>Vai trò: {{ user.get_vai_tro_display }}</p>
+</div>
+
+{% if user.vai_tro == 'PHONG_DAO_TAO' %}
+{% include 'accounts/_trang_chu_phong_dao_tao.html' %}
+{% elif user.vai_tro == 'GIANG_VIEN' %}
+{% include 'accounts/_trang_chu_giang_vien.html' %}
+{% elif user.vai_tro == 'CO_VAN_HOC_TAP' %}
+{% include 'accounts/_trang_chu_co_van.html' %}
+{% endif %}
+{% endif %}
+{% endblock %}

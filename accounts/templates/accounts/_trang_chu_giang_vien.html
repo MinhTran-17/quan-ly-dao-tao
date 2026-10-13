@@ -1,0 +1,113 @@
+{% comment %}
+Trang chủ Giảng viên (dữ liệu: accounts/tong_hop_giang_vien.py): số liệu tổng quan, cảnh báo cần chú ý (ẩn khi không có
+gì), buổi dạy hôm nay và thông báo gần đây. Dùng lại kiểu khối của trang chủ Phòng Đào tạo (nhan_vien/_css.html).
+{% endcomment %}
+{% with tt=tong_hop %}
+{% if not tt.co_ho_so %}
+<section class="khung">
+    <p>Tài khoản của bạn chưa gắn hồ sơ giảng viên nên chưa có dữ liệu giảng dạy. Liên hệ Phòng Đào tạo để được hỗ trợ.</p>
+</section>
+{% else %}
+<section class="khoi-tong-quan" aria-label="Số liệu tổng quan">
+    <div class="khoi-tong-quan__dau">
+        <h2>Số liệu tổng quan</h2>
+        {% if tt.hoc_ky_xet %}
+        <p class="ghi-chu-truong">Học kỳ đang xét: Học kỳ {{ tt.hoc_ky_xet.hoc_ky }}, năm học {{ tt.hoc_ky_xet.nam_hoc }}
+            ({% if tt.hoc_ky_xet.nguon == 'dot' %}theo đợt đăng ký đang hiệu lực{% else %}học kỳ mới nhất trong danh mục{% endif %}).</p>
+        {% else %}
+        <p class="ghi-chu-truong">Chưa có học kỳ nào trong danh mục.</p>
+        {% endif %}
+    </div>
+    <div class="luoi-tong-hop luoi-tong-hop--5">
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Lớp học phần đang phụ trách</div>
+            {% if tt.so_lop is not None %}
+            <div class="o-tong-hop__gia-tri">{{ tt.so_lop }}</div>
+            {% else %}
+            <div class="o-tong-hop__ghi-chu">Chưa có học kỳ.</div>
+            {% endif %}
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_lop_phu_trach }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Sinh viên đang đăng ký</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_sinh_vien }}</div>
+            <div class="o-tong-hop__ghi-chu o-tong-hop__ghi-chu--nho">Số sinh viên khác nhau trong các lớp của học kỳ đang xét</div>
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_lop_phu_trach }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Buổi dạy hôm nay ({{ tt.ten_thu_hom_nay }})</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_buoi_hom_nay }}</div>
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_lich_giang_day }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Buổi dạy trong tuần</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_buoi_tuan }}</div>
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_lich_giang_day_luoi }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Lớp còn điểm chưa công bố</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_lop_chua_cong_bo }}</div>
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_lop_phu_trach }}">Xem chi tiết</a>
+        </div>
+    </div>
+</section>
+
+{% if tt.dong_canh_bao %}
+<section class="khoi-chu-y" aria-label="Cảnh báo cần chú ý">
+    <h2>Cảnh báo cần chú ý</h2>
+    <ul>
+        {% for dong in tt.dong_canh_bao %}
+        <li class="khoi-chu-y__dong khoi-chu-y__dong--{{ dong.muc }}">
+            <span>{{ dong.noi_dung }}</span>
+            <a class="nut nut-phu nut-nho" href="{{ dong.url }}">{{ dong.nhan_nut }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<section class="khung khoi-gan-day" aria-label="Buổi dạy hôm nay">
+    <div class="khoi-gan-day__dau">
+        <h2>Buổi dạy hôm nay</h2>
+        <a class="nut nut-phu nut-nho" href="{{ tt.url_lich_giang_day }}">Xem lịch giảng dạy</a>
+    </div>
+    {% if tt.lich_hom_nay %}
+    <ul class="khoi-gan-day__danh-sach">
+        {% for lich in tt.lich_hom_nay %}
+        <li>
+            <div>
+                <div class="khoi-gan-day__chinh">{{ lich.ma_lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</div>
+                <div class="khoi-gan-day__phu">Lớp {{ lich.ma_lop_hoc_phan_id }} &middot; Phòng {{ lich.phong_hoc }}</div>
+            </div>
+            <div class="khoi-gan-day__thoi-gian">Tiết {{ lich.tiet_bat_dau }}, {{ lich.so_tiet }} tiết</div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="ghi-chu-truong">Hôm nay ({{ tt.ten_thu_hom_nay }}) bạn không có buổi dạy nào.</p>
+    {% endif %}
+</section>
+
+<section class="khung khoi-gan-day" aria-label="Thông báo gần đây">
+    <div class="khoi-gan-day__dau">
+        <h2>Thông báo gần đây</h2>
+        <a class="nut nut-phu nut-nho" href="{{ tt.url_thong_bao }}">Xem tất cả</a>
+    </div>
+    {% if tt.thong_bao_gan_day %}
+    <ul class="khoi-gan-day__danh-sach">
+        {% for tb in tt.thong_bao_gan_day %}
+        <li>
+            <div>
+                <div class="khoi-gan-day__chinh">{{ tb.tieu_de }}{% if not tb.da_doc_boi_toi %} <span class="chip chip--con_hieu_luc">Mới</span>{% endif %}</div>
+                <div class="khoi-gan-day__phu">Từ {{ tb.nguoi_gui.ten_dang_nhap }}</div>
+            </div>
+            <div class="khoi-gan-day__thoi-gian">{{ tb.thoi_gian_gui|date:"d/m/Y H:i" }}</div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="ghi-chu-truong">Chưa có thông báo nào.</p>
+    {% endif %}
+</section>
+{% endif %}
+{% endwith %}

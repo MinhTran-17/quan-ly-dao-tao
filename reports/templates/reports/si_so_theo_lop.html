@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Thống kê sĩ số theo lớp học phần{% endblock %}
+{% block noi_dung %}
+<h1>Sĩ số theo lớp học phần</h1>
+{% include 'reports/_bo_loc.html' %}
+<p><a class="nut nut-chinh nut-nho" href="{% url 'reports:si_so_theo_lop_xuat_excel' %}?{{ request.GET.urlencode }}">Xuất Excel</a></p>
+
+<div class="khung-bang">
+<table>
+    <thead>
+    <tr><th>Mã lớp học phần</th><th>Học phần</th><th>Học kỳ</th><th>Năm học</th><th class="so">Đã đăng ký / Sĩ số tối đa</th></tr>
+    </thead>
+    <tbody>
+    {% for lop in danh_sach %}
+    <tr>
+        <td>{{ lop.ma_lop_hoc_phan }}</td>
+        <td>{{ lop.ma_hoc_phan.ten_hoc_phan }}</td>
+        <td>{{ lop.hoc_ky }}</td>
+        <td>{{ lop.nam_hoc }}</td>
+        <td class="so">{{ lop.so_dang_ky }} / {{ lop.si_so_toi_da }}{% if lop.so_dang_ky >= lop.si_so_toi_da %} <span class="chip chip--da_day">Đầy</span>{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Không có lớp học phần nào khớp điều kiện lọc.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

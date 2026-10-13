@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Danh sách học phần{% endblock %}
+{% block noi_dung %}
+<h1>Danh sách học phần</h1>
+<p><a class="nut nut-chinh" href="{% url 'academics:hoc_phan_tao' %}">+ Tạo học phần</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Mã/tên học phần</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo mã hoặc tên học phần">
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Tìm</button>
+        <a class="nut nut-phu" href="{% url 'academics:hoc_phan_danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Mã học phần</th><th>Tên học phần</th><th class="so">Số tín chỉ</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for hp in danh_sach %}
+    <tr>
+        <td>{{ hp.ma_hoc_phan }}</td>
+        <td>{{ hp.ten_hoc_phan }}</td>
+        <td class="so">{{ hp.so_tin_chi }}</td>
+        <td>
+            <a class="nut nut-nhe nut-nho" href="{% url 'academics:hoc_phan_sua' hp.pk %}">Sửa</a>
+            <a class="nut nut-nguy-hiem nut-nho" href="{% url 'academics:hoc_phan_xoa' hp.pk %}">Xóa</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Không có học phần nào khớp điều kiện tìm kiếm.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

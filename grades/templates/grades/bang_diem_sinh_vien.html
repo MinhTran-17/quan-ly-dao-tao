@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Bảng điểm sinh viên{% endblock %}
+{% block noi_dung %}
+<div class="tieu-de-trang">
+    <h1>Bảng điểm - {{ sinh_vien.ma_sinh_vien }} - {{ sinh_vien.ho_ten }}</h1>
+    {% if user.vai_tro == 'SINH_VIEN' %}
+    <div class="nhom-nut">
+        <a class="nut nut-chinh" href="{% url 'grades:xuat_bang_diem_pdf' %}">Xuất PDF</a>
+        <a class="nut nut-nhe" href="{% url 'tom_tat_ket_qua:toi' %}">Nhờ AI tóm tắt kết quả học tập</a>
+    </div>
+    {% elif user.vai_tro == 'CO_VAN_HOC_TAP' %}
+    <div class="nhom-nut">
+        <a class="nut nut-nhe" href="{% url 'tom_tat_ket_qua:co_van' %}">Nhờ AI tóm tắt kết quả học tập sinh viên</a>
+    </div>
+    {% endif %}
+</div>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Học kỳ</label>
+        <select name="hoc_ky">
+            <option value="">-- Chọn --</option>
+            {% for hk in cac_hoc_ky %}
+            <option value="{{ hk }}" {% if hoc_ky_loc == hk %}selected{% endif %}>{{ hk }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="truong">
+        <label>Năm học</label>
+        <select name="nam_hoc">
+            <option value="">-- Chọn --</option>
+            {% for nh in cac_nam_hoc %}
+            <option value="{{ nh }}" {% if nam_hoc_loc == nh %}selected{% endif %}>{{ nh }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Xem học kỳ</button>
+    </div>
+</form>
+
+{% if canh_bao.canh_bao %}
+<div class="{% if canh_bao.ly_do|length >= 2 %}thong-bao--error{% else %}thong-bao--warning{% endif %} canh-bao-khoi">
+    <strong>Cảnh báo học vụ &mdash; Học kỳ {{ hoc_ky_loc }}, năm học {{ nam_hoc_loc }}</strong>
+    <ul>
+        {% for ly_do in canh_bao.ly_do %}<li>{{ ly_do }}</li>{% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="luoi-tong-hop luoi-tong-hop--4">
+    <div class="o-tong-hop">
+        <div class="o-tong-hop__nhan">Điểm trung bình học kỳ{% if hoc_ky_loc and nam_hoc_loc %} {{ hoc_ky_loc }} - {{ nam_hoc_loc }}{% endif %}</div>
+        {% if diem_tb_hoc_ky is not None %}
+        <div class="o-tong-hop__gia-tri">{{ diem_tb_hoc_ky }}</div>
+        {% elif not hoc_ky_loc or not nam_hoc_loc %}
+        <div class="o-tong-hop__ghi-chu">Chưa có học kỳ nào có đủ điểm — chọn học kỳ ở trên để xem.</div>
+        {% else %}
+        <div class="o-tong-hop__ghi-chu">Chưa có học phần nào đủ điểm trong học kỳ này.</div>
+        {% endif %}
+    </div>
+    <div class="o-tong-hop">
+        <div class="o-tong-hop__nhan">Xếp loại học kỳ</div>
+        {% if xep_loai_hoc_ky %}
+        <div class="o-tong-hop__gia-tri o-tong-hop__gia-tri--den">{{ xep_loai_hoc_ky }}</div>
+        {% else %}
+        <div class="o-tong-hop__ghi-chu">Chưa có điểm để xếp loại.</div>
+        {% endif %}
+    </div>
+    <div class="o-tong-hop">
+        <div class="o-tong-hop__nhan">Điểm trung bình tích lũy</div>
+        {% if diem_tb_tich_luy is not None %}
+        <div class="o-tong-hop__gia-tri">{{ diem_tb_tich_luy }}</div>
+        {% else %}
+        <div class="o-tong-hop__ghi-chu">Chưa có học phần nào đủ điểm.</div>
+        {% endif %}
+    </div>
+    <div class="o-tong-hop">
+        <div class="o-tong-hop__nhan">Xếp loại tích lũy</div>
+        {% if xep_loai_tich_luy %}
+        <div class="o-tong-hop__gia-tri o-tong-hop__gia-tri--den">{{ xep_loai_tich_luy }}</div>
+        {% else %}
+        <div class="o-tong-hop__ghi-chu">Chưa có điểm để xếp loại.</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="khung-bang">
+<table class="bang-diem">
+    <thead>
+    <tr>
+        <th>Mã học phần</th><th>Tên học phần</th><th class="so">Số tín chỉ</th>
+        <th class="so">Điểm quá trình</th><th class="so">Điểm thi</th><th class="so">Điểm tổng kết</th>
+        <th class="trung-tam">Trạng thái</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for dk in danh_sach %}
+    {% ifchanged dk.ma_lop_hoc_phan.nam_hoc dk.ma_lop_hoc_phan.hoc_ky %}
+    <tr class="hang-nhom"><td colspan="7">Học kỳ {{ dk.ma_lop_hoc_phan.hoc_ky }} - {{ dk.ma_lop_hoc_phan.nam_hoc }}</td></tr>
+    {% endifchanged %}
+    <tr class="hang-diem">
+        <td>{{ dk.ma_lop_hoc_phan.ma_hoc_phan.ma_hoc_phan }}</td>
+        <td>{{ dk.ma_lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</td>
+        <td class="so">{{ dk.ma_lop_hoc_phan.ma_hoc_phan.so_tin_chi }}</td>
+        {% if dk.cho_cong_bo or not dk.diem %}
+        <td class="so gia-tri-trong">&mdash;</td>
+        <td class="so gia-tri-trong">&mdash;</td>
+        <td class="so gia-tri-trong">&mdash;</td>
+        {% else %}
+        {% with tong_ket=dk.diem.tinh_diem_tong_ket %}
+        <td class="so">{% if dk.diem.diem_qua_trinh is None %}<span class="gia-tri-trong">Chưa nhập</span>{% else %}{{ dk.diem.diem_qua_trinh }}{% endif %}</td>
+        <td class="so">{% if dk.diem.diem_thi is None %}<span class="gia-tri-trong">Chưa nhập</span>{% else %}{{ dk.diem.diem_thi }}{% endif %}</td>
+        <td class="so">{% if tong_ket is None %}<span class="gia-tri-trong">Chưa đủ điểm</span>{% else %}<strong>{{ tong_ket }}</strong>{% endif %}</td>
+        {% endwith %}
+        {% endif %}
+        <td class="trung-tam">
+            {% if dk.cho_cong_bo %}
+            <span class="chip chip--thieu_tien_quyet">Đang chờ công bố</span>
+            {% elif not dk.diem %}
+            <span class="chip chip--da_huy">Chưa nhập điểm</span>
+            {% elif dk.diem.da_cong_bo %}
+            <span class="chip chip--con_hieu_luc">Đã công bố</span>
+            {% else %}
+            <span class="chip chip--da_huy">Chưa công bố</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7">Chưa có dữ liệu điểm.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

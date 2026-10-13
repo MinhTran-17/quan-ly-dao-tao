@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Học phần nhiều sinh viên đăng ký{% endblock %}
+{% block noi_dung %}
+<h1>Xếp hạng học phần theo số lượt đăng ký</h1>
+{% include 'reports/_bo_loc.html' %}
+<p><a class="nut nut-chinh nut-nho" href="{% url 'reports:hoc_phan_nhieu_dang_ky_xuat_excel' %}?{{ request.GET.urlencode }}">Xuất Excel</a></p>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th class="so">Hạng</th><th>Mã học phần</th><th>Tên học phần</th><th class="so">Số lượt đăng ký</th></tr></thead>
+    <tbody>
+    {% for hp in danh_sach %}
+    <tr>
+        <td class="so">{{ forloop.counter }}</td>
+        <td>{{ hp.ma_hoc_phan }}</td>
+        <td>{{ hp.ten_hoc_phan }}</td>
+        <td class="so">{{ hp.so_dang_ky }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Không có dữ liệu.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

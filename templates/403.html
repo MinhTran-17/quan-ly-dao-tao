@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Không có quyền truy cập{% endblock %}
+{% block noi_dung %}
+<div class="khung the-loi">
+    <h1>403</h1>
+    <h2>Không có quyền truy cập</h2>
+    <p>Tài khoản của bạn không có quyền thực hiện thao tác này.</p>
+    <a class="nut nut-chinh" href="{% url 'accounts:trang_chu' %}">Về trang chủ</a>
+</div>
+{% endblock %}

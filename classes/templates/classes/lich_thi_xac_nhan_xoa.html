@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Xóa lịch thi{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Xóa lịch thi</h1>
+    <p>Bạn có chắc muốn xóa lịch thi của lớp "{{ lich_thi.lop_hoc_phan_id }}" khỏi danh sách?</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Xóa</button>
+            <a class="nut nut-phu" href="{% url 'classes:lich_thi_danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

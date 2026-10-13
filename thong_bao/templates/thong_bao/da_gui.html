@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Thông báo đã gửi{% endblock %}
+{% block noi_dung %}
+<h1>Thông báo đã gửi</h1>
+<p class="ghi-chu-truong">Các thông báo do Phòng Đào tạo đã gửi, mới nhất trước.</p>
+<p><a class="nut nut-chinh" href="{% url 'thong_bao:gui_phong_dao_tao' %}">+ Gửi thông báo</a></p>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Tiêu đề</th><th>Nội dung</th><th>Đối tượng nhận</th><th>Người gửi</th><th>Thời gian gửi</th></tr></thead>
+    <tbody>
+    {% for tb in danh_sach %}
+    <tr>
+        <td>{{ tb.tieu_de }}</td>
+        <td>{{ tb.noi_dung|truncatechars:80 }}</td>
+        <td>{% include 'thong_bao/_doi_tuong.html' %}</td>
+        <td>{{ tb.nguoi_gui.ten_dang_nhap }}</td>
+        <td>{{ tb.thoi_gian_gui|date:"d/m/Y H:i" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Chưa có thông báo nào được gửi.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

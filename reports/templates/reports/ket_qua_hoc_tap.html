@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Kết quả học tập tổng hợp{% endblock %}
+{% block noi_dung %}
+<h1>Kết quả học tập tổng hợp</h1>
+{% include 'reports/_bo_loc.html' %}
+<p><a class="nut nut-chinh nut-nho" href="{% url 'reports:ket_qua_hoc_tap_xuat_excel' %}?{{ request.GET.urlencode }}">Xuất Excel</a></p>
+
+<h2>Phân bố điểm tổng kết ({{ tong_so_diem }} lượt có đủ điểm)</h2>
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Khoảng điểm</th><th class="so">Số lượt</th></tr></thead>
+    <tbody>
+        <tr><td>Dưới {{ diem_dat_toi_thieu }} (Không đạt)</td><td class="so">{{ phan_bo.duoi_4 }}</td></tr>
+        <tr><td>4.0 - dưới 5.5 (Trung bình)</td><td class="so">{{ phan_bo.tu_4_den_duoi_5_5 }}</td></tr>
+        <tr><td>5.5 - dưới 7.0 (Khá)</td><td class="so">{{ phan_bo.tu_5_5_den_duoi_7 }}</td></tr>
+        <tr><td>7.0 - dưới 8.5 (Giỏi)</td><td class="so">{{ phan_bo.tu_7_den_duoi_8_5 }}</td></tr>
+        <tr><td>Từ 8.5 (Xuất sắc)</td><td class="so">{{ phan_bo.tu_8_5_tro_len }}</td></tr>
+    </tbody>
+</table>
+</div>
+
+<h2>Tỷ lệ đạt theo học phần</h2>
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Học phần</th><th class="so">Số lượt có điểm</th><th class="so">Số lượt đạt</th><th class="so">Tỷ lệ đạt (%)</th></tr></thead>
+    <tbody>
+    {% for hp in theo_hoc_phan %}
+    <tr>
+        <td>{{ hp.ten }}</td>
+        <td class="so">{{ hp.tong }}</td>
+        <td class="so">{{ hp.dat }}</td>
+        <td class="so">{{ hp.ty_le_dat }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Không có dữ liệu.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

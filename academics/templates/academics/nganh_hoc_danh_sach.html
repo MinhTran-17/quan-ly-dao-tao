@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Danh sách ngành học{% endblock %}
+{% block noi_dung %}
+<h1>Danh sách ngành học</h1>
+<p><a class="nut nut-chinh" href="{% url 'academics:nganh_hoc_tao' %}">+ Tạo ngành học</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Mã/tên ngành</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo mã hoặc tên ngành">
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Tìm</button>
+        <a class="nut nut-phu" href="{% url 'academics:nganh_hoc_danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Mã ngành</th><th>Tên ngành</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for nganh in danh_sach %}
+    <tr>
+        <td>{{ nganh.ma_nganh }}</td>
+        <td>{{ nganh.ten_nganh }}</td>
+        <td>
+            <a class="nut nut-nhe nut-nho" href="{% url 'academics:nganh_hoc_sua' nganh.pk %}">Sửa</a>
+            <a class="nut nut-nguy-hiem nut-nho" href="{% url 'academics:nganh_hoc_xoa' nganh.pk %}">Xóa</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">Không có ngành nào khớp điều kiện tìm kiếm.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

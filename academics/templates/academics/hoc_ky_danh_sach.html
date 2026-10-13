@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Danh mục học kỳ{% endblock %}
+{% block noi_dung %}
+<h1>Danh mục học kỳ</h1>
+<p><a class="nut nut-chinh" href="{% url 'academics:hoc_ky_tao' %}">+ Tạo học kỳ</a></p>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Học kỳ</th><th>Năm học</th><th>Ngày bắt đầu</th><th>Ngày kết thúc</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for hoc_ky in danh_sach %}
+    <tr>
+        <td>{{ hoc_ky.hoc_ky }}</td>
+        <td>{{ hoc_ky.nam_hoc }}</td>
+        <td>{{ hoc_ky.ngay_bat_dau|date:"d/m/Y" }}</td>
+        <td>{{ hoc_ky.ngay_ket_thuc|date:"d/m/Y" }}</td>
+        <td>
+            <div class="nhom-nut">
+                <a class="nut nut-nhe nut-nho" href="{% url 'academics:hoc_ky_sua' hoc_ky.pk %}">Sửa</a>
+                <a class="nut nut-nguy-hiem nut-nho" href="{% url 'academics:hoc_ky_xoa' hoc_ky.pk %}">Xóa</a>
+            </div>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Chưa có học kỳ nào trong danh mục.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

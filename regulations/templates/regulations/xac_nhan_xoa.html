@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Xóa tài liệu quy chế{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Xóa tài liệu quy chế</h1>
+    <p>Bạn có chắc muốn xóa tài liệu "{{ tai_lieu.ten_tai_lieu }}"? Tệp trên đĩa sẽ bị xóa và không thể khôi phục.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Xóa</button>
+            <a class="nut nut-phu" href="{% url 'regulations:danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

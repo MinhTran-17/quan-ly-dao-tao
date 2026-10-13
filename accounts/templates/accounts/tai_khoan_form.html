@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block tieu_de %}{% if object %}Cập nhật tài khoản{% else %}Tạo tài khoản{% endif %}{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:420px;">
+    <h1>{% if object %}Cập nhật tài khoản{% else %}Tạo tài khoản{% endif %}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {% include '_truong_form.html' %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-chinh">Lưu</button>
+            <a class="nut nut-phu" href="{% url 'accounts:tai_khoan_danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

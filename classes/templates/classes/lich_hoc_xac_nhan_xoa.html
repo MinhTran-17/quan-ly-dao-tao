@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Xóa lịch học{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Xóa lịch học</h1>
+    <p>Bạn có chắc muốn xóa lịch học của lớp "{{ lich.ma_lop_hoc_phan_id }}": Thứ {{ lich.thu }}, tiết {{ lich.tiet_bat_dau }}, {{ lich.so_tiet }} tiết, phòng {{ lich.phong_hoc }}?</p>
+    {% if so_sinh_vien %}
+    <p><strong>Lưu ý:</strong> lớp này đang có {{ so_sinh_vien }} sinh viên đăng ký. Xóa lịch sẽ làm buổi học này biến mất khỏi thời khóa biểu của họ, và các lần đăng ký sau sẽ không còn bị kiểm tra trùng lịch với buổi này.</p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Xóa</button>
+            <a class="nut nut-phu" href="{% url 'classes:lich_hoc_danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

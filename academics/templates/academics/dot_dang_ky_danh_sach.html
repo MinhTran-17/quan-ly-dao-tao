@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Đợt đăng ký học phần{% endblock %}
+{% block noi_dung %}
+<h1>Đợt đăng ký học phần</h1>
+<p><a class="nut nut-chinh" href="{% url 'academics:dot_dang_ky_tao' %}">+ Tạo đợt đăng ký</a></p>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Học kỳ</th><th>Ngày mở</th><th>Ngày đóng</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for dot in danh_sach %}
+    <tr>
+        <td>{{ dot.hoc_ky }}</td>
+        <td>{{ dot.ngay_mo|date:"d/m/Y H:i" }}</td>
+        <td>{{ dot.ngay_dong|date:"d/m/Y H:i" }}</td>
+        <td>
+            <div class="nhom-nut">
+                <a class="nut nut-nhe nut-nho" href="{% url 'academics:dot_dang_ky_sua' dot.pk %}">Sửa</a>
+                <a class="nut nut-nguy-hiem nut-nho" href="{% url 'academics:dot_dang_ky_xoa' dot.pk %}">Xóa</a>
+            </div>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Chưa có đợt đăng ký nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Lịch thi{% endblock %}
+{% block noi_dung %}
+<div class="tieu-de-trang">
+    <h1>Lịch thi</h1>
+    <div class="nhom-nut">
+        <a class="nut nut-chinh" href="{% url 'enrollment:lich_thi_xuat_pdf' %}">Xuất PDF</a>
+    </div>
+</div>
+{% if not co_ho_so %}
+<div class="thong-bao--warning canh-bao-khoi">Tài khoản của bạn chưa gắn hồ sơ sinh viên. Liên hệ Phòng Đào tạo để được hỗ trợ.</div>
+{% endif %}
+
+{% now "Y-m-d" as hom_nay %}
+<div class="khung-bang">
+<table class="bang-sv">
+    <thead><tr><th>Lớp học phần</th><th>Học phần</th><th class="trung-tam">Giờ bắt đầu</th><th class="so">Thời lượng (phút)</th><th>Phòng thi</th></tr></thead>
+    <tbody>
+    {% for lich in danh_sach %}
+    {# Gom theo ngày thi (danh sách đã sắp theo ngày thi gần nhất); lịch đã qua được làm nhạt. #}
+    {% ifchanged lich.ngay_thi %}
+    <tr class="hang-nhom"><td colspan="5">{{ lich.ngay_thi|date:"l, d/m/Y" }}</td></tr>
+    {% endifchanged %}
+    <tr class="hang-diem{% if lich.ngay_thi|date:'Y-m-d' < hom_nay %} hang-mo{% endif %}">
+        <td>{{ lich.lop_hoc_phan_id }}</td>
+        <td>{{ lich.lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</td>
+        <td class="trung-tam">{{ lich.gio_bat_dau|time:'H:i' }}</td>
+        <td class="so">{{ lich.thoi_luong_phut }}</td>
+        <td>{{ lich.phong_thi }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Bạn chưa có lịch thi nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

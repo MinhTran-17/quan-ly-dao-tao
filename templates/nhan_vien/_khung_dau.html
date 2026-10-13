@@ -1,0 +1,109 @@
+{% comment %}
+Banner + thanh menu của Phòng Đào tạo, Giảng viên, Cố vấn học tập (mọi vai trò trừ Sinh viên).
+Dùng lại đúng các lớp .sv-* (màu, icon, gạch chân mục đang chọn, dropdown mở bằng hover trên
+máy tính/bấm trên cảm ứng) của khung Sinh viên; mỗi vai trò có nhóm tab riêng theo chức năng thật
+của vai trò đó — xem docs/thiet_ke_giao_dien.md. Mục đang chọn xác định bằng request.resolver_match.
+{% endcomment %}
+{% include 'menu/_bieu_tuong.html' %}
+
+{% with u=request.resolver_match.url_name|default:'' a=request.resolver_match.app_name|default:'' %}
+<header class="sv-banner">
+    <div class="sv-container sv-container--rong">
+        <a class="sv-banner__logo" href="{% url 'accounts:trang_chu' %}">{% include '_logo.html' %}</a>
+    </div>
+</header>
+
+<div class="sv-thanh-menu sv-thanh-menu--nv{% if user.vai_tro == 'PHONG_DAO_TAO' %} sv-thanh-menu--nhieu{% endif %}" id="sv-thanh-menu">
+    <div class="sv-container sv-container--rong">
+        <button type="button" class="sv-hamburger" id="sv-hamburger" aria-label="Mở menu" aria-controls="sv-menu" aria-expanded="false">
+            <svg class="sv-icon" aria-hidden="true"><use href="#sv-i-menu"/></svg>
+        </button>
+
+        <nav class="sv-menu" id="sv-menu" aria-label="Menu chính">
+            <a class="sv-menu__muc{% if u == 'trang_chu' %} sv-menu__muc--chon{% endif %}" href="{% url 'accounts:trang_chu' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-home"/></svg><span>Trang chủ</span></a>
+
+            {% if user.vai_tro == 'PHONG_DAO_TAO' %}
+            <a class="sv-menu__muc{% if a == 'accounts' and 'tai_khoan' in u %} sv-menu__muc--chon{% endif %}" href="{% url 'accounts:tai_khoan_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-khoa"/></svg><span>Tài khoản</span></a>
+
+            <div class="sv-nhom{% if a == 'people' %} sv-nhom--chon{% endif %}">
+                <button type="button" class="sv-menu__muc sv-nhom__nut" aria-haspopup="true" aria-expanded="false"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-nhom"/></svg><span>Người dùng</span><svg class="sv-icon sv-icon--mui" aria-hidden="true"><use href="#sv-i-mui"/></svg></button>
+                <div class="sv-nhom__xo">
+                    <a class="sv-nhom__muc{% if a == 'people' and 'sinh_vien' in u and 'excel' not in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'people:sinh_vien_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-nguoi-dung"/></svg>Sinh viên</a>
+                    <a class="sv-nhom__muc{% if a == 'people' and 'giang_vien' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'people:giang_vien_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-giang-vien"/></svg>Giảng viên</a>
+                    <a class="sv-nhom__muc{% if a == 'people' and 'co_van' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'people:co_van_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-nhom"/></svg>Cố vấn học tập</a>
+                    <a class="sv-nhom__muc{% if a == 'people' and 'excel' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'people:sinh_vien_nhap_excel' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-tai-len"/></svg>Nhập sinh viên từ Excel</a>
+                </div>
+            </div>
+
+            <div class="sv-nhom{% if a == 'academics' %} sv-nhom--chon{% endif %}">
+                <button type="button" class="sv-menu__muc sv-nhom__nut" aria-haspopup="true" aria-expanded="false"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-hoc-tap"/></svg><span>Học vụ</span><svg class="sv-icon sv-icon--mui" aria-hidden="true"><use href="#sv-i-mui"/></svg></button>
+                <div class="sv-nhom__xo">
+                    <a class="sv-nhom__muc{% if a == 'academics' and 'nganh_hoc' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'academics:nganh_hoc_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-nganh"/></svg>Ngành học</a>
+                    <a class="sv-nhom__muc{% if a == 'academics' and 'lop_hanh_chinh' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'academics:lop_hanh_chinh_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-nhom"/></svg>Lớp hành chính</a>
+                    <a class="sv-nhom__muc{% if a == 'academics' and 'hoc_phan' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'academics:hoc_phan_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-hoc-tap"/></svg>Học phần</a>
+                    <a class="sv-nhom__muc{% if a == 'academics' and 'dieu_kien_tien_quyet' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'academics:dieu_kien_tien_quyet_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-tien-quyet"/></svg>Điều kiện tiên quyết</a>
+                    <a class="sv-nhom__muc{% if a == 'academics' and 'chuong_trinh' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'academics:chuong_trinh_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-tien-do"/></svg>Chương trình đào tạo</a>
+                    <a class="sv-nhom__muc{% if a == 'academics' and 'hoc_ky' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'academics:hoc_ky_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-lich"/></svg>Danh mục học kỳ</a>
+                    <a class="sv-nhom__muc{% if a == 'academics' and 'dot_dang_ky' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'academics:dot_dang_ky_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-dang-ky"/></svg>Đợt đăng ký học phần</a>
+                </div>
+            </div>
+
+            <div class="sv-nhom{% if a == 'classes' or a == 'enrollment' or u == 'bang_diem_lop_phong_dao_tao' or u == 'sua_diem' or u == 'bang_diem_sinh_vien' %} sv-nhom--chon{% endif %}">
+                <button type="button" class="sv-menu__muc sv-nhom__nut" aria-haspopup="true" aria-expanded="false"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-dang-ky"/></svg><span>Lớp học phần</span><svg class="sv-icon sv-icon--mui" aria-hidden="true"><use href="#sv-i-mui"/></svg></button>
+                <div class="sv-nhom__xo">
+                    <a class="sv-nhom__muc{% if a == 'classes' and 'lop_hoc_phan' in u or u == 'bang_diem_lop_phong_dao_tao' or u == 'sua_diem' or u == 'danh_sach_sinh_vien_lop' or u == 'xuat_excel_sinh_vien_lop' %} sv-nhom__muc--chon{% endif %}" href="{% url 'classes:lop_hoc_phan_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-dang-ky"/></svg>Lớp học phần</a>
+                    <a class="sv-nhom__muc{% if a == 'classes' and 'lich_hoc' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'classes:lich_hoc_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-lich"/></svg>Lịch học</a>
+                    <a class="sv-nhom__muc{% if a == 'classes' and 'lich_thi' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'classes:lich_thi_danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-lich-thi"/></svg>Lịch thi</a>
+                    <a class="sv-nhom__muc{% if u == 'tra_cuu_lich_su' or u == 'bang_diem_sinh_vien' %} sv-nhom__muc--chon{% endif %}" href="{% url 'enrollment:tra_cuu_lich_su' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-lich-su"/></svg>Tra cứu lịch sử đăng ký</a>
+                </div>
+            </div>
+
+            <a class="sv-menu__muc{% if a == 'regulations' %} sv-menu__muc--chon{% endif %}" href="{% url 'regulations:danh_sach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-lich-thi"/></svg><span>Quy chế</span></a>
+
+            <div class="sv-nhom{% if a == 'reports' %} sv-nhom--chon{% endif %}">
+                <button type="button" class="sv-menu__muc sv-nhom__nut" aria-haspopup="true" aria-expanded="false"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-tien-do"/></svg><span>Báo cáo</span><svg class="sv-icon sv-icon--mui" aria-hidden="true"><use href="#sv-i-mui"/></svg></button>
+                <div class="sv-nhom__xo">
+                    <a class="sv-nhom__muc{% if a == 'reports' and 'si_so' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'reports:si_so_theo_lop' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-tien-do"/></svg>Sĩ số theo lớp</a>
+                    <a class="sv-nhom__muc{% if a == 'reports' and 'hoc_phan_nhieu' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'reports:hoc_phan_nhieu_dang_ky' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-hoc-tap"/></svg>Học phần nhiều đăng ký</a>
+                    <a class="sv-nhom__muc{% if a == 'reports' and 'ket_qua' in u %} sv-nhom__muc--chon{% endif %}" href="{% url 'reports:ket_qua_hoc_tap' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-bang-diem"/></svg>Kết quả học tập</a>
+                </div>
+            </div>
+
+            <a class="sv-menu__muc{% if u == 'canh_bao_phong_dao_tao' %} sv-menu__muc--chon{% endif %}" href="{% url 'grades:canh_bao_phong_dao_tao' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-canh-bao"/></svg><span>Cảnh báo học vụ</span></a>
+            <a class="sv-menu__muc{% if u == 'gui_phong_dao_tao' or u == 'da_gui' %} sv-menu__muc--chon{% endif %}" href="{% url 'thong_bao:gui_phong_dao_tao' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-gui"/></svg><span>Gửi thông báo</span></a>
+
+            {% elif user.vai_tro == 'GIANG_VIEN' %}
+            <a class="sv-menu__muc{% if u == 'lop_phu_trach' or a == 'grades' or a == 'diem_danh' or u == 'danh_sach_sinh_vien_lop' or u == 'xuat_excel_sinh_vien_lop' %} sv-menu__muc--chon{% endif %}" href="{% url 'classes:lop_phu_trach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-hoc-tap"/></svg><span>Lớp phụ trách</span></a>
+            <a class="sv-menu__muc{% if u == 'lich_giang_day' %} sv-menu__muc--chon{% endif %}" href="{% url 'classes:lich_giang_day' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-lich"/></svg><span>Lịch giảng dạy</span></a>
+            <a class="sv-menu__muc{% if u == 'gui_giang_vien' %} sv-menu__muc--chon{% endif %}" href="{% url 'thong_bao:gui_giang_vien' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-gui"/></svg><span>Gửi thông báo</span></a>
+
+            {% elif user.vai_tro == 'CO_VAN_HOC_TAP' %}
+            <a class="sv-menu__muc{% if u == 'sinh_vien_phu_trach' or u == 'xuat_excel_sinh_vien_phu_trach' or u == 'bang_diem_sinh_vien' %} sv-menu__muc--chon{% endif %}" href="{% url 'enrollment:sinh_vien_phu_trach' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-nhom"/></svg><span>Sinh viên phụ trách</span></a>
+            <a class="sv-menu__muc{% if a == 'tien_do_hoc_tap' %} sv-menu__muc--chon{% endif %}" href="{% url 'tien_do_hoc_tap:co_van' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-tien-do"/></svg><span>Tiến độ học tập</span></a>
+            <a class="sv-menu__muc{% if u == 'canh_bao_co_van' %} sv-menu__muc--chon{% endif %}" href="{% url 'grades:canh_bao_co_van' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-canh-bao"/></svg><span>Cảnh báo học vụ</span></a>
+            <a class="sv-menu__muc{% if a == 'tom_tat_ket_qua' %} sv-menu__muc--chon{% endif %}" href="{% url 'tom_tat_ket_qua:co_van' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-tom-tat"/></svg><span>Tóm tắt AI</span></a>
+            <a class="sv-menu__muc{% if a == 'hoi_dap_quy_che' %} sv-menu__muc--chon{% endif %}" href="{% url 'hoi_dap_quy_che:trang_chat' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-hoi-dap"/></svg><span>Hỏi đáp AI</span></a>
+            <a class="sv-menu__muc{% if u == 'gui_co_van' %} sv-menu__muc--chon{% endif %}" href="{% url 'thong_bao:gui_co_van' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-gui"/></svg><span>Gửi thông báo</span></a>
+            {% endif %}
+        </nav>
+
+        <div class="sv-phai">
+            <a class="sv-chip sv-chuong{% if a == 'thong_bao' and u == 'danh_sach' or a == 'thong_bao' and u == 'chi_tiet' %} sv-chuong--chon{% endif %}" href="{% url 'thong_bao:danh_sach' %}" aria-label="Thông báo{% if SO_THONG_BAO_CHUA_DOC %}, {{ SO_THONG_BAO_CHUA_DOC }} chưa đọc{% endif %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-chuong"/></svg>{% if SO_THONG_BAO_CHUA_DOC %}<span class="chip-thong-bao">{% if SO_THONG_BAO_CHUA_DOC > 99 %}99+{% else %}{{ SO_THONG_BAO_CHUA_DOC }}{% endif %}</span>{% endif %}</a>
+
+            <div class="sv-nhom">
+                <button type="button" class="sv-chip sv-nhom__nut" aria-haspopup="true" aria-expanded="false">{{ user.ten_dang_nhap }}<span class="sv-chip__vai-tro"> · {{ user.get_vai_tro_display }}</span><svg class="sv-icon sv-icon--mui" aria-hidden="true"><use href="#sv-i-mui"/></svg></button>
+                <div class="sv-nhom__xo sv-nhom__xo--phai">
+                    <a class="sv-nhom__muc{% if a == 'accounts' and u == 'thong_tin_ca_nhan' %} sv-nhom__muc--chon{% endif %}" href="{% url 'accounts:thong_tin_ca_nhan' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-nguoi-dung"/></svg>Thông tin cá nhân</a>
+                    <a class="sv-nhom__muc{% if a == 'accounts' and u == 'doi_mat_khau' %} sv-nhom__muc--chon{% endif %}" href="{% url 'accounts:doi_mat_khau' %}"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-khoa"/></svg>Đổi mật khẩu</a>
+                    <form method="post" action="{% url 'accounts:dang_xuat' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="sv-nhom__muc"><svg class="sv-icon" aria-hidden="true"><use href="#sv-i-dang-xuat"/></svg>Đăng xuất</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endwith %}
+
+{% include 'menu/_js.html' %}

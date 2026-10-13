@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block tieu_de %}{{ chuong_trinh.ten_chuong_trinh }}{% endblock %}
+{% block noi_dung %}
+<h1>{{ chuong_trinh.ten_chuong_trinh }}</h1>
+<p class="ghi-chu-truong">Ngành: {{ chuong_trinh.nganh.ten_nganh }} — Khóa: {{ chuong_trinh.khoa_hoc }}</p>
+<p><a class="nut nut-phu nut-nho" href="{% url 'academics:chuong_trinh_danh_sach' %}">« Quay lại danh sách chương trình</a></p>
+
+<h2>Học phần trong chương trình</h2>
+<div class="khung-bang">
+<table>
+    <thead><tr><th class="so">Học kỳ dự kiến</th><th>Học phần</th><th class="so">Số tín chỉ</th><th>Loại</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for ct in chi_tiet_danh_sach %}
+    <tr>
+        <td class="so">{{ ct.hoc_ky_du_kien }}</td>
+        <td>{{ ct.hoc_phan.ma_hoc_phan }} - {{ ct.hoc_phan.ten_hoc_phan }}</td>
+        <td class="so">{{ ct.hoc_phan.so_tin_chi }}</td>
+        <td>
+            {% if ct.bat_buoc %}<span class="chip chip--con_hieu_luc">Bắt buộc</span>
+            {% else %}<span class="chip chip--da_day">Tự chọn</span>{% endif %}
+        </td>
+        <td>
+            <div class="nhom-nut">
+                <a class="nut nut-nhe nut-nho" href="{% url 'academics:chuong_trinh_chi_tiet_sua' ct.pk %}">Sửa</a>
+                <form class="noi-tuyen" method="post" action="{% url 'academics:chuong_trinh_chi_tiet_xoa' ct.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nut nut-nguy-hiem nut-nho">Bỏ khỏi chương trình</button>
+                </form>
+            </div>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Chương trình chưa có học phần nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<h2>Thêm học phần vào chương trình</h2>
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Mã/tên học phần</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm học phần chưa có trong chương trình">
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Tìm</button>
+        <a class="nut nut-phu" href="{% url 'academics:chuong_trinh_chi_tiet' chuong_trinh.pk %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Học phần</th><th class="so">Số tín chỉ</th><th>Thêm vào chương trình</th></tr></thead>
+    <tbody>
+    {% for hp in hoc_phan_kha_dung %}
+    <tr>
+        <td>{{ hp.ma_hoc_phan }} - {{ hp.ten_hoc_phan }}</td>
+        <td class="so">{{ hp.so_tin_chi }}</td>
+        <td>
+            <form class="noi-tuyen" method="post" action="{% url 'academics:chuong_trinh_chi_tiet' chuong_trinh.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="hoc_phan" value="{{ hp.pk }}">
+                <label>Học kỳ dự kiến <input type="number" name="hoc_ky_du_kien" min="1" max="8" value="1" required style="width:60px;"></label>
+                <label><input type="checkbox" name="bat_buoc" checked> Bắt buộc</label>
+                <button type="submit" class="nut nut-chinh nut-nho">Thêm</button>
+            </form>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">Không có học phần nào khớp điều kiện tìm kiếm (hoặc tất cả đã có trong chương trình).</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

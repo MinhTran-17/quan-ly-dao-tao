@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Nhập sinh viên từ Excel{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:560px;">
+    <h1>Nhập sinh viên từ Excel</h1>
+    <p class="ghi-chu-truong">
+        Tệp .xlsx với các cột theo đúng thứ tự: Mã sinh viên, Họ tên, Ngày sinh (YYYY-MM-DD), Email,
+        Số điện thoại, Mã lớp hành chính, Tên đăng nhập (để trống sẽ tự tạo từ mã sinh viên).
+        Mỗi dòng hợp lệ sẽ được tạo kèm một tài khoản đăng nhập mới với mật khẩu tạm, bắt buộc đổi
+        ngay lần đăng nhập đầu.
+    </p>
+    <p><a class="nut nut-phu nut-nho" href="{% url 'people:sinh_vien_mau_excel' %}">Tải tệp mẫu</a></p>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% include '_truong_form.html' %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-chinh">Nhập dữ liệu</button>
+            <a class="nut nut-phu" href="{% url 'people:sinh_vien_danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

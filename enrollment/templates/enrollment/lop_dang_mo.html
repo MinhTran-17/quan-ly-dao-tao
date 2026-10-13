@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Lớp đang mở{% endblock %}
+{% block noi_dung %}
+<div class="tieu-de-trang">
+    <h1>Lớp đang mở</h1>
+    <div class="nhom-nut">
+        <a class="nut nut-nhe" href="{% url 'tu_van_dang_ky:trang_tu_van' %}">Nhờ AI tư vấn nên đăng ký lớp nào</a>
+    </div>
+</div>
+{% if not co_ho_so %}
+<div class="thong-bao--warning canh-bao-khoi">Tài khoản của bạn chưa gắn hồ sơ sinh viên. Liên hệ Phòng Đào tạo để được hỗ trợ.</div>
+{% endif %}
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Học kỳ</label>
+        <select name="hoc_ky">
+            <option value="">-- Tất cả --</option>
+            {% for hk in cac_hoc_ky %}
+            <option value="{{ hk }}" {% if hoc_ky_loc == hk %}selected{% endif %}>{{ hk }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="truong">
+        <label>Năm học</label>
+        <select name="nam_hoc">
+            <option value="">-- Tất cả --</option>
+            {% for nh in cac_nam_hoc %}
+            <option value="{{ nh }}" {% if nam_hoc_loc == nh %}selected{% endif %}>{{ nh }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="truong truong--checkbox">
+        <label class="nhan-checkbox">
+            <input type="checkbox" name="con_cho" value="1" {% if con_cho_loc == '1' %}checked{% endif %}>
+            Chỉ hiển thị lớp còn chỗ
+        </label>
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Lọc</button>
+        <a class="nut nut-phu" href="{% url 'enrollment:lop_dang_mo' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table class="bang-sv">
+    <thead>
+    <tr>
+        <th>Mã lớp học phần</th><th>Học phần</th><th>Giảng viên</th>
+        <th class="trung-tam">Sĩ số</th><th>Trạng thái</th><th class="trung-tam">Thao tác</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for lop in danh_sach %}
+    {% ifchanged lop.nam_hoc lop.hoc_ky %}
+    {# Lý do đợt đăng ký chỉ nêu MỘT lần ở dòng nhóm học kỳ (không lặp ở từng hàng, không trùng câu với thông báo lỗi). #}
+    <tr class="hang-nhom">
+        <td colspan="6">
+            Học kỳ {{ lop.hoc_ky }} - {{ lop.nam_hoc }}
+            {% if lop.dot_dang_ky.mo %}
+            <span class="chip chip--du_dieu_kien">Đang mở đăng ký</span>
+            {% else %}
+            <span class="chip chip--ngoai_dot_dang_ky">Ngoài đợt đăng ký</span>
+            <span class="hang-nhom__phu">{{ lop.dot_dang_ky.ly_do }}</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endifchanged %}
+    <tr class="hang-diem">
+        <td>{{ lop.ma_lop_hoc_phan }}</td>
+        <td>{{ lop.ma_hoc_phan.ten_hoc_phan }}</td>
+        <td>{{ lop.ma_giang_vien.ho_ten }}</td>
+        <td class="trung-tam">
+            {% widthratio lop.so_dang_ky lop.si_so_toi_da 100 as ty_le_day %}
+            {% if lop.so_dang_ky >= lop.si_so_toi_da %}
+            <span class="chip chip--da_day" title="Đã đầy">{{ lop.so_dang_ky }}/{{ lop.si_so_toi_da }}</span>
+            {% elif ty_le_day|add:0 >= 80 %}
+            <span class="chip chip--thieu_tien_quyet" title="Sắp đầy">{{ lop.so_dang_ky }}/{{ lop.si_so_toi_da }}</span>
+            {% else %}
+            <span class="chip chip--du_dieu_kien" title="Còn nhiều chỗ">{{ lop.so_dang_ky }}/{{ lop.si_so_toi_da }}</span>
+            {% endif %}
+        </td>
+        <td>
+            {% with tt=lop.trang_thai_dk %}
+            {% if tt.trang_thai == 'da_dang_ky' %}
+            <span class="chip chip--da_dang_ky">Đã đăng ký</span>
+            {% elif tt.trang_thai == 'ngoai_dot_dang_ky' %}
+            <span class="chip chip--ngoai_dot_dang_ky">Ngoài đợt đăng ký</span>
+            {% elif tt.trang_thai == 'thieu_tien_quyet' %}
+            <span class="chip chip--thieu_tien_quyet">Thiếu tiên quyết</span>
+            <div class="ghi-chu-truong">Cần đạt: {% for hp in tt.hoc_phan_con_thieu %}{{ hp.ten_hoc_phan }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+            {% elif tt.trang_thai == 'trung_lich' %}
+            <span class="chip chip--trung_lich">Trùng lịch</span>
+            <div class="ghi-chu-truong">Với lớp {{ tt.lich_trung.ma_lop_hoc_phan_id }} (Thứ {{ tt.lich_trung.thu }}, tiết {{ tt.lich_trung.tiet_bat_dau }}, {{ tt.lich_trung.so_tiet }} tiết)</div>
+            {% elif tt.trang_thai == 'da_day' %}
+            <span class="chip chip--da_day">Đã đầy</span>
+            {% elif tt.trang_thai == 'du_dieu_kien' %}
+            <span class="chip chip--du_dieu_kien">Đủ điều kiện</span>
+            {% else %}
+            <span class="gia-tri-trong">&mdash;</span>
+            {% endif %}
+            {% endwith %}
+        </td>
+        <td class="trung-tam">
+            {% if lop.trang_thai_dk.trang_thai == 'du_dieu_kien' %}
+            <form class="noi-tuyen" method="post" action="{% url 'enrollment:dang_ky' lop.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="nut nut-chinh nut-nho">Đăng ký</button>
+            </form>
+            {% else %}
+            <button type="button" class="nut nut-vo-hieu nut-nho" disabled>Đăng ký</button>
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">Không có lớp học phần nào khớp điều kiện lọc.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

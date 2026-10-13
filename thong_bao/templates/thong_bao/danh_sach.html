@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Thông báo{% endblock %}
+{% block noi_dung %}
+<h1>Thông báo</h1>
+
+<div class="khung-bang">
+<table class="bang-sv">
+    <thead><tr><th>Tiêu đề</th><th>Người gửi</th><th>Thời gian gửi</th><th>Trạng thái</th></tr></thead>
+    <tbody>
+    {% for tb in danh_sach %}
+    <tr class="hang-diem">
+        <td><a class="lien-ket-van-ban" href="{% url 'thong_bao:chi_tiet' tb.pk %}">{{ tb.tieu_de }}</a></td>
+        <td>{{ tb.nguoi_gui.ten_dang_nhap }}</td>
+        <td>{{ tb.thoi_gian_gui|date:"d/m/Y H:i" }}</td>
+        <td>
+            {% if tb.da_doc_boi_toi %}
+            <span class="chip chip--da_huy">Đã đọc</span>
+            {% else %}
+            <span class="chip chip--con_hieu_luc">Mới</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Chưa có thông báo nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Sinh viên phụ trách{% endblock %}
+{% block noi_dung %}
+<h1>Sinh viên phụ trách</h1>
+{% if not co_ho_so %}
+<p class="loi-truong">Tài khoản của bạn chưa gắn hồ sơ cố vấn học tập. Liên hệ Phòng Đào tạo để được hỗ trợ.</p>
+{% endif %}
+<p><a class="nut nut-chinh nut-nho" href="{% url 'enrollment:xuat_excel_sinh_vien_phu_trach' %}">Xuất Excel</a></p>
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Mã sinh viên</th><th>Họ tên</th><th>Lớp hành chính</th><th>Email</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for sv in danh_sach %}
+    <tr>
+        <td>{{ sv.ma_sinh_vien }}</td>
+        <td>{{ sv.ho_ten }}</td>
+        <td>{{ sv.ma_lop.ten_lop }}</td>
+        <td>{{ sv.email }}</td>
+        <td><a class="nut nut-nhe nut-nho" href="{% url 'grades:bang_diem_sinh_vien' sv.pk %}">Xem điểm</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Chưa phụ trách sinh viên nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Xóa đợt đăng ký{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Xóa đợt đăng ký</h1>
+    <p>Bạn có chắc muốn xóa "{{ dot_dang_ky }}" khỏi danh sách?</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Xóa</button>
+            <a class="nut nut-phu" href="{% url 'academics:dot_dang_ky_danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

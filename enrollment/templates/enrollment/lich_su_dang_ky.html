@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Lịch sử đăng ký{% endblock %}
+{% block noi_dung %}
+<div class="tieu-de-trang">
+    <h1>Lịch sử đăng ký</h1>
+</div>
+<div class="khung-bang">
+<table class="bang-sv">
+    <thead><tr><th>Học phần</th><th>Lớp học phần</th><th>Học kỳ</th><th>Năm học</th><th>Thời gian đăng ký</th><th class="trung-tam">Trạng thái</th><th class="trung-tam">Thao tác</th></tr></thead>
+    <tbody>
+    {% for dk in danh_sach %}
+    <tr class="hang-diem{% if dk.trang_thai != 'CON_HIEU_LUC' %} hang-mo{% endif %}">
+        <td>{{ dk.ma_lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</td>
+        <td>{{ dk.ma_lop_hoc_phan.ma_lop_hoc_phan }}</td>
+        <td>{{ dk.ma_lop_hoc_phan.hoc_ky }}</td>
+        <td>{{ dk.ma_lop_hoc_phan.nam_hoc }}</td>
+        <td>{{ dk.thoi_gian_dang_ky|date:"d/m/Y H:i" }}</td>
+        <td class="trung-tam">
+            {% if dk.trang_thai == 'CON_HIEU_LUC' %}
+            <span class="chip chip--con_hieu_luc">Còn hiệu lực</span>
+            {% else %}
+            <span class="chip chip--da_huy">Đã hủy</span>
+            {% endif %}
+        </td>
+        <td class="trung-tam">
+            {% if dk.trang_thai == 'CON_HIEU_LUC' %}
+            <a class="nut nut-nguy-hiem nut-nho" href="{% url 'enrollment:huy_dang_ky' dk.pk %}?nguon=lich_su">Hủy đăng ký</a>
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7">Chưa đăng ký lớp học phần nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

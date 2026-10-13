@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Danh sách điều kiện tiên quyết{% endblock %}
+{% block noi_dung %}
+<h1>Danh sách điều kiện tiên quyết</h1>
+<p><a class="nut nut-chinh" href="{% url 'academics:dieu_kien_tien_quyet_tao' %}">+ Tạo điều kiện tiên quyết</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Mã/tên học phần</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo mã hoặc tên học phần (kể cả học phần tiên quyết)">
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Tìm</button>
+        <a class="nut nut-phu" href="{% url 'academics:dieu_kien_tien_quyet_danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Học phần</th><th>Học phần tiên quyết</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for dk in danh_sach %}
+    <tr>
+        <td>{{ dk.ma_hoc_phan.ten_hoc_phan }}</td>
+        <td>{{ dk.ma_hoc_phan_tien_quyet.ten_hoc_phan }}</td>
+        <td>
+            <a class="nut nut-nhe nut-nho" href="{% url 'academics:dieu_kien_tien_quyet_sua' dk.pk %}">Sửa</a>
+            <a class="nut nut-nguy-hiem nut-nho" href="{% url 'academics:dieu_kien_tien_quyet_xoa' dk.pk %}">Xóa</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">Chưa có điều kiện tiên quyết nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

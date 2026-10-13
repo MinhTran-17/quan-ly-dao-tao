@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Tư vấn đăng ký học phần (AI){% endblock %}
+{% block noi_dung %}
+<h1>Tư vấn đăng ký học phần</h1>
+<p>AI chỉ đưa gợi ý tham khảo dựa trên trạng thái đăng ký do hệ thống tính sẵn, không thay quyết định của Phòng Đào tạo.</p>
+
+<div class="khung" style="max-width:520px;">
+    <form method="post">
+        {% csrf_token %}
+        {% include '_truong_form.html' %}
+        <button type="submit" class="nut nut-chinh">Yêu cầu tư vấn</button>
+    </form>
+</div>
+
+{% if ket_qua %}
+    <span class="nhan-ai">Trợ lý AI</span>
+
+    {% if ket_qua.loi_ai %}
+    <p class="thong-bao--error">{{ ket_qua.loi_ai }} Bạn vẫn có thể xem trạng thái từng lớp bên dưới.</p>
+    {% endif %}
+
+    {% if ket_qua.goi_y or ket_qua.chua_nen_dang_ky %}
+    <div class="nhom-goi-y">
+        <h2>Nên đăng ký</h2>
+        <ul>
+        {% for muc in ket_qua.goi_y %}
+            <li><strong>{{ muc.ma_lop_hoc_phan }}</strong> — {{ muc.ten_hoc_phan }} ({{ muc.lich }}): {{ muc.ly_do }}</li>
+        {% empty %}
+            <li>Không có gợi ý nào.</li>
+        {% endfor %}
+        </ul>
+    </div>
+
+    <div class="nhom-chua-nen">
+        <h2>Chưa nên đăng ký</h2>
+        <ul>
+        {% for muc in ket_qua.chua_nen_dang_ky %}
+            <li><strong>{{ muc.ma_lop_hoc_phan }}</strong> — {{ muc.ten_hoc_phan }} ({{ muc.lich }}): {{ muc.ly_do }}</li>
+        {% empty %}
+            <li>Không có mục nào.</li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if ket_qua.ghi_chu_loc %}
+    <ul class="thong-bao">
+        {% for gc in ket_qua.ghi_chu_loc %}<li class="thong-bao--warning">{{ gc }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if ket_qua.luu_y %}
+    <div class="khung khung-ket-qua-ai"><p>{{ ket_qua.luu_y|linebreaksbr }}</p></div>
+    {% endif %}
+
+    <h2>Danh sách lớp học phần (trạng thái do hệ thống tính)</h2>
+    <div class="khung-bang">
+    <table class="bang-sv">
+        <thead><tr><th>Mã lớp</th><th>Học phần</th><th>Lịch</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+        {% for muc in ket_qua.danh_sach_trang_thai %}
+        <tr class="hang-diem">
+            <td>{{ muc.lop.ma_lop_hoc_phan }}</td>
+            <td>{{ muc.lop.ma_hoc_phan.ten_hoc_phan }}</td>
+            <td>
+                {% for l in muc.lich %}Thứ {{ l.thu }} tiết {{ l.tiet_bat_dau }}{% if not forloop.last %}, {% endif %}{% empty %}chưa có lịch{% endfor %}
+            </td>
+            <td><span class="chip chip--{{ muc.trang_thai }}">{{ muc.trang_thai_hien_thi }}</span></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">Không có lớp học phần nào đang mở trong học kỳ đã chọn.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+{% endif %}
+{% endblock %}

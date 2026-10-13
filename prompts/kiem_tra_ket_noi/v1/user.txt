@@ -1,0 +1,2 @@
+Đây là tin nhắn kiểm tra kết nối hệ thống, không chứa dữ liệu học tập hay thông tin cá
+nhân của người dùng nào. Hãy xác nhận bạn đã nhận được tin nhắn này.

@@ -1,0 +1,76 @@
+{% load l10n %}
+{% if ket_qua %}
+{% if not ket_qua.co_chuong_trinh %}
+<div class="thong-bao--warning canh-bao-khoi">
+    <strong>Chưa có chương trình đào tạo.</strong>
+    Lớp hành chính của sinh viên chưa được gán chương trình đào tạo. Liên hệ Phòng Đào tạo để được hỗ trợ.
+</div>
+{% else %}
+<h2>{{ ket_qua.chuong_trinh.ten_chuong_trinh }} ({{ ket_qua.chuong_trinh.khoa_hoc }})</h2>
+
+<div class="luoi-tong-hop luoi-tong-hop--3">
+    <div class="o-tong-hop">
+        <div class="o-tong-hop__nhan">Hoàn thành chương trình</div>
+        <div class="o-tong-hop__gia-tri">{{ ket_qua.phan_tram_hoan_thanh }}%</div>
+        <div class="thanh-tien-do"><div class="thanh-tien-do__fill" style="width: {{ ket_qua.phan_tram_hoan_thanh|unlocalize }}%;"></div></div>
+    </div>
+    <div class="o-tong-hop">
+        <div class="o-tong-hop__nhan">Học phần bắt buộc đã đạt</div>
+        <div class="o-tong-hop__gia-tri o-tong-hop__gia-tri--den">{{ ket_qua.so_bat_buoc_da_dat }} <small>/ {{ ket_qua.tong_so_bat_buoc }}</small></div>
+    </div>
+    <div class="o-tong-hop">
+        <div class="o-tong-hop__nhan">Học phần bắt buộc còn thiếu</div>
+        <div class="o-tong-hop__gia-tri o-tong-hop__gia-tri--den">{{ ket_qua.con_thieu_bat_buoc|length }}</div>
+    </div>
+</div>
+<p class="ghi-chu-truong">Tỷ lệ hoàn thành chỉ tính trên học phần bắt buộc.</p>
+
+{% with da_dat=ket_qua.da_dat_bat_buoc|add:ket_qua.da_dat_tu_chon %}
+<div class="tieu-de-nhom">
+    <h2>Đã đạt</h2>
+    <span class="chip chip--du_dieu_kien">{{ da_dat|length }} học phần</span>
+</div>
+<div class="khung-bang">
+<table class="bang-sv bang-tien-do">
+    <thead><tr><th>Mã học phần</th><th>Tên học phần</th><th class="so">Số tín chỉ</th></tr></thead>
+    <tbody>
+    {% for ct in da_dat|dictsort:"hoc_ky_du_kien" %}
+    {% ifchanged ct.hoc_ky_du_kien %}<tr class="hang-nhom"><td colspan="3">Học kỳ dự kiến {{ ct.hoc_ky_du_kien }}</td></tr>{% endifchanged %}
+    <tr class="hang-diem">
+        <td>{{ ct.hoc_phan.ma_hoc_phan }}</td>
+        <td>{{ ct.hoc_phan.ten_hoc_phan }} {% if ct.bat_buoc %}<span class="chip chip--con_hieu_luc">Bắt buộc</span>{% else %}<span class="chip chip--da_day">Tự chọn</span>{% endif %}</td>
+        <td class="so">{{ ct.hoc_phan.so_tin_chi }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">Chưa đạt học phần nào trong chương trình.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endwith %}
+
+{% with con_thieu=ket_qua.con_thieu_bat_buoc|add:ket_qua.con_thieu_tu_chon %}
+<div class="tieu-de-nhom">
+    <h2>Còn thiếu</h2>
+    <span class="chip chip--thieu_tien_quyet">{{ con_thieu|length }} học phần</span>
+</div>
+<div class="khung-bang">
+<table class="bang-sv bang-tien-do">
+    <thead><tr><th>Mã học phần</th><th>Tên học phần</th><th class="so">Số tín chỉ</th></tr></thead>
+    <tbody>
+    {% for ct in con_thieu|dictsort:"hoc_ky_du_kien" %}
+    {% ifchanged ct.hoc_ky_du_kien %}<tr class="hang-nhom"><td colspan="3">Học kỳ dự kiến {{ ct.hoc_ky_du_kien }}</td></tr>{% endifchanged %}
+    <tr class="hang-diem">
+        <td>{{ ct.hoc_phan.ma_hoc_phan }}</td>
+        <td>{{ ct.hoc_phan.ten_hoc_phan }} {% if ct.bat_buoc %}<span class="chip chip--con_hieu_luc">Bắt buộc</span>{% else %}<span class="chip chip--da_day">Tự chọn</span>{% endif %}</td>
+        <td class="so">{{ ct.hoc_phan.so_tin_chi }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">Đã hoàn thành toàn bộ học phần trong chương trình.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endwith %}
+{% endif %}
+{% endif %}

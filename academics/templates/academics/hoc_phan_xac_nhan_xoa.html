@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Xóa học phần{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Xóa học phần</h1>
+    <p>Bạn có chắc muốn xóa học phần "{{ hoc_phan }}"?</p>
+    {% if dang_dung %}
+    <p>Học phần này đang được dùng bởi {{ mo_ta_su_dung }} nên chưa thể xóa. Hãy xóa hoặc chuyển các mục đó trước.</p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Xóa</button>
+            <a class="nut nut-phu" href="{% url 'academics:hoc_phan_danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+<script>
+(function () {
+    var thanh = document.getElementById('sv-thanh-menu');
+    var hamburger = document.getElementById('sv-hamburger');
+    if (!thanh) { return; }
+    var nhoms = thanh.querySelectorAll('.sv-nhom');
+
+    function dongNhom(giuLai) {
+        nhoms.forEach(function (nhom) {
+            if (nhom === giuLai) { return; }
+            nhom.classList.remove('sv-nhom--mo');
+            var nut = nhom.querySelector('.sv-nhom__nut');
+            if (nut) { nut.setAttribute('aria-expanded', 'false'); }
+        });
+    }
+    function dongMenuDiDong() {
+        thanh.classList.remove('sv-thanh-menu--mo');
+        if (hamburger) { hamburger.setAttribute('aria-expanded', 'false'); }
+    }
+
+    nhoms.forEach(function (nhom) {
+        var nut = nhom.querySelector('.sv-nhom__nut');
+        if (!nut) { return; }
+        nut.addEventListener('click', function () {
+            var mo = !nhom.classList.contains('sv-nhom--mo');
+            dongNhom(nhom);
+            nhom.classList.toggle('sv-nhom--mo', mo);
+            nut.setAttribute('aria-expanded', mo ? 'true' : 'false');
+        });
+    });
+
+    if (hamburger) {
+        hamburger.addEventListener('click', function () {
+            var mo = !thanh.classList.contains('sv-thanh-menu--mo');
+            thanh.classList.toggle('sv-thanh-menu--mo', mo);
+            hamburger.setAttribute('aria-expanded', mo ? 'true' : 'false');
+        });
+    }
+
+    document.addEventListener('click', function (su_kien) {
+        if (!thanh.contains(su_kien.target)) {
+            dongNhom(null);
+            dongMenuDiDong();
+        }
+    });
+    document.addEventListener('keydown', function (su_kien) {
+        if (su_kien.key === 'Escape') {
+            dongNhom(null);
+            dongMenuDiDong();
+        }
+    });
+})();
+</script>

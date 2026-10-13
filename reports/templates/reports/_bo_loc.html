@@ -1,0 +1,24 @@
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Học kỳ</label>
+        <select name="hoc_ky">
+            <option value="">-- Tất cả --</option>
+            {% for hk in cac_hoc_ky %}
+            <option value="{{ hk }}" {% if hoc_ky_loc == hk %}selected{% endif %}>{{ hk }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="truong">
+        <label>Năm học</label>
+        <select name="nam_hoc">
+            <option value="">-- Tất cả --</option>
+            {% for nh in cac_nam_hoc %}
+            <option value="{{ nh }}" {% if nam_hoc_loc == nh %}selected{% endif %}>{{ nh }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Lọc</button>
+        <a class="nut nut-phu" href="{{ request.path }}">Xóa lọc</a>
+    </div>
+</form>

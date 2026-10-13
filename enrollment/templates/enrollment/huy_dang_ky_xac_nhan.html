@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Hủy đăng ký học phần{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Hủy đăng ký học phần</h1>
+    <p>Bạn có chắc muốn hủy đăng ký lớp "{{ dang_ky.ma_lop_hoc_phan.ma_lop_hoc_phan }}" —
+        {{ dang_ky.ma_lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}?</p>
+    <p class="ghi-chu-truong">
+        Lịch sử đăng ký (kể cả lần hủy này) vẫn được giữ lại, không bị xóa. Bạn có thể đăng
+        ký lại lớp này sau nếu vẫn còn trong đợt đăng ký và còn đủ điều kiện.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="nguon" value="{{ nguon }}">
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Hủy đăng ký</button>
+            <a class="nut nut-phu" href="{% url 'enrollment:lich_su_dang_ky' %}">Không hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

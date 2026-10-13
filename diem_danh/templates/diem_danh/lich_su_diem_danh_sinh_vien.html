@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Lịch sử điểm danh{% endblock %}
+{% block noi_dung %}
+<h1>Lịch sử điểm danh</h1>
+{% for muc in theo_lop %}
+<div class="khung">
+    <h2>{{ muc.lop_hoc_phan.ma_lop_hoc_phan }} - {{ muc.lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</h2>
+    <p>Tỷ lệ có mặt: <strong>{{ muc.ty_le }}%</strong> ({{ muc.so_co_mat }}/{{ muc.tong }} buổi)</p>
+    <div class="khung-bang">
+    <table class="bang-sv">
+        <thead><tr><th>Ngày</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+        {% for dd in muc.danh_sach %}
+        <tr class="hang-diem">
+            <td>{{ dd.ngay_diem_danh|date:"d/m/Y" }}</td>
+            <td>
+                {% if dd.co_mat %}<span class="chip chip--con_hieu_luc">Có mặt</span>
+                {% else %}<span class="chip chip--da_huy">Vắng</span>{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% empty %}
+<p class="ghi-chu-truong">Chưa có dữ liệu điểm danh nào.</p>
+{% endfor %}
+{% endblock %}

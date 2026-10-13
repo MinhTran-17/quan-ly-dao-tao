@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block tieu_de %}{{ tieu_de }}{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:560px;">
+    <h1>{{ tieu_de }}</h1>
+    <p class="ghi-chu-truong">{{ mo_ta }}</p>
+    <form method="post">
+        {% csrf_token %}
+        {% include '_truong_form.html' %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-chinh">Gửi thông báo</button>
+            <a class="nut nut-phu" href="{% url 'thong_bao:danh_sach' %}">Xem thông báo đã gửi</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

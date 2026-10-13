@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block tieu_de %}{{ tieu_de }}{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>{{ tieu_de }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {% include '_truong_form.html' %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-chinh">Lưu</button>
+            <a class="nut nut-phu" href="{% url url_danh_sach %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

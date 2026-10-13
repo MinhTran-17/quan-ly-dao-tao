@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Danh sách giảng viên{% endblock %}
+{% block noi_dung %}
+<h1>Danh sách giảng viên</h1>
+<p><a class="nut nut-chinh" href="{% url 'people:giang_vien_tao' %}">+ Tạo giảng viên</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Mã/họ tên</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo mã hoặc họ tên">
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Tìm</button>
+        <a class="nut nut-phu" href="{% url 'people:giang_vien_danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead>
+    <tr>
+        <th>Mã giảng viên</th>
+        <th>Họ tên</th>
+        <th>Email</th>
+        <th>Thao tác</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for gv in danh_sach %}
+    <tr>
+        <td>{{ gv.ma_giang_vien }}</td>
+        <td>{{ gv.ho_ten }}</td>
+        <td>{{ gv.email }}</td>
+        <td>
+            <a class="nut nut-nhe nut-nho" href="{% url 'people:giang_vien_sua' gv.pk %}">Sửa</a>
+            <a class="nut nut-nguy-hiem nut-nho" href="{% url 'people:giang_vien_xoa' gv.pk %}">Xóa</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Không có giảng viên nào khớp điều kiện tìm kiếm.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

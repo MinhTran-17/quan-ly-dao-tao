@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Thời khóa biểu{% endblock %}
+{% block noi_dung %}
+<div class="tieu-de-trang">
+    <h1>Thời khóa biểu</h1>
+    <div class="nhom-nut">
+        {% if xem_luoi %}
+        <a class="nut nut-phu" href="?">Xem dạng danh sách</a>
+        {% else %}
+        <a class="nut nut-phu" href="?xem=luoi">Xem dạng lưới tuần</a>
+        {% endif %}
+        <a class="nut nut-chinh" href="{% url 'enrollment:thoi_khoa_bieu_xuat_pdf' %}">Xuất PDF</a>
+    </div>
+</div>
+
+{% if xem_luoi %}
+{% if luoi_tuan %}
+<div class="khung-bang">
+<table class="bang-luoi-tuan bang-sv">
+    <thead><tr><th class="so">Tiết</th>{% for thu, ten in cac_thu %}<th>{{ ten }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for dong in luoi_tuan %}
+    <tr>
+        <td class="so">{{ dong.tiet }}</td>
+        {% for o in dong.o %}
+        <td>
+            {% for lich in o %}
+            <div class="o-lich-hoc">
+                {{ lich.ma_lop_hoc_phan_id }}
+                <small>{{ lich.ma_lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }} — {{ lich.phong_hoc }}</small>
+            </div>
+            {% endfor %}
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<div class="khung"><p class="ghi-chu-truong">Chưa đăng ký lớp học phần nào.</p></div>
+{% endif %}
+{% else %}
+<div class="khung-bang">
+<table class="bang-sv">
+    <thead><tr><th>Học phần</th><th>Lớp học phần</th><th>Thứ</th><th>Tiết bắt đầu</th><th>Số tiết</th><th>Phòng học</th><th class="trung-tam">Thao tác</th></tr></thead>
+    <tbody>
+    {% for lich in danh_sach %}
+    <tr class="hang-diem">
+        <td>{{ lich.ma_lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</td>
+        <td>{{ lich.ma_lop_hoc_phan.ma_lop_hoc_phan }}</td>
+        <td>{{ lich.thu }}</td>
+        <td>{{ lich.tiet_bat_dau }}</td>
+        <td>{{ lich.so_tiet }}</td>
+        <td>{{ lich.phong_hoc }}</td>
+        <td class="trung-tam"><a class="nut nut-nguy-hiem nut-nho" href="{% url 'enrollment:huy_dang_ky' lich.ma_dang_ky_hien_tai %}?nguon=thoi_khoa_bieu">Hủy đăng ký</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7">Chưa đăng ký lớp học phần nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

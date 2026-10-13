@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Xóa điều kiện tiên quyết{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Xóa điều kiện tiên quyết</h1>
+    <p>Bạn có chắc muốn xóa điều kiện: "{{ dieu_kien.ma_hoc_phan.ten_hoc_phan }}" cần tiên quyết "{{ dieu_kien.ma_hoc_phan_tien_quyet.ten_hoc_phan }}"?</p>
+    <p>Các đăng ký đã có không bị ảnh hưởng; từ lần đăng ký sau, sinh viên không còn bị kiểm tra điều kiện này.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Xóa</button>
+            <a class="nut nut-phu" href="{% url 'academics:dieu_kien_tien_quyet_danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

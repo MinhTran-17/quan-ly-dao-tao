@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Xóa hồ sơ {{ ten_loai }}{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Xóa hồ sơ {{ ten_loai }}</h1>
+    <p>Bạn có chắc muốn xóa hồ sơ {{ ten_loai }} "{{ ho_so }}"?</p>
+    {% if dang_lien_quan %}
+    <p>Hồ sơ này đang có {{ dang_lien_quan|join:", " }} liên quan nên chưa thể xóa. Nếu người này không còn hoạt động, hãy khóa tài khoản thay vì xóa hồ sơ.</p>
+    {% else %}
+    <p>Chỉ hồ sơ bị xóa; tài khoản đăng nhập "{{ ho_so.ma_tai_khoan.ten_dang_nhap }}" vẫn còn (không gắn hồ sơ nào).</p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Xóa</button>
+            <a class="nut nut-phu" href="{% url url_danh_sach %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

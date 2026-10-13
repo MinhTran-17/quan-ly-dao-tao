@@ -1,0 +1,85 @@
+{% comment %}
+Ba khối đầu trang chủ Phòng Đào tạo (dữ liệu: accounts/tong_hop_phong_dao_tao.py): số liệu tổng quan, cảnh báo cần chú ý
+(ẩn khi không có gì), thông báo đã gửi gần đây. Lưới thẻ chức năng nằm ngay bên dưới, giữ nguyên.
+{% endcomment %}
+{% with tt=tong_hop %}
+<section class="khoi-tong-quan" aria-label="Số liệu tổng quan">
+    <div class="khoi-tong-quan__dau">
+        <h2>Số liệu tổng quan</h2>
+        {% if tt.hoc_ky_xet %}
+        <p class="ghi-chu-truong">Học kỳ đang xét: Học kỳ {{ tt.hoc_ky_xet.hoc_ky }}, năm học {{ tt.hoc_ky_xet.nam_hoc }}
+            ({% if tt.hoc_ky_xet.nguon == 'dot' %}theo đợt đăng ký đang hiệu lực{% else %}học kỳ mới nhất trong danh mục{% endif %}).</p>
+        {% else %}
+        <p class="ghi-chu-truong">Chưa có học kỳ nào trong danh mục.</p>
+        {% endif %}
+    </div>
+    <div class="luoi-tong-hop luoi-tong-hop--5">
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Sinh viên đang hoạt động</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_sinh_vien_hoat_dong }}</div>
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_sinh_vien }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Lớp học phần của học kỳ đang xét</div>
+            {% if tt.so_lop_hoc_phan is not None %}
+            <div class="o-tong-hop__gia-tri">{{ tt.so_lop_hoc_phan }}</div>
+            {% else %}
+            <div class="o-tong-hop__ghi-chu">Chưa có học kỳ.</div>
+            {% endif %}
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_lop_hoc_phan }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Đợt đăng ký đang hiệu lực</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_dot_hieu_luc }}</div>
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_dot_dang_ky }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Sinh viên bị cảnh báo học vụ</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_canh_bao }}{% if tt.so_canh_bao_do %} <small>({{ tt.so_canh_bao_do }} mức đỏ)</small>{% endif %}</div>
+            <div class="o-tong-hop__ghi-chu o-tong-hop__ghi-chu--nho">* tính theo học kỳ gần nhất của từng sinh viên, có thể khác trang chi tiết theo học kỳ</div>
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_canh_bao }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Lớp học phần đã đầy chỗ</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_lop_day }}</div>
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_si_so }}">Xem chi tiết</a>
+        </div>
+    </div>
+</section>
+
+{% if tt.dong_canh_bao %}
+<section class="khoi-chu-y" aria-label="Cảnh báo cần chú ý">
+    <h2>Cảnh báo cần chú ý</h2>
+    <ul>
+        {% for dong in tt.dong_canh_bao %}
+        <li class="khoi-chu-y__dong khoi-chu-y__dong--{{ dong.muc }}">
+            <span>{{ dong.noi_dung }}</span>
+            <a class="nut nut-phu nut-nho" href="{{ dong.url }}">{{ dong.nhan_nut }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<section class="khung khoi-gan-day" aria-label="Thông báo đã gửi gần đây">
+    <div class="khoi-gan-day__dau">
+        <h2>Thông báo đã gửi gần đây</h2>
+        <a class="nut nut-phu nut-nho" href="{{ tt.url_thong_bao_da_gui }}">Xem tất cả</a>
+    </div>
+    {% if tt.thong_bao_gan_day %}
+    <ul class="khoi-gan-day__danh-sach">
+        {% for tb in tt.thong_bao_gan_day %}
+        <li>
+            <div>
+                <div class="khoi-gan-day__chinh">{{ tb.tieu_de }}</div>
+                <div class="khoi-gan-day__phu">Gửi {% include 'thong_bao/_doi_tuong.html' %}</div>
+            </div>
+            <div class="khoi-gan-day__thoi-gian">{{ tb.thoi_gian_gui|date:"d/m/Y H:i" }}</div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="ghi-chu-truong">Chưa có thông báo nào được gửi.</p>
+    {% endif %}
+</section>
+{% endwith %}

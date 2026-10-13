@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Kết quả nhập sinh viên{% endblock %}
+{% block noi_dung %}
+<h1>Kết quả nhập sinh viên từ Excel</h1>
+<div class="khung">
+    <p>
+        <strong>{{ ket_qua.so_thanh_cong }}</strong> dòng nhập thành công,
+        <strong>{{ ket_qua.loi|length }}</strong> dòng lỗi.
+    </p>
+    <p><a class="nut nut-phu nut-nho" href="{% url 'people:sinh_vien_nhap_excel' %}">Nhập tệp khác</a></p>
+</div>
+
+{% if ket_qua.tao_moi %}
+<div class="khung">
+    <h2>Tài khoản vừa tạo (mật khẩu tạm chỉ hiện một lần ở đây)</h2>
+    <div class="khung-bang">
+    <table>
+        <thead><tr><th>Mã sinh viên</th><th>Tên đăng nhập</th><th>Mật khẩu tạm</th></tr></thead>
+        <tbody>
+        {% for tk in ket_qua.tao_moi %}
+        <tr>
+            <td>{{ tk.ma_sinh_vien }}</td>
+            <td>{{ tk.ten_dang_nhap }}</td>
+            <td><code>{{ tk.mat_khau_tam }}</code></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+
+{% if ket_qua.loi %}
+<div class="khung">
+    <h2>Các dòng lỗi</h2>
+    <div class="khung-bang">
+    <table>
+        <thead><tr><th class="so">Dòng</th><th>Lý do</th></tr></thead>
+        <tbody>
+        {% for muc in ket_qua.loi %}
+        <tr>
+            <td class="so">{{ muc.dong }}</td>
+            <td>{{ muc.loi }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

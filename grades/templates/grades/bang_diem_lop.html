@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Bảng điểm lớp {{ lop_hoc_phan.ma_lop_hoc_phan }}{% endblock %}
+{% block noi_dung %}
+<h1>Bảng điểm lớp {{ lop_hoc_phan.ma_lop_hoc_phan }} - {{ lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</h1>
+{% if cho_phep_cong_bo %}
+<form class="noi-tuyen" method="post" action="{% url 'grades:cong_bo_diem_lop' lop_hoc_phan.pk %}">
+    {% csrf_token %}
+    <button type="submit" class="nut nut-chinh">Công bố điểm cả lớp</button>
+</form>
+<p class="ghi-chu-truong">Công bố toàn bộ sinh viên đã có đủ điểm quá trình và điểm thi trong lớp này. Sinh viên chỉ xem được điểm sau khi công bố; sửa lại điểm sau khi công bố sẽ tự ẩn đi cho tới khi công bố lại.</p>
+{% endif %}
+<div class="khung-bang">
+<table>
+    <thead>
+    <tr>
+        <th>Mã sinh viên</th><th>Họ tên</th><th class="so">Điểm quá trình</th><th class="so">Điểm thi</th>
+        <th class="so">Điểm tổng kết</th><th>Công bố</th><th>Thao tác</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for dk in danh_sach %}
+    <tr>
+        <td>{{ dk.ma_sinh_vien.ma_sinh_vien }}</td>
+        <td>{{ dk.ma_sinh_vien.ho_ten }}</td>
+        <td class="so">{{ dk.diem.diem_qua_trinh|default:"Chưa nhập" }}</td>
+        <td class="so">{{ dk.diem.diem_thi|default:"Chưa nhập" }}</td>
+        <td class="so">
+            {% if dk.diem %}
+                {{ dk.diem.tinh_diem_tong_ket|default:"Chưa đủ điểm" }}
+            {% else %}
+                Chưa nhập
+            {% endif %}
+        </td>
+        <td>
+            {% if dk.diem.da_cong_bo %}
+            <span class="chip chip--con_hieu_luc">Đã công bố</span>
+            {% else %}
+            <span class="chip chip--da_huy">Chưa công bố</span>
+            {% endif %}
+        </td>
+        <td>
+            {% if dk.diem %}
+                <a class="nut nut-nhe nut-nho" href="{% url ten_url_sua dk.pk %}">Sửa điểm</a>
+            {% elif cho_phep_tao_moi %}
+                <a class="nut nut-chinh nut-nho" href="{% url 'grades:nhap_diem' dk.pk %}">Nhập điểm</a>
+            {% else %}
+                <span class="chip chip--thieu_tien_quyet">Chưa có điểm (chờ giảng viên nhập)</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7">Chưa có sinh viên nào đăng ký lớp này.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

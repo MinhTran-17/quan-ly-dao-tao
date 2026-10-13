@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Cập nhật học phần trong chương trình{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Cập nhật học phần trong chương trình</h1>
+    <p class="ghi-chu-truong">
+        Chương trình: {{ object.chuong_trinh.ten_chuong_trinh }} — Học phần: {{ object.hoc_phan.ma_hoc_phan }} -
+        {{ object.hoc_phan.ten_hoc_phan }}
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        {% include '_truong_form.html' %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-chinh">Lưu</button>
+            <a class="nut nut-phu" href="{% url 'academics:chuong_trinh_chi_tiet' object.chuong_trinh.pk %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

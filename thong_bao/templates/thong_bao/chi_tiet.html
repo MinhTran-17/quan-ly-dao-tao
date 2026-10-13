@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block tieu_de %}{{ thong_bao.tieu_de }}{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:640px;">
+    <p><a class="nut nut-phu nut-nho" href="{% url 'thong_bao:danh_sach' %}">&larr; Quay lại danh sách</a></p>
+    <h1>{{ thong_bao.tieu_de }}</h1>
+    <p class="ghi-chu-truong">
+        Gửi bởi {{ thong_bao.nguoi_gui.ten_dang_nhap }} lúc {{ thong_bao.thoi_gian_gui|date:"d/m/Y H:i" }}
+        {% if thong_bao.lop_hoc_phan %} — Lớp học phần {{ thong_bao.lop_hoc_phan_id }}{% endif %}
+        {% if thong_bao.lop_hanh_chinh %} — Lớp hành chính {{ thong_bao.lop_hanh_chinh_id }}{% endif %}
+    </p>
+    <blockquote>{{ thong_bao.noi_dung|linebreaksbr }}</blockquote>
+</div>
+{% endblock %}

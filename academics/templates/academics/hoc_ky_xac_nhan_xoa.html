@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Xóa học kỳ{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Xóa học kỳ</h1>
+    <p>Bạn có chắc muốn xóa "{{ hoc_ky }}" khỏi danh mục?</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Xóa</button>
+            <a class="nut nut-phu" href="{% url 'academics:hoc_ky_danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% comment %}
+Trang chủ Cố vấn học tập (dữ liệu: accounts/tong_hop_co_van.py): số liệu tổng quan, cảnh báo cần chú ý (ẩn khi không có
+gì), sinh viên cần quan tâm và thông báo gần đây. Dùng lại kiểu khối của trang chủ Phòng Đào tạo (nhan_vien/_css.html).
+{% endcomment %}
+{% with tt=tong_hop %}
+{% if not tt.co_ho_so %}
+<section class="khung">
+    <p>Tài khoản của bạn chưa gắn hồ sơ cố vấn học tập nên chưa có dữ liệu sinh viên phụ trách. Liên hệ Phòng Đào tạo để được hỗ trợ.</p>
+</section>
+{% else %}
+<section class="khoi-tong-quan" aria-label="Số liệu tổng quan">
+    <div class="khoi-tong-quan__dau">
+        <h2>Số liệu tổng quan</h2>
+        {% if tt.hoc_ky_xet %}
+        <p class="ghi-chu-truong">Học kỳ đang xét: Học kỳ {{ tt.hoc_ky_xet.hoc_ky }}, năm học {{ tt.hoc_ky_xet.nam_hoc }}
+            ({% if tt.hoc_ky_xet.nguon == 'dot' %}theo đợt đăng ký đang hiệu lực{% else %}học kỳ mới nhất trong danh mục{% endif %}).</p>
+        {% else %}
+        <p class="ghi-chu-truong">Chưa có học kỳ nào trong danh mục.</p>
+        {% endif %}
+    </div>
+    <div class="luoi-tong-hop luoi-tong-hop--5">
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Lớp hành chính phụ trách</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_lop }}</div>
+            {% if tt.ma_lop %}<div class="o-tong-hop__ghi-chu o-tong-hop__ghi-chu--nho">{{ tt.ma_lop|join:", " }}</div>{% endif %}
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_sinh_vien_phu_trach }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Sinh viên phụ trách</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_sinh_vien }}</div>
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_sinh_vien_phu_trach }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Sinh viên bị cảnh báo học vụ</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_canh_bao }}{% if tt.so_canh_bao_do %} <small>({{ tt.so_canh_bao_do }} mức đỏ)</small>{% endif %}</div>
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_canh_bao }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Chưa đăng ký học phần (học kỳ đang xét)</div>
+            {% if tt.so_chua_dang_ky is not None %}
+            <div class="o-tong-hop__gia-tri">{{ tt.so_chua_dang_ky }}</div>
+            {% else %}
+            <div class="o-tong-hop__ghi-chu">Chưa có học kỳ.</div>
+            {% endif %}
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_sinh_vien_phu_trach }}">Xem chi tiết</a>
+        </div>
+        <div class="o-tong-hop">
+            <div class="o-tong-hop__nhan">Thông báo chưa đọc</div>
+            <div class="o-tong-hop__gia-tri">{{ tt.so_thong_bao_chua_doc }}</div>
+            <a class="nut nut-phu nut-nho o-tong-hop__lien-ket" href="{{ tt.url_thong_bao }}">Xem chi tiết</a>
+        </div>
+    </div>
+</section>
+
+{% if tt.dong_canh_bao %}
+<section class="khoi-chu-y" aria-label="Cảnh báo cần chú ý">
+    <h2>Cảnh báo cần chú ý</h2>
+    <ul>
+        {% for dong in tt.dong_canh_bao %}
+        <li class="khoi-chu-y__dong khoi-chu-y__dong--{{ dong.muc }}">
+            <span>{{ dong.noi_dung }}</span>
+            <a class="nut nut-phu nut-nho" href="{{ dong.url }}">{{ dong.nhan_nut }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<section class="khung khoi-gan-day" aria-label="Sinh viên cần quan tâm">
+    <div class="khoi-gan-day__dau">
+        <h2>Sinh viên cần quan tâm</h2>
+        <a class="nut nut-phu nut-nho" href="{{ tt.url_canh_bao }}">Xem tất cả</a>
+    </div>
+    {% if tt.can_quan_tam %}
+    <ul class="khoi-gan-day__danh-sach">
+        {% for muc in tt.can_quan_tam %}
+        <li>
+            <div>
+                <div class="khoi-gan-day__chinh">{{ muc.sinh_vien.ma_sinh_vien }} &middot; {{ muc.sinh_vien.ho_ten }}
+                    <span class="chip {% if muc.muc_do %}chip--muc-do{% else %}chip--muc-vang{% endif %}">{% if muc.muc_do %}Mức đỏ{% else %}Mức vàng{% endif %}</span></div>
+                <div class="khoi-gan-day__phu">Lớp {{ muc.sinh_vien.ma_lop_id }} &middot; Học kỳ {{ muc.hoc_ky }}, {{ muc.nam_hoc }} &middot; Điểm trung bình {{ muc.diem_trung_binh }} &middot; {{ muc.ly_do|join:" " }}</div>
+            </div>
+            <a class="nut nut-phu nut-nho" href="{% url 'grades:bang_diem_sinh_vien' muc.sinh_vien.ma_sinh_vien %}">Xem bảng điểm</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="ghi-chu-truong">Không có sinh viên nào bị cảnh báo học vụ.</p>
+    {% endif %}
+</section>
+
+<section class="khung khoi-gan-day" aria-label="Thông báo gần đây">
+    <div class="khoi-gan-day__dau">
+        <h2>Thông báo gần đây</h2>
+        <a class="nut nut-phu nut-nho" href="{{ tt.url_thong_bao }}">Xem tất cả</a>
+    </div>
+    {% if tt.thong_bao_gan_day %}
+    <ul class="khoi-gan-day__danh-sach">
+        {% for tb in tt.thong_bao_gan_day %}
+        <li>
+            <div>
+                <div class="khoi-gan-day__chinh">{{ tb.tieu_de }}{% if not tb.da_doc_boi_toi %} <span class="chip chip--con_hieu_luc">Mới</span>{% endif %}</div>
+                <div class="khoi-gan-day__phu">Từ {{ tb.nguoi_gui.ten_dang_nhap }}</div>
+            </div>
+            <div class="khoi-gan-day__thoi-gian">{{ tb.thoi_gian_gui|date:"d/m/Y H:i" }}</div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="ghi-chu-truong">Chưa có thông báo nào.</p>
+    {% endif %}
+</section>
+{% endif %}
+{% endwith %}

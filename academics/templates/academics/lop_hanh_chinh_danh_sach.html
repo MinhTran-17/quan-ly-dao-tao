@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Danh sách lớp hành chính{% endblock %}
+{% block noi_dung %}
+<h1>Danh sách lớp hành chính</h1>
+<p><a class="nut nut-chinh" href="{% url 'academics:lop_hanh_chinh_tao' %}">+ Tạo lớp hành chính</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Mã/tên lớp</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo mã hoặc tên lớp">
+    </div>
+    <div class="truong">
+        <label>Ngành</label>
+        <select name="ma_nganh">
+            <option value="">-- Tất cả --</option>
+            {% for nganh in danh_sach_nganh %}
+            <option value="{{ nganh.pk }}" {% if nganh.pk == ma_nganh_loc %}selected{% endif %}>{{ nganh.ten_nganh }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Lọc</button>
+        <a class="nut nut-phu" href="{% url 'academics:lop_hanh_chinh_danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Mã lớp</th><th>Tên lớp</th><th>Ngành</th><th>Cố vấn</th><th>Chương trình đào tạo</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for lop in danh_sach %}
+    <tr>
+        <td>{{ lop.ma_lop }}</td>
+        <td>{{ lop.ten_lop }}</td>
+        <td>{{ lop.ma_nganh.ten_nganh }}</td>
+        <td>{{ lop.ma_co_van.ho_ten }}</td>
+        <td>{% if lop.chuong_trinh_dao_tao %}{{ lop.chuong_trinh_dao_tao.ten_chuong_trinh }}{% else %}<span class="ghi-chu-truong">Chưa gán</span>{% endif %}</td>
+        <td><a class="nut nut-nhe nut-nho" href="{% url 'academics:lop_hanh_chinh_sua' lop.pk %}">Sửa</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">Không có lớp nào khớp điều kiện lọc.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

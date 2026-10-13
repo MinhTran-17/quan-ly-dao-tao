@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Điểm danh lớp {{ lop_hoc_phan.ma_lop_hoc_phan }}{% endblock %}
+{% block noi_dung %}
+<h1>Điểm danh lớp {{ lop_hoc_phan.ma_lop_hoc_phan }} - {{ lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</h1>
+<p><a class="nut nut-phu nut-nho" href="{% url 'diem_danh:lich_su_diem_danh_lop' lop_hoc_phan.pk %}">Xem lịch sử điểm danh</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Ngày điểm danh</label>
+        <input type="date" name="ngay" value="{{ ngay|date:'Y-m-d' }}">
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Chọn ngày</button>
+    </div>
+</form>
+
+{% if da_diem_danh_ngay_nay %}
+<p class="ghi-chu-truong">Ngày này đã có điểm danh — lưu lại sẽ ghi đè, không tạo trùng.</p>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="ngay" value="{{ ngay|date:'Y-m-d' }}">
+    <div class="khung-bang">
+    <table>
+        <thead><tr><th>Mã sinh viên</th><th>Họ tên</th><th>Có mặt</th></tr></thead>
+        <tbody>
+        {% for sv in danh_sach %}
+        <tr>
+            <td>{{ sv.ma_sinh_vien }}</td>
+            <td>{{ sv.ho_ten }}</td>
+            <td><input type="checkbox" name="co_mat_{{ sv.pk }}" {% if sv.co_mat %}checked{% endif %}></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">Chưa có sinh viên nào đăng ký còn hiệu lực trong lớp này.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% if danh_sach %}
+    <button type="submit" class="nut nut-chinh">Lưu điểm danh</button>
+    {% endif %}
+</form>
+{% endblock %}

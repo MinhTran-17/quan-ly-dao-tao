@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Danh sách sinh viên{% endblock %}
+{% block noi_dung %}
+<h1>Danh sách sinh viên</h1>
+<p>
+    <a class="nut nut-chinh" href="{% url 'people:sinh_vien_tao' %}">+ Tạo sinh viên</a>
+    <a class="nut nut-phu" href="{% url 'people:sinh_vien_nhap_excel' %}">Nhập từ Excel</a>
+</p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Mã/họ tên</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo mã hoặc họ tên">
+    </div>
+    <div class="truong">
+        <label>Lớp hành chính</label>
+        <select name="ma_lop">
+            <option value="">-- Tất cả --</option>
+            {% for lop in danh_sach_lop %}
+            <option value="{{ lop.pk }}" {% if lop.pk == ma_lop_loc %}selected{% endif %}>{{ lop.ten_lop }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="truong">
+        <label>Ngành</label>
+        <select name="ma_nganh">
+            <option value="">-- Tất cả --</option>
+            {% for nganh in danh_sach_nganh %}
+            <option value="{{ nganh.pk }}" {% if nganh.pk == ma_nganh_loc %}selected{% endif %}>{{ nganh.ten_nganh }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Lọc</button>
+        <a class="nut nut-phu" href="{% url 'people:sinh_vien_danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead>
+    <tr>
+        <th>Mã sinh viên</th>
+        <th>Họ tên</th>
+        <th>Lớp hành chính</th>
+        <th>Email</th>
+        <th>Thao tác</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for sv in danh_sach %}
+    <tr>
+        <td>{{ sv.ma_sinh_vien }}</td>
+        <td>{{ sv.ho_ten }}</td>
+        <td>{{ sv.ma_lop.ten_lop }}</td>
+        <td>{{ sv.email }}</td>
+        <td>
+            <a class="nut nut-nhe nut-nho" href="{% url 'people:sinh_vien_sua' sv.pk %}">Sửa</a>
+            <a class="nut nut-nguy-hiem nut-nho" href="{% url 'people:sinh_vien_xoa' sv.pk %}">Xóa</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Không có sinh viên nào khớp điều kiện lọc.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

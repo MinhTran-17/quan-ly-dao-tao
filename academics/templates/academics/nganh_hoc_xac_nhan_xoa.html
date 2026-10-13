@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Xóa ngành học{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Xóa ngành học</h1>
+    <p>Bạn có chắc muốn xóa ngành "{{ nganh }}"?</p>
+    {% if so_lop_hanh_chinh or so_chuong_trinh %}
+    <p>Ngành này đang được dùng bởi {{ so_lop_hanh_chinh }} lớp hành chính và {{ so_chuong_trinh }} chương trình đào tạo nên chưa thể xóa. Hãy chuyển hoặc xóa các mục đó trước.</p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-nguy-hiem">Xóa</button>
+            <a class="nut nut-phu" href="{% url 'academics:nganh_hoc_danh_sach' %}">Hủy</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

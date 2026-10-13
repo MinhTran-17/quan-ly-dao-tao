@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Lịch thi{% endblock %}
+{% block noi_dung %}
+<h1>Lịch thi</h1>
+<p><a class="nut nut-chinh" href="{% url 'classes:lich_thi_tao' %}">+ Tạo lịch thi</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Học kỳ</label>
+        <select name="hoc_ky">
+            <option value="">-- Tất cả --</option>
+            {% for hk in cac_hoc_ky %}
+            <option value="{{ hk }}" {% if hoc_ky_loc == hk %}selected{% endif %}>{{ hk }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="truong">
+        <label>Năm học</label>
+        <select name="nam_hoc">
+            <option value="">-- Tất cả --</option>
+            {% for nh in cac_nam_hoc %}
+            <option value="{{ nh }}" {% if nam_hoc_loc == nh %}selected{% endif %}>{{ nh }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Lọc</button>
+        <a class="nut nut-phu" href="{% url 'classes:lich_thi_danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead>
+    <tr>
+        <th>Lớp học phần</th><th>Học phần</th><th>Ngày thi</th><th>Giờ bắt đầu</th>
+        <th>Thời lượng (phút)</th><th>Phòng thi</th><th>Thao tác</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for lich in danh_sach %}
+    <tr>
+        <td>{{ lich.lop_hoc_phan_id }}</td>
+        <td>{{ lich.lop_hoc_phan.ma_hoc_phan.ten_hoc_phan }}</td>
+        <td>{{ lich.ngay_thi|date:'d/m/Y' }}</td>
+        <td>{{ lich.gio_bat_dau|time:'H:i' }}</td>
+        <td>{{ lich.thoi_luong_phut }}</td>
+        <td>{{ lich.phong_thi }}</td>
+        <td>
+            <div class="nhom-nut">
+                <a class="nut nut-nhe nut-nho" href="{% url 'classes:lich_thi_sua' lich.pk %}">Sửa</a>
+                <a class="nut nut-nguy-hiem nut-nho" href="{% url 'classes:lich_thi_xoa' lich.pk %}">Xóa</a>
+            </div>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7">Không có lịch thi nào khớp điều kiện lọc.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

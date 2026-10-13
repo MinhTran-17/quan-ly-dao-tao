@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Danh sách lớp học phần{% endblock %}
+{% block noi_dung %}
+<h1>Danh sách lớp học phần</h1>
+<p><a class="nut nut-chinh" href="{% url 'classes:lop_hoc_phan_tao' %}">+ Tạo lớp học phần</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Mã lớp/học phần</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo mã lớp hoặc tên học phần">
+    </div>
+    <div class="truong">
+        <label>Học kỳ</label>
+        <select name="hoc_ky">
+            <option value="">-- Tất cả --</option>
+            {% for hk in cac_hoc_ky %}
+            <option value="{{ hk }}" {% if hoc_ky_loc == hk %}selected{% endif %}>{{ hk }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="truong">
+        <label>Năm học</label>
+        <select name="nam_hoc">
+            <option value="">-- Tất cả --</option>
+            {% for nh in cac_nam_hoc %}
+            <option value="{{ nh }}" {% if nam_hoc_loc == nh %}selected{% endif %}>{{ nh }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Lọc</button>
+        <a class="nut nut-phu" href="{% url 'classes:lop_hoc_phan_danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead>
+    <tr>
+        <th>Mã lớp học phần</th><th>Học phần</th><th>Học kỳ</th><th>Năm học</th>
+        <th class="so">Sĩ số tối đa</th><th>Giảng viên</th><th>Thao tác</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for lop in danh_sach %}
+    <tr>
+        <td>{{ lop.ma_lop_hoc_phan }}</td>
+        <td>{{ lop.ma_hoc_phan.ten_hoc_phan }}</td>
+        <td>{{ lop.hoc_ky }}</td>
+        <td>{{ lop.nam_hoc }}</td>
+        <td class="so">{{ lop.si_so_toi_da }}</td>
+        <td>{{ lop.ma_giang_vien.ho_ten }}</td>
+        <td>
+            <div class="nhom-nut">
+                <a class="nut nut-nhe nut-nho" href="{% url 'classes:lop_hoc_phan_sua' lop.pk %}">Sửa</a>
+                <a class="nut nut-phu nut-nho" href="{% url 'enrollment:danh_sach_sinh_vien_lop' lop.pk %}">Danh sách đăng ký</a>
+                <a class="nut nut-phu nut-nho" href="{% url 'grades:bang_diem_lop_phong_dao_tao' lop.pk %}">Điểm</a>
+            </div>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7">Không có lớp học phần nào khớp điều kiện lọc.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}

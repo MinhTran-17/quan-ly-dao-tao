@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Thông tin cá nhân{% endblock %}
+{% block noi_dung %}
+<div class="khung" style="max-width:480px;">
+    <h1>Thông tin cá nhân</h1>
+    <p><strong>Tên đăng nhập:</strong> {{ user.ten_dang_nhap }}</p>
+    <p><strong>Vai trò:</strong> {{ user.get_vai_tro_display }}</p>
+    <p><a class="nut nut-phu nut-nho" href="{% url 'accounts:doi_mat_khau' %}">Đổi mật khẩu</a></p>
+    {% if ho_so %}
+    <p><strong>Họ tên:</strong> {{ ho_so.ho_ten }}</p>
+    <p><strong>Mã:</strong> {{ ho_so.pk }}</p>
+    <h2>Cập nhật thông tin liên hệ</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% include '_truong_form.html' %}
+        <div class="nhom-nut">
+            <button type="submit" class="nut nut-chinh">Lưu</button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

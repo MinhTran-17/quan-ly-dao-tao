@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Chương trình đào tạo{% endblock %}
+{% block noi_dung %}
+<h1>Chương trình đào tạo</h1>
+<p><a class="nut nut-chinh" href="{% url 'academics:chuong_trinh_tao' %}">+ Tạo chương trình đào tạo</a></p>
+
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label>Tên chương trình/ngành</label>
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo tên chương trình hoặc ngành">
+    </div>
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Tìm</button>
+        <a class="nut nut-phu" href="{% url 'academics:chuong_trinh_danh_sach' %}">Xóa lọc</a>
+    </div>
+</form>
+
+<div class="khung-bang">
+<table>
+    <thead><tr><th>Ngành</th><th>Khóa học</th><th>Tên chương trình</th><th class="so">Số học phần</th><th>Thao tác</th></tr></thead>
+    <tbody>
+    {% for ct in danh_sach %}
+    <tr>
+        <td>{{ ct.nganh.ten_nganh }}</td>
+        <td>{{ ct.khoa_hoc }}</td>
+        <td>{{ ct.ten_chuong_trinh }}</td>
+        <td class="so">{{ ct.so_hoc_phan }}</td>
+        <td>
+            <div class="nhom-nut">
+                <a class="nut nut-nhe nut-nho" href="{% url 'academics:chuong_trinh_chi_tiet' ct.pk %}">Học phần</a>
+                <a class="nut nut-phu nut-nho" href="{% url 'academics:chuong_trinh_sua' ct.pk %}">Sửa</a>
+                <a class="nut nut-nguy-hiem nut-nho" href="{% url 'academics:chuong_trinh_xoa' ct.pk %}">Xóa</a>
+            </div>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">Chưa có chương trình đào tạo nào.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% include '_phan_trang.html' %}
+{% endblock %}
