@@ -1,0 +1,55 @@
+{% comment %}Một câu trả lời trong khung chat tóm tắt (tra_loi: dict từ tom_tat_ket_qua.chat).{% endcomment %}
+{% if tra_loi.loai == 'thong_bao' %}
+<p>{{ tra_loi.noi_dung }}</p>
+{% else %}
+<span class="chat-pham-vi">Phạm vi: {{ tra_loi.pham_vi }}</span>
+{% if tra_loi.ghi_chu %}<p class="ghi-chu-truong">{{ tra_loi.ghi_chu }}</p>{% endif %}
+{% if tra_loi.loi_ai %}<p class="thong-bao--error">{{ tra_loi.loi_ai }} Bạn vẫn có thể xem số liệu bên dưới.</p>{% endif %}
+
+{% if tra_loi.tom_tat %}<p>{{ tra_loi.tom_tat }}</p>{% endif %}
+{% if tra_loi.tom_tat or tra_loi.diem_manh or tra_loi.can_cai_thien or tra_loi.ke_hoach_goi_y %}
+<h3>Điểm mạnh</h3>
+<ul>{% for muc in tra_loi.diem_manh %}<li>{{ muc }}</li>{% empty %}<li>Không có.</li>{% endfor %}</ul>
+<h3>Cần cải thiện</h3>
+<ul>
+{% for muc in tra_loi.can_cai_thien %}
+    <li><strong>{{ muc.ma_hoc_phan }}</strong> — {{ muc.ten_hoc_phan }} (điểm tổng kết {{ muc.diem_tong_ket }}): {{ muc.ly_do }}</li>
+{% empty %}
+    <li>Không có.</li>
+{% endfor %}
+</ul>
+<h3>Kế hoạch gợi ý</h3>
+<ul>{% for muc in tra_loi.ke_hoach_goi_y %}<li>{{ muc }}</li>{% empty %}<li>Không có.</li>{% endfor %}</ul>
+{% endif %}
+
+{% if tra_loi.ghi_chu_loc %}
+<ul class="thong-bao">{% for gc in tra_loi.ghi_chu_loc %}<li class="thong-bao--warning">{{ gc }}</li>{% endfor %}</ul>
+{% endif %}
+{% if tra_loi.luu_y %}<p>{{ tra_loi.luu_y|linebreaksbr }}</p>{% endif %}
+
+{% if tra_loi.so_lieu %}
+<h3>Số liệu do hệ thống tính</h3>
+<div class="khung-bang">
+<table>
+    <tr><td>Tổng tín chỉ đã đạt</td><td class="so">{{ tra_loi.so_lieu.tong_tin_chi_dat }}</td></tr>
+    <tr><td>Số học phần đã đạt</td><td class="so">{{ tra_loi.so_lieu.so_hoc_phan_dat }}</td></tr>
+    <tr><td>Số học phần chưa đạt</td><td class="so">{{ tra_loi.so_lieu.so_hoc_phan_chua_dat }}</td></tr>
+    <tr><td>Học phần điểm cao nhất</td><td class="so">{{ tra_loi.so_lieu.cao_nhat }}</td></tr>
+    <tr><td>Học phần điểm thấp nhất</td><td class="so">{{ tra_loi.so_lieu.thap_nhat }}</td></tr>
+</table>
+</div>
+<details>
+    <summary>Bảng điểm đã dùng ({{ tra_loi.bang_diem|length }} học phần)</summary>
+    <div class="khung-bang">
+    <table class="bang-sv">
+        <thead><tr><th>Mã học phần</th><th>Tên học phần</th><th>Học kỳ</th><th>Năm học</th><th class="so">Điểm quá trình</th><th class="so">Điểm thi</th><th class="so">Điểm tổng kết</th></tr></thead>
+        <tbody>
+        {% for muc in tra_loi.bang_diem %}
+        <tr class="hang-diem"><td>{{ muc.ma }}</td><td>{{ muc.ten }}</td><td>{{ muc.hoc_ky }}</td><td>{{ muc.nam_hoc }}</td><td class="so">{{ muc.qua_trinh }}</td><td class="so">{{ muc.thi }}</td><td class="so">{{ muc.tong_ket }}</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</details>
+{% endif %}
+{% endif %}

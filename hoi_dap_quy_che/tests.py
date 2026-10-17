@@ -646,9 +646,10 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         for _ in range(SO_CAU_HOI_TOI_DA_MOI_PHUT):
             kiem_tra_va_dem(self.sinh_vien_tk)
         self.client.force_login(self.sinh_vien_tk)
-        response = self.client.post(reverse('hoi_dap_quy_che:trang_chat'), {'cau_hoi': 'Câu hỏi bất kỳ?'})
+        response = self.client.post(reverse('hoi_dap_quy_che:trang_chat'), {'cau_hoi': 'Câu hỏi bất kỳ?'}, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'quá nhiều câu')
+        self.assertEqual(response.context['lich_su'], [])
 
 
 class ChayCaThuQuyCheCommandTest(KiemThuCoDinhCauHinhAI):
@@ -978,3 +979,70 @@ class ChayCaThuQuyCheV2Test(KiemThuCoDinhCauHinhAI):
         with patch('builtins.input') as gia_lap_input:
             call_command('chay_ca_thu_quy_che', f'--tep={self.duong_dan_tep}', stdout=StringIO())
         gia_lap_input.assert_not_called()
+
+
+class KhungChatHoiDapTest(KiemThuCoDinhCauHinhAI):
+    """Khung chat hỏi đáp quy chế: lịch sử trong session, mỗi câu hỏi là một yêu cầu độc lập (chỉ câu hiện tại được
+    truy hồi/gửi AI), gửi xong chuyển hướng về trang chat."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.tai_khoan = TaiKhoan.objects.create_user(
+            ten_dang_nhap='sv_chat_qc', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU
+        )
+        self.client.force_login(self.tai_khoan)
+        self.url = reverse('hoi_dap_quy_che:trang_chat')
+
+    def _ket_qua(self, tra_loi='Bị cảnh báo khi điểm trung bình dưới mức quy định.', loi_ai=None):
+        from .services import KetQuaHoiDap
+        doan = {'ten_tai_lieu': 'Quy chế đào tạo', 'dieu': '11', 'khoan': '1', 'noi_dung': 'Nội dung Điều 11 khoản 1.'}
+        ket_qua = KetQuaHoiDap([(doan, 12.5)])
+        ket_qua.tra_loi = tra_loi
+        ket_qua.loi_ai = loi_ai
+        if not loi_ai:
+            ket_qua.nguon = [{'ten_tai_lieu': 'Quy chế đào tạo', 'dieu': '11', 'khoan': '1', 'trich_doan': 'Nội dung Điều 11 khoản 1.'}]
+        return ket_qua
+
+    def test_tra_loi_co_nguon_luu_vao_lich_su_va_chuyen_huong(self):
+        with patch('hoi_dap_quy_che.views.hoi_dap_quy_che', return_value=self._ket_qua()) as gia_lap:
+            response = self.client.post(self.url, {'cau_hoi': 'Khi nào bị cảnh báo học tập?'})
+        self.assertRedirects(response, self.url)
+        gia_lap.assert_called_once_with('Khi nào bị cảnh báo học tập?')
+        trang = self.client.get(self.url)
+        self.assertEqual(len(trang.context['lich_su']), 1)
+        self.assertContains(trang, 'Bị cảnh báo khi điểm trung bình dưới mức quy định.')
+        self.assertContains(trang, 'Quy chế đào tạo, Điều 11, khoản 1')
+
+    def test_cau_truoc_khong_gui_kem_cau_sau(self):
+        with patch('hoi_dap_quy_che.views.hoi_dap_quy_che', return_value=self._ket_qua()) as gia_lap:
+            self.client.post(self.url, {'cau_hoi': 'Câu thứ nhất về cảnh báo?'})
+            self.client.post(self.url, {'cau_hoi': 'Câu thứ hai về tốt nghiệp?'})
+        self.assertEqual([lan.args for lan in gia_lap.call_args_list], [('Câu thứ nhất về cảnh báo?',), ('Câu thứ hai về tốt nghiệp?',)])
+        self.assertEqual(len(self.client.get(self.url).context['lich_su']), 2)
+
+    def test_ai_loi_van_hien_doan_quy_che_de_tu_doc(self):
+        with patch('hoi_dap_quy_che.views.hoi_dap_quy_che', return_value=self._ket_qua(loi_ai='Dịch vụ AI gặp lỗi.')):
+            self.client.post(self.url, {'cau_hoi': 'Khi nào bị cảnh báo học tập?'})
+        trang = self.client.get(self.url)
+        self.assertContains(trang, 'Dịch vụ AI gặp lỗi.')
+        self.assertContains(trang, 'Các đoạn quy chế liên quan (để bạn tự đọc)')
+        self.assertContains(trang, 'Nội dung Điều 11 khoản 1.')
+
+    def test_cau_qua_dai_hoac_rong_va_khong_con_nut_goi_y(self):
+        self.assertNotContains(self.client.get(self.url), 'name="goi_y"')
+        with patch('hoi_dap_quy_che.views.hoi_dap_quy_che', return_value=self._ket_qua()) as gia_lap:
+            for cau in ('', 'x' * 501):
+                response = self.client.post(self.url, {'cau_hoi': cau}, follow=True)
+                self.assertEqual(len(list(response.context['messages'])), 1)
+            gia_lap.assert_not_called()
+
+    def test_xoa_cuoc_tro_chuyen_va_lich_su_rieng_tung_nguoi(self):
+        with patch('hoi_dap_quy_che.views.hoi_dap_quy_che', return_value=self._ket_qua()):
+            self.client.post(self.url, {'cau_hoi': 'Khi nào bị cảnh báo học tập?'})
+        nguoi_khac = TaiKhoan.objects.create_user(ten_dang_nhap='sv_chat_qc2', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU)
+        client_khac = self.client_class()
+        client_khac.force_login(nguoi_khac)
+        self.assertEqual(client_khac.get(self.url).context['lich_su'], [])
+        self.client.post(self.url, {'xoa_lich_su': '1'})
+        self.assertEqual(self.client.get(self.url).context['lich_su'], [])

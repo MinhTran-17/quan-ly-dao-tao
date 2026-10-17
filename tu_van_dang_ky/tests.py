@@ -158,10 +158,10 @@ class TuVanViewTest(KiemThuCoDinhCauHinhAI):
     @override_settings(AI_BACKEND='gia')
     def test_gui_form_hien_thi_ket_qua_khong_crash(self):
         response = self.client.post(reverse('tu_van_dang_ky:trang_tu_van'), {
-            'hoc_ky': '1', 'nam_hoc': '2025-2026', 'ghi_chu': 'demo',
-        })
+            'cau_hoi': 'Tư vấn học kỳ 1 năm học 2025-2026, demo',
+        }, follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context['ket_qua'])
+        self.assertEqual(len(response.context['lich_su']), 1)
         self.assertContains(response, 'HP01_2025')
         # Bảng trạng thái lớp đồng bộ giao diện với các trang Sinh viên khác (header xanh nhạt).
         self.assertContains(response, '<table class="bang-sv">')
@@ -192,8 +192,8 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         client_gia = ClientAIGia(phan_hoi=_JSON_RONG)
         with patch(_LAY_CLIENT_AI, return_value=client_gia) as gia_lap:
             response = self.client.post(reverse('tu_van_dang_ky:trang_tu_van'), {
-                'hoc_ky': '1', 'nam_hoc': '2025-2026', 'ghi_chu': '',
-            })
+                'cau_hoi': 'Tư vấn học kỳ 1 năm học 2025-2026',
+            }, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'quá')
         gia_lap.assert_not_called()
@@ -569,3 +569,70 @@ class ChayCaThuTuVanCommandTest(TestCase):
         self.assertRegex(noi_dung, r'=== Chạy lúc \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} ===')
         self.assertIn('Phiên bản prompt (AI_PHIEN_BAN_TU_VAN):', noi_dung)
         self.assertIn('Model thực tế API trả về:', noi_dung)
+
+
+class KhungChatTuVanTest(KiemThuCoDinhCauHinhAI):
+    """Khung chat tư vấn: code đọc học kỳ cần tư vấn từ câu gõ; cả câu gõ là ghi chú (dữ liệu không tin cậy, trong
+    khối dữ liệu của prompt); thiếu thông tin hoặc không liên quan thì trả lời ngay, không gọi AI."""
+
+    def setUp(self):
+        cache.clear()
+        tao_dot_dang_ky_mo('1', '2025-2026')
+        lop_hanh_chinh = tao_lop_hanh_chinh('CNTT_TV')
+        giang_vien = tao_giang_vien('GV_TV')
+        self.sinh_vien = tao_sinh_vien('SV_TV', lop_hanh_chinh)
+        for ma, hoc_ky, nam_hoc in (('HK1', '1', '2025-2026'), ('HK2', '2', '2025-2026'), ('CU', '1', '2024-2025')):
+            hoc_phan = HocPhan.objects.create(ma_hoc_phan=f'HP_{ma}', ten_hoc_phan=f'Học phần {ma}', so_tin_chi=3)
+            LopHocPhan.objects.create(
+                ma_lop_hoc_phan=f'LOP_{ma}', hoc_ky=hoc_ky, nam_hoc=nam_hoc, si_so_toi_da=40,
+                ma_hoc_phan=hoc_phan, ma_giang_vien=giang_vien,
+            )
+        self.client.force_login(self.sinh_vien.ma_tai_khoan)
+        self.url = reverse('tu_van_dang_ky:trang_tu_van')
+
+    def _gui(self, cau):
+        client_gia = ClientAIGia(phan_hoi=_JSON_RONG)
+        with patch(_LAY_CLIENT_AI, return_value=client_gia):
+            response = self.client.post(self.url, {'cau_hoi': cau})
+        return response, client_gia
+
+    def test_ky_va_nam_dung_hoc_ky_do_va_cau_go_la_ghi_chu_trong_khoi_du_lieu(self):
+        cau = 'Tư vấn học kỳ 2 năm học 2025-2026, em muốn tránh học thứ 7'
+        response, client_gia = self._gui(cau)
+        self.assertRedirects(response, self.url)
+        prompt = client_gia.cac_lan_goi[0]['nguoi_dung']
+        self.assertIn('LOP_HK2', prompt)
+        self.assertNotIn('LOP_HK1', prompt)
+        dau, cuoi = prompt.index('<<<DU_LIEU>>>'), prompt.index('<<<HET_DU_LIEU>>>')
+        self.assertTrue(dau < prompt.index(cau) < cuoi)
+        self.assertContains(self.client.get(self.url), 'Phạm vi: Học kỳ 2 năm học 2025-2026')
+
+    def test_chi_noi_nam_co_nhieu_ky_thi_hoi_lai_khong_goi_ai(self):
+        _, client_gia = self._gui('Tư vấn năm học 2025-2026')
+        self.assertEqual(client_gia.cac_lan_goi, [])
+        self.assertContains(self.client.get(self.url), 'Năm học 2025-2026 có mở lớp ở học kỳ 1, 2. Bạn muốn tư vấn học kỳ nào?')
+
+    def test_khong_noi_hoc_ky_thi_lay_hoc_ky_dang_mo_dang_ky(self):
+        _, client_gia = self._gui('Em muốn học các môn về AI, nên đăng ký lớp nào?')
+        self.assertIn('LOP_HK1', client_gia.cac_lan_goi[0]['nguoi_dung'])
+        self.assertContains(self.client.get(self.url), 'Bạn chưa nói học kỳ nên tư vấn học kỳ 1 năm học 2025-2026.')
+
+    def test_cau_khong_lien_quan_hoac_hoc_ky_khong_co_lop_tra_loi_ngay(self):
+        for cau in ('xin chào', 'Tư vấn học kỳ 3 năm học 2025-2026'):
+            _, client_gia = self._gui(cau)
+            self.assertEqual(client_gia.cac_lan_goi, [], cau)
+        trang = self.client.get(self.url)
+        self.assertContains(trang, 'Mình tư vấn nên đăng ký lớp học phần nào')
+        self.assertContains(trang, 'Không có lớp học phần nào mở trong học kỳ 3 năm học 2025-2026')
+
+    def test_xoa_cuoc_tro_chuyen_va_khong_con_nut_goi_y(self):
+        self.assertNotContains(self.client.get(self.url), 'name="goi_y"')
+        self._gui('Tư vấn học kỳ 1 năm học 2025-2026')
+        self.assertEqual(len(self.client.get(self.url).context['lich_su']), 1)
+        self.client.post(self.url, {'xoa_lich_su': '1'})
+        self.assertEqual(self.client.get(self.url).context['lich_su'], [])
+
+    def test_cau_qua_dai_bi_tu_choi(self):
+        _, client_gia = self._gui('x' * 301)
+        self.assertEqual(client_gia.cac_lan_goi, [])
+        self.assertEqual(self.client.get(self.url).context['lich_su'], [])

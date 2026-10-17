@@ -1,51 +1,7 @@
-    /* ===== Thanh menu Phòng Đào tạo / Giảng viên / Cố vấn (xem docs/thiet_ke_giao_dien.md) ===== */
-    /* Dùng lại các quy tắc .sv-* trong sinh_vien/_css.html (màu #1877F2, dropdown #145DBF, hover #0D47A1, icon,
-       gạch chân mục đang chọn, mở dropdown bằng hover/bấm); ở đây chỉ chỉnh riêng độ rộng và điểm chuyển sang
-       menu 3 gạch, vì các vai trò này có nhiều tab hơn Sinh viên. */
-    .sv-container--rong { max-width: 1440px; }
-
-    /* Phòng Đào tạo có 9 mục: khi màn hình chưa đủ rộng thì ẩn icon ở thanh chính (icon trong dropdown vẫn còn). */
-    @media (min-width: 1101px) and (max-width: 1439px) {
-        .sv-thanh-menu--nhieu .sv-menu__muc { padding: 0 10px; gap: 6px; }
-        .sv-thanh-menu--nhieu .sv-menu > .sv-menu__muc > .sv-icon:first-child,
-        .sv-thanh-menu--nhieu .sv-menu > .sv-nhom > .sv-nhom__nut > .sv-icon:first-child { display: none; }
-    }
-
-    /* Dưới 1100px: thu thành nút 3 gạch (Sinh viên chỉ thu ở dưới 768px vì chỉ có 3 nhóm). */
-    @media (max-width: 1100px) {
-        .sv-thanh-menu--nv .sv-hamburger { display: inline-flex; }
-        .sv-thanh-menu--nv .sv-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            height: auto;
-            max-height: calc(100vh - 60px);
-            overflow-y: auto;
-            flex-direction: column;
-            gap: 0;
-            padding: 8px 12px 12px;
-            background: var(--mau-the);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, .14);
-        }
-        .sv-thanh-menu--nv.sv-thanh-menu--mo .sv-menu { display: flex; }
-        .sv-thanh-menu--nv .sv-menu__muc { width: 100%; height: 44px; padding: 0 14px; gap: 8px; border-bottom: none; border-radius: 6px; color: var(--mau-chu-phu); }
-        .sv-thanh-menu--nv .sv-menu > .sv-menu__muc > .sv-icon:first-child,
-        .sv-thanh-menu--nv .sv-menu > .sv-nhom > .sv-nhom__nut > .sv-icon:first-child { display: block; }
-        .sv-thanh-menu--nv .sv-menu__muc:hover, .sv-thanh-menu--nv .sv-menu .sv-nhom:hover > .sv-nhom__nut { background: var(--mau-nen-trang); color: var(--mau-chu); }
-        .sv-thanh-menu--nv .sv-menu__muc--chon, .sv-thanh-menu--nv .sv-menu .sv-nhom--chon > .sv-nhom__nut { background: var(--mau-xanh-nhat); color: var(--mau-xanh-chinh); }
-        .sv-thanh-menu--nv .sv-menu__muc:focus-visible { outline-color: var(--mau-xanh-chinh); }
-        .sv-thanh-menu--nv .sv-menu .sv-nhom { flex-direction: column; align-items: stretch; height: auto; }
-        .sv-thanh-menu--nv .sv-menu .sv-nhom__nut > span { flex: 1; text-align: left; }
-        .sv-thanh-menu--nv .sv-menu .sv-nhom__xo { position: static; min-width: 0; padding: 0 0 4px 16px; box-shadow: none; background: transparent; overflow: visible; }
-        .sv-thanh-menu--nv .sv-menu .sv-nhom__xo > * + * { border-top: 0; }
-        .sv-thanh-menu--nv .sv-menu .sv-nhom__muc { color: var(--mau-chu); border-radius: 6px; padding: 9px 12px; }
-        .sv-thanh-menu--nv .sv-menu .sv-nhom__muc:hover { background: var(--mau-xanh-nhat); color: var(--mau-chu); }
-        .sv-thanh-menu--nv .sv-menu .sv-nhom__muc--chon { color: var(--mau-xanh-chinh); background: transparent; box-shadow: none; }
-        .sv-thanh-menu--nv .sv-menu .sv-nhom__muc:focus-visible { outline-color: var(--mau-xanh-chinh); }
-        .sv-thanh-menu--nv .sv-chip__vai-tro { display: none; }
-    }
+    /* ===== Khung Phòng Đào tạo / Giảng viên / Cố vấn (xem docs/thiet_ke_giao_dien.md) ===== */
+    /* Sidebar, thanh trên, menu người dùng dùng chung các quy tắc .sv-* trong sinh_vien/_css.html (cùng điểm
+       chuyển ngăn trượt dưới 1025px). Sidebar có thanh cuộn riêng nên Phòng Đào tạo nhiều mục vẫn không cần
+       quy tắc riêng; ở đây chỉ còn CSS của trang chủ ba vai trò này. */
 
     /* ===== Trang chủ Phòng Đào tạo: số liệu tổng quan, cảnh báo cần chú ý, thông báo gần đây ===== */
     /* Dùng lại .luoi-tong-hop/.o-tong-hop của base.html (như trang chủ Sinh viên) và bảng màu :root. */
@@ -55,21 +11,21 @@
     .khoi-tong-quan__dau p { margin: 0; }
     .luoi-tong-hop--5 { grid-template-columns: repeat(5, 1fr); }
     .o-tong-hop__lien-ket { margin-top: auto; align-self: flex-start; }
-    .o-tong-hop__ghi-chu--nho { font-size: 11px; line-height: 1.35; }
+    .o-tong-hop__ghi-chu--nho { font-size: 12px; line-height: 1.35; }
 
     .khoi-chu-y {
         margin-bottom: 16px;
         padding: 14px 16px;
         background: var(--mau-vang-nhat);
         border-left: 4px solid var(--mau-vang);
-        border-radius: 8px;
+        border-radius: 12px;
         box-shadow: var(--bong-the);
     }
     .khoi-chu-y h2 { margin-bottom: 8px; }
     .khoi-chu-y ul { list-style: none; margin: 0; padding: 0; }
     .khoi-chu-y__dong { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; }
     .khoi-chu-y__dong + .khoi-chu-y__dong { border-top: 1px solid rgba(0, 0, 0, .08); }
-    .khoi-chu-y__dong--do > span { font-weight: 700; color: var(--mau-do); }
+    .khoi-chu-y__dong--do > span { font-weight: 700; color: #B91C1C; }
     .khoi-chu-y__dong .nut { flex-shrink: 0; }
 
     .khoi-gan-day { margin-bottom: 16px; }
@@ -90,5 +46,5 @@
     @media (max-width: 400px) { .luoi-tong-hop--5 { grid-template-columns: 1fr; } }
 
     /* Chip mức cảnh báo học vụ ở trang chủ Cố vấn (đỏ: 2 lý do, vàng: 1 lý do — quy ước của trang chủ Sinh viên). */
-    .chip--muc-do { background: var(--mau-do-nhat); color: var(--mau-do); }
+    .chip--muc-do { background: var(--mau-do-nhat); color: #B91C1C; }
     .chip--muc-vang { background: var(--mau-vang-nhat); color: #8A6100; }

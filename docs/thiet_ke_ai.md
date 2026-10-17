@@ -23,6 +23,33 @@ Nguyên tắc chung cho cả 3 chức năng (chi tiết hạ tầng dùng chung 
 
 ---
 
+## Khung chat (dùng chung cho cả 3 chức năng)
+
+Cả 3 chức năng dùng chung khung chat `ai_core/templates/ai_core/_khung_chat.html` (tin nhắn, ô nhập có chữ mờ
+ví dụ, nút "Xóa cuộc trò chuyện"; không có nút câu gợi ý). Nguyên tắc:
+
+- **Code tự hiểu phạm vi, không nhờ AI**: `ai_core/phan_tich_cau_hoi.py` (`doc_pham_vi`) đọc học kỳ ("kỳ 1",
+  "kì 1", "hk1", "học kỳ 1"), năm học (`YYYY-YYYY` liên tiếp, vd. "2024-2025", "2024/2025"), "toàn khóa"/"tất
+  cả"/"tích lũy", "gần nhất"/"kỳ này" sau khi bỏ dấu và chữ hoa. Mỗi tin nhắn tốn **đúng một** lượt gọi AI, và câu
+  gõ (dữ liệu không tin cậy) không điều khiển được việc lấy dữ liệu nào — chỉ phạm vi đọc được mới quyết định.
+- **Trả lời ngay, không gọi AI** khi: phạm vi chưa có dữ liệu (học kỳ chưa có điểm/chưa mở lớp), cần hỏi lại (tư
+  vấn: năm học có nhiều học kỳ mà không nói kỳ nào), hoặc câu không liên quan tới chức năng. Với tóm tắt và tư vấn,
+  các câu này cũng **không bị tính** vào giới hạn tần suất.
+- **Mỗi tin nhắn là một yêu cầu độc lập**: các lượt chat trước KHÔNG được gửi lại cho AI (không tốn thêm token,
+  không gửi thừa dữ liệu học tập).
+- **Lịch sử hội thoại** (`ai_core/lich_su_chat.py`): lưu trong session của người dùng (không tạo bảng CSDL mới),
+  tối đa 10 lượt gần nhất, mất khi đăng xuất hoặc bấm "Xóa cuộc trò chuyện". Mỗi lượt chỉ gồm chuỗi/số/danh sách
+  (đã chuyển từ kết quả của service), không có đối tượng model.
+- **POST rồi chuyển hướng về GET**: tải lại trang không gửi lại câu hỏi (không tốn thêm lượt AI).
+
+| Chức năng | Câu gõ dùng để | Câu gõ có gửi AI không |
+|---|---|---|
+| Tóm tắt kết quả | Chọn phạm vi (kỳ/năm/toàn khóa) | **Không** — chỉ gửi điểm của phạm vi đã chọn, dòng "Phạm vi: ..." nằm trong khối dữ liệu |
+| Tư vấn đăng ký | Chọn học kỳ cần tư vấn + làm ghi chú của sinh viên | Có, như ô ghi chú trước đây (trong khối dữ liệu, tối đa 300 ký tự) |
+| Hỏi đáp quy chế | Câu hỏi để truy hồi BM25 | Có, như trước (trong khối dữ liệu, tối đa 500 ký tự) |
+
+---
+
 ## 1. Tư vấn đăng ký học phần (`tu_van_dang_ky`)
 
 **Trang:** `/tu-van-dang-ky/` (chỉ Sinh viên, luôn tư vấn cho `request.user`, không nhận
@@ -30,7 +57,11 @@ tham số chọn sinh viên khác).
 
 ### Luồng xử lý
 
-1. Sinh viên chọn học kỳ/năm học, nhập ghi chú tự do (tối đa 300 ký tự, không bắt buộc).
+1. Sinh viên gõ tin nhắn trong khung chat (tối đa 300 ký tự). `tu_van_dang_ky.chat.chon_hoc_ky` chọn học kỳ cần
+   tư vấn: có kỳ + năm thì dùng đúng kỳ đó; chỉ kỳ thì năm học gần nhất có mở lớp kỳ đó; chỉ năm thì kỳ duy nhất
+   của năm, năm có nhiều kỳ thì hỏi lại (không gọi AI); không nói gì thì học kỳ đang có đợt đăng ký
+   (`hoc_ky_dang_xet`, cách chọn như trang chủ Phòng Đào tạo). Câu không liên quan tới đăng ký hoặc học kỳ không mở
+   lớp nào: trả lời ngay, không gọi AI. Cả tin nhắn được dùng làm ghi chú của sinh viên.
 2. `ai_core.gioi_han_tan_suat.kiem_tra_va_dem` kiểm tra giới hạn tần suất (10 lần/phút);
    vượt giới hạn thì báo lỗi thân thiện, không gọi tiếp bước nào bên dưới.
 3. `tu_van_dang_ky.services._tinh_danh_sach_trang_thai` liệt kê mọi lớp học phần đang mở
@@ -92,13 +123,19 @@ học tập chọn một sinh viên trong danh sách lớp mình phụ trách).
 
 ### Luồng xử lý
 
-1. (Cố vấn) chọn một sinh viên từ danh sách; server kiểm tra lại
-   `sinh_vien.ma_lop.ma_co_van_id == co_van.pk`, sai thì 403 ngay, **không gọi AI**.
+1. (Cố vấn) chọn một sinh viên từ danh sách để mở cuộc trò chuyện (mỗi sinh viên một lịch sử riêng); server kiểm
+   tra lại `sinh_vien.ma_lop.ma_co_van_id == co_van.pk` ở cả lúc mở và lúc gửi tin, sai thì 403 ngay, **không gọi
+   AI**. Người dùng gõ tin nhắn (tối đa 300 ký tự); `tom_tat_ket_qua.chat.chon_pham_vi` đọc phạm vi và đối chiếu
+   với các học kỳ thật sự có điểm: kỳ + năm → học kỳ đó; chỉ năm → cả năm học (năm mới có một kỳ thì kỳ đó, kèm
+   ghi chú); chỉ kỳ → kỳ đó của năm học gần nhất có điểm; "gần nhất" → học kỳ mới nhất có điểm; "toàn khóa" hoặc
+   chỉ hỏi chung → toàn khóa. Phạm vi chưa có điểm hoặc câu không liên quan: trả lời ngay, không gọi AI.
 2. `ai_core.gioi_han_tan_suat.kiem_tra_va_dem` kiểm tra giới hạn tần suất theo NGƯỜI ĐANG
    XEM (sinh viên tự xem, hoặc cố vấn — không theo sinh viên được chọn, để cố vấn xem nhiều
    sinh viên khác nhau vẫn dùng chung một hạn mức của chính họ).
-3. `grades.services.bang_diem_chi_tiet` lấy bảng điểm (mỗi học phần một dòng, giữ điểm cao
-   nhất nếu học lại), dùng đúng `Diem.tinh_diem_tong_ket()` (không tính lại công thức).
+3. `grades.services.bang_diem_chi_tiet(sinh_vien, hoc_ky, nam_hoc)` lấy bảng điểm **của đúng phạm vi đã chọn**
+   (mỗi học phần một dòng, giữ điểm cao nhất nếu học lại trong phạm vi), dùng đúng `Diem.tinh_diem_tong_ket()`
+   (không tính lại công thức). Dòng "Phạm vi: ..." được thêm vào khối số liệu (trong khối dữ liệu của prompt;
+   prompt `v1` giữ nguyên).
 4. Nếu chưa có điểm nào: trả thông báo cố định, **không gọi AI**.
 5. Tính số liệu tổng hợp: tổng tín chỉ đã đạt, số học phần đạt/chưa đạt, học phần điểm cao
    nhất/thấp nhất (nếu chỉ có 1 học phần thì cao nhất = thấp nhất, không lỗi/không chia 0).
@@ -147,7 +184,8 @@ hiển thị bảng số liệu/bảng điểm do code tính.
 
 ### Luồng xử lý
 
-1. Người dùng nhập câu hỏi tự do (tối đa 500 ký tự).
+1. Người dùng gõ câu hỏi trong khung chat (tối đa 500 ký tự). Chỉ câu hỏi hiện tại được
+   truy hồi và gửi AI (không gửi các câu trước trong cuộc trò chuyện).
 2. `hoi_dap_quy_che.gioi_han_tan_suat.kiem_tra_va_dem` kiểm tra giới hạn tần suất (10 câu
    hỏi/phút/người dùng).
 3. `hoi_dap_quy_che.chi_muc.truy_hoi`: trích chữ từ mọi tài liệu quy chế đã tải lên
@@ -227,3 +265,8 @@ mức" trong `README.md`.
 - `gioi_han_tan_suat.py`: giới hạn tần suất dùng chung cho `tu_van_dang_ky`/`tom_tat_ket_qua`
   (10 lần/phút/người dùng, cache của Django, không tạo bảng CSDL mới).
 - `management/commands/kiem_tra_ai.py`: kiểm tra kết nối, không gửi dữ liệu người dùng.
+- `phan_tich_cau_hoi.py`: `doc_pham_vi(cau_go)` đọc học kỳ/năm học/toàn khóa/gần nhất từ câu gõ (xem mục "Khung
+  chat"); `bo_dau()` chuẩn hóa chữ để so khớp.
+- `lich_su_chat.py`: lịch sử chat trong session (`doc`, `them`, `xoa`, tối đa 10 lượt) và `cau_gui_len(request)`
+  (nội dung ô nhập `cau_hoi`).
+- `templates/ai_core/_khung_chat.html`: khung chat dùng chung (CSS ở `templates/base.html`).

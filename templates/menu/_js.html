@@ -1,10 +1,38 @@
 <script>
 (function () {
-    var thanh = document.getElementById('sv-thanh-menu');
+    var boCuc = document.getElementById('sv-bo-cuc');
+    var sidebar = document.getElementById('sv-sidebar');
     var hamburger = document.getElementById('sv-hamburger');
-    if (!thanh) { return; }
-    var nhoms = thanh.querySelectorAll('.sv-nhom');
+    if (!boCuc || !sidebar) { return; }
 
+    // Giữ vị trí cuộn của sidebar khi chuyển trang (mỗi lần bấm menu là tải lại trang, sidebar sẽ về đầu).
+    // sessionStorage có thể bị chặn nên bọc try/catch; không có vị trí đã lưu thì cuộn cho mục đang chọn hiện ra.
+    var KHOA_CUON = 'qldt-cuon-sidebar';
+    var daKhoiPhuc = false;
+    try {
+        var viTri = sessionStorage.getItem(KHOA_CUON);
+        if (viTri !== null) { sidebar.scrollTop = parseInt(viTri, 10) || 0; daKhoiPhuc = true; }
+    } catch (loi) {}
+    if (!daKhoiPhuc) {
+        var mucChon = sidebar.querySelector('.sv-menu__muc--chon, .sv-nhom__muc--chon');
+        if (mucChon) { mucChon.scrollIntoView({ block: 'nearest' }); }
+    }
+    window.addEventListener('pagehide', function () {
+        try { sessionStorage.setItem(KHOA_CUON, String(sidebar.scrollTop)); } catch (loi) {}
+    });
+
+    // Nhóm trong sidebar: mở/thu gọn tại chỗ (mặc định mở hết), không tự đóng khi bấm ra ngoài.
+    sidebar.querySelectorAll('.sv-nhom').forEach(function (nhom) {
+        var nut = nhom.querySelector('.sv-nhom__nut');
+        if (!nut) { return; }
+        nut.addEventListener('click', function () {
+            var dong = nhom.classList.toggle('sv-nhom--dong');
+            nut.setAttribute('aria-expanded', dong ? 'false' : 'true');
+        });
+    });
+
+    // Menu người dùng ở thanh trên: dropdown, đóng khi bấm ra ngoài hoặc nhấn Esc.
+    var nhoms = document.querySelectorAll('.sv-phai .sv-nhom');
     function dongNhom(giuLai) {
         nhoms.forEach(function (nhom) {
             if (nhom === giuLai) { return; }
@@ -13,11 +41,6 @@
             if (nut) { nut.setAttribute('aria-expanded', 'false'); }
         });
     }
-    function dongMenuDiDong() {
-        thanh.classList.remove('sv-thanh-menu--mo');
-        if (hamburger) { hamburger.setAttribute('aria-expanded', 'false'); }
-    }
-
     nhoms.forEach(function (nhom) {
         var nut = nhom.querySelector('.sv-nhom__nut');
         if (!nut) { return; }
@@ -29,24 +52,29 @@
         });
     });
 
+    // Màn hình hẹp: nút ☰ trượt sidebar ra; bấm ra ngoài sidebar hoặc nhấn Esc để đóng.
+    function dongSidebar() {
+        boCuc.classList.remove('sv-bo-cuc--mo');
+        if (hamburger) { hamburger.setAttribute('aria-expanded', 'false'); }
+    }
     if (hamburger) {
-        hamburger.addEventListener('click', function () {
-            var mo = !thanh.classList.contains('sv-thanh-menu--mo');
-            thanh.classList.toggle('sv-thanh-menu--mo', mo);
+        hamburger.addEventListener('click', function (su_kien) {
+            su_kien.stopPropagation();
+            var mo = boCuc.classList.toggle('sv-bo-cuc--mo');
             hamburger.setAttribute('aria-expanded', mo ? 'true' : 'false');
         });
     }
 
     document.addEventListener('click', function (su_kien) {
-        if (!thanh.contains(su_kien.target)) {
-            dongNhom(null);
-            dongMenuDiDong();
-        }
+        var trongNhom = false;
+        nhoms.forEach(function (nhom) { if (nhom.contains(su_kien.target)) { trongNhom = true; } });
+        if (!trongNhom) { dongNhom(null); }
+        if (!sidebar.contains(su_kien.target)) { dongSidebar(); }
     });
     document.addEventListener('keydown', function (su_kien) {
         if (su_kien.key === 'Escape') {
             dongNhom(null);
-            dongMenuDiDong();
+            dongSidebar();
         }
     });
 })();

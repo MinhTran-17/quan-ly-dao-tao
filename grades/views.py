@@ -19,8 +19,8 @@ from people.models import SinhVien
 from .forms import DiemForm
 from .models import Diem
 from .services import (
-    canh_bao_hoc_vu, diem_trung_binh_hoc_ky, diem_trung_binh_tich_luy, hoc_ky_gan_nhat_co_du_diem,
-    xep_loai_hoc_luc,
+    canh_bao_hoc_vu, diem_trung_binh_hoc_ky, diem_trung_binh_nam_hoc, diem_trung_binh_tich_luy,
+    hoc_ky_gan_nhat_co_du_diem, xep_loai_hoc_luc,
 )
 
 
@@ -183,30 +183,60 @@ def bang_diem_sinh_vien_view(request, ma_sinh_vien):
             and (diem.diem_qua_trinh is not None or diem.diem_thi is not None)
         )
 
+    # Bộ lọc chỉ gồm các năm học/học kỳ mà sinh viên có đăng ký (không lấy cả danh mục học kỳ).
+    cac_ky_cua_sv = sorted(
+        {(dk.ma_lop_hoc_phan.hoc_ky, dk.ma_lop_hoc_phan.nam_hoc) for dk in danh_sach},
+        key=lambda ky: (ky[1], ky[0]), reverse=True,
+    )
+    cac_nam_hoc = sorted({nam_hoc for _, nam_hoc in cac_ky_cua_sv}, reverse=True)
+    cac_hoc_ky = sorted({hoc_ky for hoc_ky, _ in cac_ky_cua_sv})
+
+    # Chưa chọn năm học (lúc mới vào, hoặc năm không hợp lệ): hiện điểm của mọi học kỳ, chỉ có điểm trung bình
+    # và xếp loại tích lũy. Chọn năm + kỳ: xem đúng học kỳ đó. Chọn năm, để trống kỳ ("Cả năm"): xem cả năm học
+    # — trừ khi năm đó mới có một học kỳ thì xem học kỳ đó.
     hoc_ky_loc = request.GET.get('hoc_ky', '').strip()
     nam_hoc_loc = request.GET.get('nam_hoc', '').strip()
-    if not (hoc_ky_loc and nam_hoc_loc):
-        mac_dinh = hoc_ky_gan_nhat_co_du_diem(sinh_vien, chi_diem_da_cong_bo)
-        if mac_dinh:
-            hoc_ky_loc, nam_hoc_loc = mac_dinh
+    tat_ca = nam_hoc_loc not in cac_nam_hoc
+    ca_nam = False
+    chi_mot_ky = False
+    if tat_ca:
+        hoc_ky_loc = nam_hoc_loc = ''
+    elif not hoc_ky_loc:
+        ky_trong_nam = [hoc_ky for hoc_ky, nam_hoc in cac_ky_cua_sv if nam_hoc == nam_hoc_loc]
+        if len(ky_trong_nam) == 1:
+            hoc_ky_loc, chi_mot_ky = ky_trong_nam[0], True
+        else:
+            ca_nam = True
 
-    diem_tb_hoc_ky = None
+    danh_sach_hien_thi = [
+        dk for dk in danh_sach
+        if tat_ca or (
+            dk.ma_lop_hoc_phan.nam_hoc == nam_hoc_loc and (ca_nam or dk.ma_lop_hoc_phan.hoc_ky == hoc_ky_loc)
+        )
+    ]
+
+    diem_tb_ky_chon = None
     canh_bao = None
-    if hoc_ky_loc and nam_hoc_loc:
-        diem_tb_hoc_ky = diem_trung_binh_hoc_ky(sinh_vien, hoc_ky_loc, nam_hoc_loc, chi_diem_da_cong_bo)
+    if ca_nam:
+        diem_tb_ky_chon = diem_trung_binh_nam_hoc(sinh_vien, nam_hoc_loc, chi_diem_da_cong_bo)
+    elif hoc_ky_loc and nam_hoc_loc:
+        diem_tb_ky_chon = diem_trung_binh_hoc_ky(sinh_vien, hoc_ky_loc, nam_hoc_loc, chi_diem_da_cong_bo)
         canh_bao = canh_bao_hoc_vu(sinh_vien, hoc_ky_loc, nam_hoc_loc, chi_diem_da_cong_bo)
     diem_tb_tich_luy = diem_trung_binh_tich_luy(sinh_vien, chi_diem_da_cong_bo)
-    cac_hoc_ky, cac_nam_hoc = danh_sach_bo_loc_hoc_ky()
 
     return render(request, 'grades/bang_diem_sinh_vien.html', {
         'sinh_vien': sinh_vien,
-        'danh_sach': danh_sach,
-        'hoc_ky_loc': hoc_ky_loc,
+        'danh_sach': danh_sach_hien_thi,
+        'co_dang_ky': bool(danh_sach),
+        'hoc_ky_loc': '' if ca_nam else hoc_ky_loc,
         'nam_hoc_loc': nam_hoc_loc,
+        'tat_ca': tat_ca,
+        'ca_nam': ca_nam,
+        'chi_mot_ky': chi_mot_ky,
         'cac_hoc_ky': cac_hoc_ky,
         'cac_nam_hoc': cac_nam_hoc,
-        'diem_tb_hoc_ky': diem_tb_hoc_ky,
-        'xep_loai_hoc_ky': xep_loai_hoc_luc(diem_tb_hoc_ky),
+        'diem_tb_hoc_ky': diem_tb_ky_chon,
+        'xep_loai_hoc_ky': xep_loai_hoc_luc(diem_tb_ky_chon),
         'diem_tb_tich_luy': diem_tb_tich_luy,
         'xep_loai_tich_luy': xep_loai_hoc_luc(diem_tb_tich_luy),
         'canh_bao': canh_bao,

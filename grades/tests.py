@@ -554,21 +554,83 @@ class GiaoDienBangDiemSinhVienTest(TestCase):
         return self.client.get(self.url, tham_so)
 
     def test_nhom_theo_hoc_ky_dung_thu_tu_va_tieu_de_nhom(self):
+        # Xem cả năm học: mỗi học kỳ của năm là một nhóm, học kỳ 1 trước học kỳ 2; năm khác không hiện.
         self._dang_ky('HPA', '1', '2025-2026', diem=(8, 8))
         self._dang_ky('HPB', '1', '2025-2026', diem=(7, 7))
         self._dang_ky('HPC', '2', '2025-2026', diem=(9, 9))
         self._dang_ky('HPD', '1', '2024-2025', diem=(6, 6))
-        noi_dung = self._trang().content.decode()
-        self.assertEqual(noi_dung.count('<tr class="hang-nhom">'), 3)
-        nhom_1, nhom_2, nhom_3 = (
-            noi_dung.index('Học kỳ 1 - 2025-2026'), noi_dung.index('Học kỳ 2 - 2025-2026'),
-            noi_dung.index('Học kỳ 1 - 2024-2025'),
-        )
+        noi_dung = self._trang(nam_hoc='2025-2026', hoc_ky='').content.decode()
+        self.assertEqual(noi_dung.count('<tr class="hang-nhom">'), 2)
+        nhom_1, nhom_2 = noi_dung.index('Học kỳ 1 - 2025-2026'), noi_dung.index('Học kỳ 2 - 2025-2026')
         self.assertTrue(nhom_1 < noi_dung.index('<td>HPA</td>') < nhom_2)
         self.assertTrue(nhom_1 < noi_dung.index('<td>HPB</td>') < nhom_2)
-        self.assertTrue(nhom_2 < noi_dung.index('<td>HPC</td>') < nhom_3)
-        self.assertTrue(nhom_3 < noi_dung.index('<td>HPD</td>'))
+        self.assertTrue(nhom_2 < noi_dung.index('<td>HPC</td>'))
+        self.assertNotIn('<td>HPD</td>', noi_dung)
         self.assertIn('<td colspan="7">Học kỳ 1 - 2025-2026</td>', noi_dung)
+
+    def test_chon_nam_va_ky_chi_hien_hoc_ky_do(self):
+        self._dang_ky('HPA', '1', '2025-2026', diem=(8, 8))
+        self._dang_ky('HPC', '2', '2025-2026', diem=(9, 9))
+        self._dang_ky('HPD', '1', '2024-2025', diem=(6, 6))
+        response = self._trang(nam_hoc='2025-2026', hoc_ky='2')
+        noi_dung = response.content.decode()
+        self.assertIn('<td>HPC</td>', noi_dung)
+        self.assertNotIn('<td>HPA</td>', noi_dung)
+        self.assertNotIn('<td>HPD</td>', noi_dung)
+        self.assertEqual(noi_dung.count('<tr class="hang-nhom">'), 1)
+        self.assertIn('Điểm trung bình học kỳ 2 - 2025-2026', noi_dung)
+        self.assertEqual(response.context['diem_tb_hoc_ky'], Decimal('9.00'))
+
+    def test_chon_ca_nam_tinh_diem_trung_binh_nam_hoc(self):
+        self._dang_ky('HPA', '1', '2025-2026', diem=(8, 8))  # 3 tín chỉ, tổng kết 8.0
+        self._dang_ky('HPC', '2', '2025-2026', diem=(5, 5))  # 2 tín chỉ, tổng kết 5.0
+        self._dang_ky('HPD', '1', '2024-2025', diem=(2, 2))  # năm khác, không tính
+        response = self._trang(nam_hoc='2025-2026', hoc_ky='')
+        self.assertTrue(response.context['ca_nam'])
+        # (8.0*3 + 5.0*2) / 5 = 6.80
+        self.assertEqual(response.context['diem_tb_hoc_ky'], Decimal('6.80'))
+        self.assertContains(response, 'Điểm trung bình năm học 2025-2026')
+        self.assertContains(response, 'Xếp loại năm học')
+        self.assertContains(response, '<option value="" selected>Cả năm</option>')
+        self.assertIsNone(response.context['canh_bao'])
+
+    def test_nam_moi_co_mot_ky_thi_khong_xem_ca_nam_ma_xem_ky_do(self):
+        self._dang_ky('HPA', '1', '2025-2026', diem=(8, 8))
+        self._dang_ky('HPD', '1', '2024-2025', diem=(6, 6))
+        self._dang_ky('HPE', '2', '2024-2025', diem=(7, 7))
+        response = self._trang(nam_hoc='2025-2026', hoc_ky='')
+        self.assertFalse(response.context['ca_nam'])
+        self.assertTrue(response.context['chi_mot_ky'])
+        self.assertEqual(response.context['hoc_ky_loc'], '1')
+        self.assertContains(response, 'Năm học 2025-2026 mới có học kỳ 1 nên chưa xem được cả năm')
+        self.assertContains(response, '<option value="1" selected>Học kỳ 1</option>')
+        self.assertContains(response, 'Điểm trung bình học kỳ 1 - 2025-2026')
+        self.assertNotContains(response, '<td>HPD</td>')
+
+    def test_mac_dinh_chua_chon_hien_moi_hoc_ky_va_bo_loc_chi_gom_ky_cua_sinh_vien(self):
+        self._dang_ky('HPA', '1', '2025-2026')
+        self._dang_ky('HPD', '2', '2024-2025', diem=(6, 6))
+        response = self._trang()
+        self.assertTrue(response.context['tat_ca'])
+        self.assertEqual((response.context['hoc_ky_loc'], response.context['nam_hoc_loc']), ('', ''))
+        self.assertContains(response, '<td>HPD</td>')
+        self.assertContains(response, '<td>HPA</td>')
+        self.assertEqual(response.content.decode().count('<tr class="hang-nhom">'), 2)
+        self.assertContains(response, '<option value="" selected>-- Chọn năm học --</option>')
+        self.assertContains(response, '<option value="" selected>-- Chọn học kỳ --</option>')
+        self.assertNotContains(response, 'Xem tất cả')
+        self.assertIsNone(response.context['canh_bao'])
+        self.assertEqual(response.context['cac_nam_hoc'], ['2025-2026', '2024-2025'])
+        self.assertEqual(response.context['cac_hoc_ky'], ['1', '2'])
+        # Đã chọn thì có nút quay về xem tất cả.
+        self.assertContains(self._trang(nam_hoc='2024-2025', hoc_ky='2'), 'Xem tất cả')
+
+    def test_nam_hoc_khong_hop_le_hien_tat_ca(self):
+        self._dang_ky('HPD', '2', '2024-2025', diem=(6, 6))
+        response = self._trang(nam_hoc='1999-2000', hoc_ky='1')
+        self.assertTrue(response.context['tat_ca'])
+        self.assertEqual((response.context['hoc_ky_loc'], response.context['nam_hoc_loc']), ('', ''))
+        self.assertContains(response, '<td>HPD</td>')
 
     def test_cac_cot_dung_thu_tu_va_khong_co_cot_diem_chu(self):
         self._dang_ky('HPA', '1', '2025-2026', diem=(8, 8))
@@ -622,7 +684,13 @@ class GiaoDienBangDiemSinhVienTest(TestCase):
     def test_khoi_tong_hop_co_bon_o_dung_nhan_va_gia_tri(self):
         self._dang_ky('HPA', '1', '2025-2026', diem=(8, 8))
         self._dang_ky('HPB', '1', '2025-2026', diem=(5, 6))
-        response = self._trang()
+        # Mới vào (chưa chọn): chỉ hai ô tích lũy.
+        mac_dinh = self._trang().content.decode()
+        self.assertIn('<div class="luoi-tong-hop luoi-tong-hop--2">', mac_dinh)
+        self.assertEqual(mac_dinh.count('<div class="o-tong-hop">'), 2)
+        self.assertNotIn('Xếp loại học kỳ', mac_dinh)
+        # Chọn học kỳ: thêm hai ô của học kỳ.
+        response = self._trang(nam_hoc='2025-2026', hoc_ky='1')
         noi_dung = response.content.decode()
         self.assertIn('<div class="luoi-tong-hop luoi-tong-hop--4">', noi_dung)
         self.assertEqual(noi_dung.count('<div class="o-tong-hop">'), 4)
@@ -634,8 +702,11 @@ class GiaoDienBangDiemSinhVienTest(TestCase):
 
     def test_khoi_tong_hop_bao_chua_co_diem_thay_vi_so(self):
         response = self._trang()
-        self.assertContains(response, 'Chưa có học kỳ nào có đủ điểm')
         self.assertContains(response, 'Chưa có học phần nào đủ điểm.')
+        self.assertContains(response, 'Chưa có điểm để xếp loại.', count=1)
+        self._dang_ky('HPA', '1', '2025-2026')
+        response = self._trang(nam_hoc='2025-2026', hoc_ky='1')
+        self.assertContains(response, 'Chưa có học phần nào đủ điểm trong học kỳ này.')
         self.assertContains(response, 'Chưa có điểm để xếp loại.', count=2)
 
     def test_canh_bao_mau_vang_khi_mot_ly_do_va_mau_do_khi_hai_ly_do(self):

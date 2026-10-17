@@ -7,6 +7,8 @@ from html.parser import HTMLParser
 from unittest import mock
 
 from django.conf import settings
+from django.contrib.staticfiles import finders
+from django.templatetags.static import static
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
@@ -975,9 +977,14 @@ class NapDuLieuDayDuTest(TestCase):
         self.assertNotContains(response, 'SV061')
 
     def test_diem_chua_cong_bo_hien_dang_cho_cong_bo_cho_sinh_vien(self):
-        diem = Diem.objects.filter(da_cong_bo=False).select_related('ma_dang_ky__ma_sinh_vien__ma_tai_khoan').last()
+        diem = Diem.objects.filter(da_cong_bo=False).select_related(
+            'ma_dang_ky__ma_sinh_vien__ma_tai_khoan', 'ma_dang_ky__ma_lop_hoc_phan',
+        ).last()
         self.client.force_login(diem.ma_dang_ky.ma_sinh_vien.ma_tai_khoan)
+        # Bảng điểm chỉ hiện học kỳ đang chọn, nên mở đúng học kỳ của điểm chưa công bố.
+        lop = diem.ma_dang_ky.ma_lop_hoc_phan
         response = self.client.get(reverse('grades:bang_diem_cua_toi'), follow=True)
+        response = self.client.get(response.request['PATH_INFO'], {'nam_hoc': lop.nam_hoc, 'hoc_ky': lop.hoc_ky})
         self.assertContains(response, 'Đang chờ công bố')
 
     def test_diem_danh_lich_thi_va_thong_bao(self):
@@ -1249,79 +1256,86 @@ class LayoutSinhVienTest(TestCase):
         self.assertContains(response, f'<form method="post" action="{reverse("accounts:dang_xuat")}">')
 
     def test_co_nut_hamburger_va_css_thu_gon_cho_man_hinh_nho(self):
+        # Dưới 1025px sidebar thành ngăn trượt từ trái, mở bằng nút ☰ ở thanh trên.
         response = self.client.get(reverse('accounts:trang_chu'))
-        self.assertContains(response, 'id="sv-hamburger"')
-        self.assertContains(response, '.sv-thanh-menu--mo .sv-menu { display: flex; }')
-
-    def test_footer_co_ba_cot_va_ban_quyen(self):
-        response = self.client.get(reverse('accounts:trang_chu'))
-        self.assertContains(response, f'© {timezone.localdate().year} {settings.TEN_TRUONG}')
-        self.assertContains(response, '<h4>Liên hệ</h4>')
-        self.assertContains(response, '<h4>Liên kết nhanh</h4>')
-        self.assertContains(response, 'Địa chỉ: (chưa cập nhật)')
-
-    def test_khong_doi_bang_mau_goc_va_khong_them_bien_moi(self):
+        self.assertContains(response, 'id="sv-hamburger" aria-label="Mở menu" aria-controls="sv-sidebar" aria-expanded="false"')
+        self.assertContains(response, '@media (max-width: 1024px)')
+        self.assertContains(response, '.sv-bo-cuc--mo .sv-sidebar { transform: none; visibility: visible;')
+    def test_khong_con_chan_trang(self):
+        # Chân trang 3 cột (địa chỉ, liên hệ, liên kết nhanh) đã bỏ theo yêu cầu.
         noi_dung = self.client.get(reverse('accounts:trang_chu')).content.decode()
-        self.assertIn('--mau-xanh-chinh: #1877F2;', noi_dung)
-        self.assertIn('--mau-nen-trang: #F0F2F5;', noi_dung)
+        self.assertNotIn('<footer', noi_dung)
+        self.assertNotIn('Liên kết nhanh', noi_dung)
+        self.assertNotIn('sv-chan-trang', noi_dung)
+
+    def test_bang_mau_moi_va_khong_them_bien_moi(self):
+        # Bảng màu đổi giá trị (giữ tên biến cũ); CSS của khung không tự khai báo biến riêng.
+        noi_dung = self.client.get(reverse('accounts:trang_chu')).content.decode()
+        self.assertIn('--mau-xanh-chinh: #1E40AF;', noi_dung)
+        self.assertIn('--mau-nen-trang: #F5F7FB;', noi_dung)
         khoi_css_sinh_vien = noi_dung.split('Layout Sinh viên: banner')[1].split('</style>')[0]
         self.assertIsNone(re.search(r'(^|[\s;{])--[a-z-]+\s*:', khoi_css_sinh_vien))
 
+    def test_font_be_vietnam_pro_dung_cuc_bo_kem_giay_phep(self):
+        noi_dung = self.client.get(reverse('accounts:trang_chu')).content.decode()
+        for ten in ('Regular', 'Medium', 'SemiBold', 'Bold'):
+            duong_dan = f'qldt/fonts/BeVietnamPro-{ten}.ttf'
+            self.assertIn(f'url("{static(duong_dan)}")', noi_dung)
+            self.assertIsNotNone(finders.find(duong_dan), duong_dan)
+        self.assertIsNotNone(finders.find('qldt/fonts/OFL.txt'))
+        self.assertIn('font-family: "Be Vietnam Pro", -apple-system', noi_dung)
+        self.assertNotIn('fonts.googleapis', noi_dung)
     def _quy_tac_css(self, bo_chon, response=None):
-        """Nội dung khai báo của quy tắc CSS đầu tiên có bộ chọn `bo_chon` trong trang."""
+        """Nội dung khai báo của quy tắc CSS đầu tiên có bộ chọn `bo_chon` trong trang. Bộ chọn phải đứng đầu
+        dòng (sau thụt lề), để ".sv-nhom__xo" không khớp nhầm vào ".sv-menu .sv-nhom__xo"."""
         noi_dung = (response or self.client.get(reverse('accounts:trang_chu'))).content.decode()
-        khop = re.search(re.escape(bo_chon) + r' \{(.*?)\}', noi_dung, re.S)
+        khop = re.search(r'^[ \t]*' + re.escape(bo_chon) + r' \{(.*?)\}', noi_dung, re.S | re.M)
         self.assertIsNotNone(khop, f'Không thấy quy tắc CSS {bo_chon!r}.')
         return khop.group(1)
 
-    def test_thanh_menu_va_chan_trang_nen_xanh_chu_trang(self):
+    def test_sidebar_nen_trang_va_muc_menu_chu_phu(self):
         response = self.client.get(reverse('accounts:trang_chu'))
-        self.assertIn('background: var(--mau-xanh-chinh)', self._quy_tac_css('.sv-thanh-menu', response))
-        self.assertIn('color: #fff;', self._quy_tac_css('.sv-menu__muc', response))
-        chan_trang = self._quy_tac_css('.sv-chan-trang', response)
-        self.assertIn('background: var(--mau-xanh-chinh)', chan_trang)
-        self.assertIn('color: rgba(255, 255, 255, .85)', chan_trang)
-        self.assertIn('color: #fff', self._quy_tac_css('.sv-chan-trang h4', response))
-        # Chữ liên kết ở chân trang phải ghi đè "li a:hover" (nền xanh nhạt) của quy tắc chung.
-        self.assertIn('background: rgba(255, 255, 255, .16)', self._quy_tac_css('.sv-chan-trang a:hover', response))
-
-    def test_muc_dang_chon_phan_biet_bang_gach_chan_trang_khong_dung_xanh_dam_hon(self):
-        quy_tac = self._quy_tac_css('.sv-menu__muc--chon, .sv-menu .sv-nhom--chon > .sv-nhom__nut')
-        self.assertIn('border-bottom-color: #fff', quy_tac)
-        self.assertIn('background: rgba(255, 255, 255, .12)', quy_tac)
-        self.assertNotIn('--mau-xanh', quy_tac)
-        # Viền focus bàn phím của thanh menu phải là trắng (xanh chìm vào nền xanh).
-        self.assertIn('outline: 2px solid #fff', self._quy_tac_css('.sv-menu__muc:focus-visible, .sv-hamburger:focus-visible'))
-
-    def test_dropdown_nen_xanh_dam_chu_trang_hover_dam_hon_va_duong_ke_mo(self):
-        response = self.client.get(reverse('accounts:trang_chu'))
-        khung = self._quy_tac_css('.sv-nhom__xo', response)
-        # Xanh đậm hơn thanh menu (#1877F2) để thấy ranh giới giữa menu chính và menu con.
-        self.assertIn('background: #145DBF', khung)
-        self.assertNotIn('var(--mau-xanh-chinh)', khung)
-        self.assertIn('color: #fff;', self._quy_tac_css('.sv-nhom__muc', response))
-        self.assertIn('background: #0D47A1', self._quy_tac_css('.sv-nhom__muc:hover', response))
+        sidebar = self._quy_tac_css('.sv-sidebar', response)
+        self.assertIn('background: var(--mau-the)', sidebar)
+        self.assertIn('position: sticky', sidebar)
+        self.assertIn('color: var(--mau-chu-phu);', self._quy_tac_css('.sv-menu__muc, .sv-menu .sv-nhom__muc', response))
+    def test_muc_dang_chon_nen_xanh_nhat_chu_xanh_va_vach_trai(self):
+        quy_tac = self._quy_tac_css('.sv-menu__muc--chon:hover, .sv-menu .sv-nhom__muc--chon:hover')
+        self.assertIn('background: var(--mau-xanh-nhat)', quy_tac)
+        self.assertIn('color: var(--mau-xanh-chinh)', quy_tac)
+        self.assertIn('box-shadow: inset 3px 0 0 var(--mau-xanh-chinh)', quy_tac)
+        # Viền focus bàn phím của mục menu và nút ☰: xanh chính trên nền trắng của sidebar/thanh trên.
         self.assertIn(
-            'border-top: 1px solid rgba(255, 255, 255, .15)', self._quy_tac_css('.sv-nhom__xo > * + *', response),
+            'outline: 2px solid var(--mau-xanh-chinh)',
+            self._quy_tac_css('.sv-menu__muc:focus-visible, .sv-nhom__muc:focus-visible, .sv-hamburger:focus-visible'),
         )
-        # Mục đang chọn trong dropdown phân biệt bằng vạch trắng + nền trắng mờ, không dùng xanh.
-        dang_chon = self._quy_tac_css('.sv-nhom__muc--chon', response)
-        self.assertIn('box-shadow: inset 3px 0 0 #fff', dang_chon)
-        self.assertNotIn('--mau-xanh', dang_chon)
-        # Viền focus bàn phím trong dropdown phải là trắng (xanh chìm vào nền xanh đậm).
-        self.assertIn('outline: 2px solid #fff', self._quy_tac_css('.sv-nhom__muc:focus-visible', response))
-
-    def test_dropdown_tren_mobile_van_doc_duoc_vi_nam_trong_bang_menu_nen_trang(self):
-        # Bảng menu sổ xuống của hamburger vẫn nền trắng, nên danh sách con trong đó phải trong suốt + chữ tối.
+    def test_nhom_sidebar_thu_gon_duoc_va_menu_nguoi_dung_la_dropdown_nen_trang(self):
         response = self.client.get(reverse('accounts:trang_chu'))
-        self.assertContains(
-            response,
-            '.sv-menu__muc { width: 100%; height: 44px; border-bottom: none; border-radius: 6px; color: var(--mau-chu-phu); }',
-        )
-        self.assertContains(response, 'padding: 0 0 4px 16px; box-shadow: none; background: transparent; overflow: visible; }')
-        self.assertContains(response, '.sv-menu .sv-nhom__muc { color: var(--mau-chu);')
-        self.assertContains(response, '.sv-menu .sv-nhom__xo > * + * { border-top: 0; }')
-
+        noi_dung = response.content.decode()
+        # Nhóm trong sidebar mặc định mở, bấm tiêu đề nhóm để thu gọn tại chỗ.
+        self.assertEqual(self._khoi_menu(response).count('class="sv-menu__muc sv-nhom__nut" aria-expanded="true"'), 3)
+        self.assertIn('.sv-menu .sv-nhom--dong > .sv-nhom__xo { display: none; }', noi_dung)
+        self.assertIn("var dong = nhom.classList.toggle('sv-nhom--dong');", noi_dung)
+        # Menu người dùng ở thanh trên vẫn là dropdown: nền trắng, viền, mục hover nền xám nhạt.
+        khung = self._quy_tac_css('.sv-nhom__xo', response)
+        self.assertIn('position: absolute', khung)
+        self.assertIn('background: var(--mau-the)', khung)
+        self.assertIn('background: var(--mau-nen-trang)', self._quy_tac_css('.sv-nhom__muc:hover', response))
+        self.assertIn('.sv-phai .sv-nhom:hover > .sv-nhom__xo, .sv-phai .sv-nhom:focus-within > .sv-nhom__xo { display: block; }', noi_dung)
+    def test_sidebar_thanh_ngan_truot_co_lop_phu_tren_man_hinh_hep(self):
+        response = self.client.get(reverse('accounts:trang_chu'))
+        noi_dung = response.content.decode()
+        self.assertIn('transform: translateX(-100%);', noi_dung)
+        self.assertIn('box-shadow: 0 0 0 100vmax rgba(15, 23, 42, .45);', noi_dung)
+        self.assertIn("var mo = boCuc.classList.toggle('sv-bo-cuc--mo');", noi_dung)
+        # Bấm ra ngoài sidebar hoặc nhấn Esc thì đóng ngăn trượt.
+        self.assertIn('if (!sidebar.contains(su_kien.target)) { dongSidebar(); }', noi_dung)
+    def test_sidebar_giu_vi_tri_cuon_khi_chuyen_trang(self):
+        noi_dung = self.client.get(reverse('accounts:trang_chu')).content.decode()
+        # Lưu scrollTop khi rời trang, khôi phục khi tải trang mới; không có thì cuộn tới mục đang chọn.
+        self.assertIn("try { sessionStorage.setItem(KHOA_CUON, String(sidebar.scrollTop)); } catch (loi) {}", noi_dung)
+        self.assertIn("sidebar.scrollTop = parseInt(viTri, 10) || 0;", noi_dung)
+        self.assertIn("mucChon.scrollIntoView({ block: 'nearest' });", noi_dung)
     def test_chip_nen_trang_de_chu_den_va_badge_do_doc_ro_tren_nen_xanh(self):
         response = self.client.get(reverse('accounts:trang_chu'))
         chip = self._quy_tac_css('.sv-chip', response)
@@ -1329,10 +1343,8 @@ class LayoutSinhVienTest(TestCase):
         self.assertIn('color: var(--mau-chu)', chip)
         self.assertIn('background: var(--mau-do)', self._quy_tac_css('.chip-thong-bao', response))
 
-    def test_do_tuong_phan_toi_thieu_tren_nen_xanh_thuong_hieu(self):
-        # Ghi lại tương phản thật (WCAG) của các tổ hợp chữ/nền mới để không bị hạ vô tình.
-        # Trắng trên #1877F2 chỉ đạt ≈4,2:1 (đạt cho chữ đậm/thành phần giao diện, chưa đạt 4,5:1 của chữ
-        # thường) — giới hạn của việc dùng chính màu thương hiệu làm nền, xem docs/thiet_ke_giao_dien.md.
+    def test_do_tuong_phan_toi_thieu_cua_bang_mau_moi(self):
+        # Ghi lại tương phản thật (WCAG) của các tổ hợp chữ/nền chính để không bị hạ vô tình.
         def do_sang(rgb):
             tuyen_tinh = [(c / 255 / 12.92) if c / 255 <= 0.03928 else (((c / 255) + 0.055) / 1.055) ** 2.4 for c in rgb]
             return 0.2126 * tuyen_tinh[0] + 0.7152 * tuyen_tinh[1] + 0.0722 * tuyen_tinh[2]
@@ -1341,25 +1353,19 @@ class LayoutSinhVienTest(TestCase):
             sang, toi = sorted((do_sang(a), do_sang(b)), reverse=True)
             return (sang + 0.05) / (toi + 0.05)
 
-        def tron_voi_trang(do_duc):
-            return tuple(round(do_duc * 255 + (1 - do_duc) * c) for c in XANH)
+        def tron_voi_trang(do_duc, mau):
+            return tuple(round(do_duc * 255 + (1 - do_duc) * c) for c in mau)
 
-        XANH, TRANG = (24, 119, 242), (255, 255, 255)
-        self.assertGreaterEqual(tuong_phan(TRANG, XANH), 4.0)
-        self.assertGreaterEqual(tuong_phan(tron_voi_trang(0.85), XANH), 3.4)
-        self.assertGreaterEqual(tuong_phan(TRANG, tron_voi_trang(0.12)), 3.5)
-        self.assertGreaterEqual(tuong_phan((228, 30, 63), TRANG), 4.5)
-        # Dropdown xanh đậm: chữ trắng đạt AA đầy đủ và vẫn tách khỏi thanh menu #1877F2 cạnh nó.
-        dropdown, dropdown_hover = (20, 93, 191), (13, 71, 161)
-        self.assertGreaterEqual(tuong_phan(TRANG, dropdown), 4.5)
-        self.assertGreaterEqual(tuong_phan(TRANG, dropdown_hover), 4.5)
-        self.assertGreaterEqual(tuong_phan(dropdown, XANH), 1.3)
-        self.assertGreaterEqual(tuong_phan(dropdown, dropdown_hover), 1.2)
-        # Đỏ đặt thẳng lên nền xanh gần như không phân biệt được -> chip phải nền trắng.
-        self.assertLess(tuong_phan((228, 30, 63), XANH), 1.5)
-
-    def test_vai_tro_khac_dung_thanh_menu_xanh_giong_sinh_vien(self):
-        """Phòng Đào tạo, Giảng viên, Cố vấn dùng cùng màu và kiểu dáng thanh menu với Sinh viên
+        XANH, XANH_NHAT, TRANG = (30, 64, 175), (239, 246, 255), (255, 255, 255)
+        CHU_PHU, NEN, DO = (71, 85, 105), (245, 247, 251), (220, 38, 38)
+        self.assertGreaterEqual(tuong_phan(TRANG, XANH), 4.5)                      # nút chính
+        self.assertGreaterEqual(tuong_phan(XANH, XANH_NHAT), 4.5)                  # mục đang chọn ở sidebar
+        self.assertGreaterEqual(tuong_phan(CHU_PHU, TRANG), 4.5)                   # mục menu thường
+        self.assertGreaterEqual(tuong_phan(CHU_PHU, NEN), 4.5)                     # breadcrumb trên thanh trên
+        self.assertGreaterEqual(tuong_phan((100, 116, 139), TRANG), 4.5)           # tiêu đề nhóm #64748B
+        self.assertGreaterEqual(tuong_phan(DO, TRANG), 4.5)                        # badge đỏ trên chip trắng
+    def test_vai_tro_khac_dung_sidebar_giong_sinh_vien(self):
+        """Phòng Đào tạo, Giảng viên, Cố vấn dùng cùng kiểu sidebar và thanh trên với Sinh viên
         (khung riêng nhan_vien/_khung_dau.html, có kiểm thử chi tiết ở MenuNhanVienTest)."""
         tai_khoan_khac = [self.tk_pdt]
         for ten, vai_tro in (('gv_layout', VaiTro.GIANG_VIEN), ('cv_layout2', VaiTro.CO_VAN_HOC_TAP)):
@@ -1370,25 +1376,25 @@ class LayoutSinhVienTest(TestCase):
             self.client.force_login(tai_khoan)
             response = self.client.get(reverse('accounts:trang_chu'))
             self.assertContains(response, '<header class="sv-banner">')
-            self.assertContains(response, 'sv-thanh-menu sv-thanh-menu--nv')
+            self.assertContains(response, '<aside class="sv-sidebar sv-sidebar--nv" id="sv-sidebar"')
+            self.assertContains(response, '<header class="sv-thanh-tren">')
             self.assertNotContains(response, 'class="thanh-tren')
             self.assertNotContains(response, '<footer class="sv-chan-trang">')
             self.assertNotContains(response, '<nav class="sv-breadcrumb"')
-
     def test_sinh_vien_khong_dung_khung_nhan_vien(self):
         response = self.client.get(reverse('accounts:trang_chu'))
-        self.assertNotContains(response, 'sv-thanh-menu--nv')
-
+        self.assertContains(response, '<aside class="sv-sidebar" id="sv-sidebar"')
+        self.assertNotContains(response, 'sv-sidebar--nv')
     def test_trang_loi_403_van_hien_layout_sinh_vien(self):
         response = self.client.get(reverse('people:sinh_vien_danh_sach'))
         self.assertContains(response, 'sv-banner', status_code=403)
-        self.assertContains(response, 'sv-chan-trang', status_code=403)
+        self.assertContains(response, '<aside class="sv-sidebar"', status_code=403)
 
     def test_chua_dang_nhap_khong_co_layout_sinh_vien(self):
         self.client.logout()
         response = self.client.get(reverse('accounts:dang_nhap'))
         self.assertNotContains(response, 'sv-banner')
-        self.assertNotContains(response, 'sv-chan-trang')
+        self.assertNotContains(response, 'sv-sidebar')
 
 
 class MenuNhanVienTest(TestCase):
@@ -1514,31 +1520,28 @@ class MenuNhanVienTest(TestCase):
         self.assertIn(f'sv-menu__muc sv-menu__muc--chon" href="{reverse("classes:lich_giang_day")}"', menu)
         self.assertEqual(menu.count('sv-menu__muc--chon'), 1)
 
-    def test_dung_kieu_dang_va_mau_cua_menu_sinh_vien(self):
+    def test_dung_chung_sidebar_va_kieu_dang_voi_sinh_vien(self):
         noi_dung = self._trang(VaiTro.PHONG_DAO_TAO).content.decode()
         self.assertIn('<header class="sv-banner">', noi_dung)
-        self.assertIn('sv-thanh-menu sv-thanh-menu--nv sv-thanh-menu--nhieu', noi_dung)
+        self.assertIn('<aside class="sv-sidebar sv-sidebar--nv" id="sv-sidebar"', noi_dung)
         self.assertNotIn('class="thanh-tren', noi_dung)
-        self.assertRegex(noi_dung, r'\.sv-thanh-menu \{[^}]*background: var\(--mau-xanh-chinh\)')
-        self.assertRegex(noi_dung, r'\.sv-nhom__xo \{[^}]*background: #145DBF')
-        self.assertIn('.sv-nhom__muc:hover { background: #0D47A1; color: #fff; }', noi_dung)
-        self.assertRegex(
-            noi_dung, r'\.sv-menu__muc--chon, \.sv-menu \.sv-nhom--chon > \.sv-nhom__nut \{[^}]*border-bottom-color: #fff',
-        )
-        # Bấm mở trên cảm ứng, hover trên máy tính: cùng quy tắc và cùng script với Sinh viên.
-        self.assertIn('.sv-nhom:hover > .sv-nhom__xo, .sv-nhom:focus-within > .sv-nhom__xo { display: block; }', noi_dung)
+        self.assertRegex(noi_dung, r'\.sv-sidebar \{[^}]*background: var\(--mau-the\)')
+        self.assertRegex(noi_dung, r'\.sv-menu__muc--chon:hover, \.sv-menu \.sv-nhom__muc--chon:hover \{[^}]*box-shadow: inset 3px 0 0 var\(--mau-xanh-chinh\)')
+        # Nhóm sidebar thu gọn tại chỗ; menu người dùng mở bằng hover trên máy tính, bấm trên cảm ứng — cùng script với Sinh viên.
+        self.assertIn('.sv-phai .sv-nhom:hover > .sv-nhom__xo, .sv-phai .sv-nhom:focus-within > .sv-nhom__xo { display: block; }', noi_dung)
         self.assertIn("nhom.classList.toggle('sv-nhom--mo', mo);", noi_dung)
+        self.assertIn("var dong = nhom.classList.toggle('sv-nhom--dong');", noi_dung)
         self.assertIn('sv-icon', noi_dung)
-
-    def test_dieu_chinh_rieng_cho_nhieu_muc_va_man_hinh_hep(self):
+    def test_sidebar_cuon_rieng_va_thanh_ngan_truot_duoi_1025px(self):
         noi_dung = self._trang(VaiTro.PHONG_DAO_TAO).content.decode()
-        self.assertIn('@media (max-width: 1100px)', noi_dung)
-        self.assertIn('.sv-thanh-menu--nv.sv-thanh-menu--mo .sv-menu { display: flex; }', noi_dung)
-        self.assertIn('@media (min-width: 1101px) and (max-width: 1439px)', noi_dung)
-        # Giảng viên và Cố vấn không có lớp "nhiều mục".
+        # Phòng Đào tạo nhiều mục: sidebar có thanh cuộn riêng thay cho quy tắc ẩn icon của thanh ngang cũ.
+        self.assertRegex(noi_dung, r'\.sv-sidebar \{[^}]*overflow-y: auto')
+        self.assertIn('@media (max-width: 1024px)', noi_dung)
+        self.assertIn('.sv-bo-cuc--mo .sv-sidebar { transform: none; visibility: visible;', noi_dung)
         for vai_tro in (VaiTro.GIANG_VIEN, VaiTro.CO_VAN_HOC_TAP):
-            self.assertNotIn('sv-thanh-menu--nv sv-thanh-menu--nhieu', self._trang(vai_tro).content.decode())
-
+            noi_dung = self._trang(vai_tro).content.decode()
+            self.assertIn('sv-sidebar sv-sidebar--nv', noi_dung)
+            self.assertNotIn('sv-thanh-menu--nhieu', noi_dung)
     def test_khong_co_chan_trang_va_duong_dan_cua_sinh_vien(self):
         for vai_tro in self.TAB_RIENG:
             noi_dung = self._trang(vai_tro).content.decode()
@@ -1792,8 +1795,10 @@ class TrangChuPhongDaoTaoTest(TestCase):
         noi_dung_chinh = noi_dung[noi_dung.index('<main>'):noi_dung.index('</main>')]
         for the in ('Quản lý tài khoản', 'Nhập sinh viên từ Excel', 'Danh mục học kỳ', 'Tra cứu lịch sử đăng ký', 'Thông báo của tôi'):
             self.assertNotIn(the, noi_dung_chinh)
-        # Lời chào vẫn còn.
-        self.assertContains(self._trang(), 'Xin chào, pdt_tc')
+        # Không còn khối lời chào (đã có ở chip thanh trên); vẫn có tiêu đề trang cho trình đọc màn hình.
+        trang = self._trang()
+        self.assertNotContains(trang, 'Xin chào, pdt_tc')
+        self.assertContains(trang, '<h1 class="an-chu">Trang chủ</h1>')
 
     def test_moi_lien_ket_da_bo_khoi_trang_chu_van_co_tren_menu(self):
         noi_dung = self._trang().content.decode()
@@ -2110,7 +2115,7 @@ class TrangChuGiangVienTest(TestCase):
             self.assertNotIn(dau_hieu, noi_dung)
         noi_dung_chinh = noi_dung[noi_dung.index('<main>'):noi_dung.index('</main>')]
         self.assertNotIn('Gửi thông báo lớp học phần', noi_dung_chinh)
-        self.assertContains(self._trang(), 'Xin chào, gv_gv')
+        self.assertNotContains(self._trang(), 'Xin chào, gv_gv')
         # Các liên kết đã bỏ khỏi trang chủ vẫn có trên menu.
         menu = re.search(r'<nav class="sv-menu".*?</nav>', noi_dung, re.S).group(0)
         for ten_url in ('classes:lop_phu_trach', 'classes:lich_giang_day', 'thong_bao:gui_giang_vien'):
@@ -2359,7 +2364,7 @@ class TrangChuCoVanTest(TestCase):
         noi_dung_chinh = noi_dung[noi_dung.index('<main>'):noi_dung.index('</main>')]
         for the in ('Trợ lý AI', 'Tóm tắt kết quả học tập sinh viên', 'Gửi thông báo lớp hành chính'):
             self.assertNotIn(the, noi_dung_chinh)
-        self.assertContains(self._trang(), 'Xin chào, cv_home')
+        self.assertNotContains(self._trang(), 'Xin chào, cv_home')
         menu = re.search(r'<nav class="sv-menu".*?</nav>', noi_dung, re.S).group(0)
         for ten_url in (
             'enrollment:sinh_vien_phu_trach', 'tien_do_hoc_tap:co_van', 'grades:canh_bao_co_van', 'tom_tat_ket_qua:co_van',

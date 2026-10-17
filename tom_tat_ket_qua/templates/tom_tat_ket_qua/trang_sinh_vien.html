@@ -1,14 +1,9 @@
 {% extends 'base.html' %}
 {% block tieu_de %}Tóm tắt kết quả học tập (AI){% endblock %}
 {% block noi_dung %}
-<h1>Tóm tắt kết quả học tập</h1>
-<p>AI chỉ diễn giải số liệu do hệ thống tính sẵn, không tự tính điểm và không thay quyết định của Phòng Đào tạo.</p>
-<div class="khung" style="max-width:420px;">
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="nut nut-chinh">Yêu cầu tóm tắt</button>
-    </form>
+<div class="tieu-de-trang">
+    <h1>Tóm tắt kết quả học tập</h1>
 </div>
-
-{% include 'tom_tat_ket_qua/_ket_qua.html' %}
+<p class="ghi-chu-truong">AI chỉ diễn giải số liệu do hệ thống tính sẵn, không tự tính điểm và không thay quyết định của Phòng Đào tạo.</p>
+{% include 'ai_core/_khung_chat.html' %}
 {% endblock %}

@@ -1,0 +1,50 @@
+{% comment %}
+Khung chat AI dùng chung (tóm tắt kết quả, hỏi đáp quy chế, tư vấn đăng ký) — xem docs/thiet_ke_giao_dien.md.
+Biến: lich_su (ai_core.lich_su_chat), mau_tra_loi (template hiển thị một câu trả lời, nhận biến tra_loi),
+loi_chao, goi_y_o_nhap (chữ mờ ví dụ trong ô nhập), gioi_han (số ký tự tối đa),
+truong_an (danh sách (tên, giá trị) gửi kèm, vd. mã sinh viên Cố vấn đang xem).
+Gửi theo kiểu POST rồi chuyển hướng về GET nên tải lại trang không gửi lại câu hỏi.
+{% endcomment %}
+<section class="khung-chat-ai" aria-label="Khung chat với trợ lý AI">
+    <div class="chat-luong" id="chat-luong" role="log" aria-live="polite">
+        <div class="chat-tin chat-tin--tro-ly">
+            <div class="chat-tin__noi-dung"><span class="nhan-ai">Trợ lý AI</span><p>{{ loi_chao }}</p></div>
+        </div>
+        {% for luot in lich_su %}
+        <div class="chat-tin chat-tin--nguoi-dung">
+            <div class="chat-tin__noi-dung">{{ luot.cau_hoi|linebreaksbr }}</div>
+        </div>
+        <div class="chat-tin chat-tin--tro-ly">
+            <div class="chat-tin__noi-dung"><span class="nhan-ai">Trợ lý AI</span>{% include mau_tra_loi with tra_loi=luot.tra_loi %}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <form method="post" class="chat-nhap">
+        {% csrf_token %}
+        {% for ten, gia_tri in truong_an %}<input type="hidden" name="{{ ten }}" value="{{ gia_tri }}">{% endfor %}
+        <div class="chat-nhap__dong">
+            <label class="an-chu" for="o-chat">Nhập câu hỏi</label>
+            <textarea id="o-chat" name="cau_hoi" rows="2" maxlength="{{ gioi_han }}" placeholder="{{ goi_y_o_nhap }}" required></textarea>
+            <button type="submit" class="nut nut-chinh">Gửi</button>
+        </div>
+        <div class="chat-nhap__chan">
+            <span class="ghi-chu-truong">Enter để gửi, Shift + Enter để xuống dòng. Tối đa {{ gioi_han }} ký tự. Nội dung do AI tạo chỉ mang tính tham khảo.</span>
+            {% if lich_su %}<button type="submit" class="nut nut-phu nut-nho" name="xoa_lich_su" value="1" formnovalidate>Xóa cuộc trò chuyện</button>{% endif %}
+        </div>
+    </form>
+</section>
+<script>
+(function () {
+    var luong = document.getElementById('chat-luong');
+    if (luong && luong.lastElementChild) { luong.lastElementChild.scrollIntoView({block: 'nearest'}); }
+    var o = document.getElementById('o-chat');
+    if (!o) { return; }
+    o.addEventListener('keydown', function (su_kien) {
+        if (su_kien.key === 'Enter' && !su_kien.shiftKey && !su_kien.isComposing) {
+            su_kien.preventDefault();
+            if (o.value.trim()) { o.form.requestSubmit ? o.form.requestSubmit() : o.form.submit(); }
+        }
+    });
+})();
+</script>

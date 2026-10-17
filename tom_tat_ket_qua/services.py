@@ -116,7 +116,7 @@ def _loc_can_cai_thien(gia_tri, bang_diem, ghi_chu_loc):
     return ket_qua
 
 
-def tom_tat_ket_qua_hoc_tap(sinh_vien, goi_ai=True):
+def tom_tat_ket_qua_hoc_tap(sinh_vien, goi_ai=True, hoc_ky=None, nam_hoc=None, mo_ta_pham_vi='Toàn khóa'):
     """Tóm tắt kết quả học tập của một sinh viên.
 
     Nguyên tắc: CODE tính số liệu (tổng tín chỉ đã đạt, số học phần đạt/chưa đạt, điểm
@@ -128,8 +128,11 @@ def tom_tat_ket_qua_hoc_tap(sinh_vien, goi_ai=True):
     KHÔNG gọi AI — dùng cho công cụ ca thử (chay_ca_thu_tom_tat) khi không có --ai, để
     kiểm tra độ dài/không rò rỉ dữ liệu cá nhân mà không tốn quota. Trang web luôn gọi với
     goi_ai=True (mặc định), hành vi không đổi.
+
+    hoc_ky/nam_hoc (tùy chọn): chỉ tóm tắt một học kỳ hoặc một năm học (khung chat, xem chon_pham_vi). Chỉ điểm
+    của đúng phạm vi đó được gửi cho AI; dòng "Phạm vi" nằm trong khối số liệu (dữ liệu, không phải chỉ thị).
     """
-    bang_diem = bang_diem_chi_tiet(sinh_vien)
+    bang_diem = bang_diem_chi_tiet(sinh_vien, hoc_ky, nam_hoc)
     if not bang_diem:
         ket_qua = KetQuaTomTat([], None)
         ket_qua.chua_co_du_lieu = True
@@ -141,7 +144,7 @@ def tom_tat_ket_qua_hoc_tap(sinh_vien, goi_ai=True):
 
     he_thong, nguoi_dung = nap_prompt(
         'tom_tat_ket_qua', settings.AI_PHIEN_BAN_TOM_TAT,
-        so_lieu_tong_hop=_dinh_dang_so_lieu(so_lieu),
+        so_lieu_tong_hop=f'- Phạm vi: {mo_ta_pham_vi}\n' + _dinh_dang_so_lieu(so_lieu),
         bang_diem=_dinh_dang_bang_diem(bang_diem),
     )
     ket_qua.he_thong = he_thong

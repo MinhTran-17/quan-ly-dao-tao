@@ -5,13 +5,30 @@
     <h1>Thời khóa biểu</h1>
     <div class="nhom-nut">
         {% if xem_luoi %}
-        <a class="nut nut-phu" href="?">Xem dạng danh sách</a>
+        <a class="nut nut-phu" href="?ky={{ ky_chon|urlencode }}">Xem dạng danh sách</a>
         {% else %}
-        <a class="nut nut-phu" href="?xem=luoi">Xem dạng lưới tuần</a>
+        <a class="nut nut-phu" href="?xem=luoi&amp;ky={{ ky_chon|urlencode }}">Xem dạng lưới tuần</a>
         {% endif %}
-        <a class="nut nut-chinh" href="{% url 'enrollment:thoi_khoa_bieu_xuat_pdf' %}">Xuất PDF</a>
+        <a class="nut nut-chinh" href="{% url 'enrollment:thoi_khoa_bieu_xuat_pdf' %}?ky={{ ky_chon|urlencode }}">Xuất PDF</a>
     </div>
 </div>
+
+{% if cac_ky %}
+<form method="get" class="khung bo-loc">
+    <div class="truong">
+        <label for="chon-ky">Học kỳ</label>
+        <select name="ky" id="chon-ky">
+            {% for ky in cac_ky %}
+            <option value="{{ ky.gia_tri }}" {% if ky.gia_tri == ky_chon %}selected{% endif %}>{{ ky.nhan }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% if xem_luoi %}<input type="hidden" name="xem" value="luoi">{% endif %}
+    <div class="bo-loc__nut">
+        <button type="submit" class="nut nut-chinh">Xem</button>
+    </div>
+</form>
+{% endif %}
 
 {% if xem_luoi %}
 {% if luoi_tuan %}

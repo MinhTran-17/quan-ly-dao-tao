@@ -3,10 +3,12 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count, F, Q
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 
 from academics.excel_utils import phan_hoi_excel, tao_workbook_excel
+from academics.models import HocKy
 from academics.services import danh_sach_bo_loc_hoc_ky, trang_thai_dot_dang_ky
 from accounts.models import VaiTro
 from accounts.permissions import YeuCauVaiTroMixin, yeu_cau_vai_tro
@@ -126,6 +128,49 @@ def huy_dang_ky_view(request, pk):
     return render(request, 'enrollment/huy_dang_ky_xac_nhan.html', {'dang_ky': dang_ky, 'nguon': nguon})
 
 
+def _cac_hoc_ky_cua_sinh_vien(sinh_vien):
+    """Các (hoc_ky, nam_hoc) mà sinh viên có lớp đăng ký còn hiệu lực, mới nhất trước."""
+    return list(
+        LopHocPhan.objects.filter(
+            dang_ky__ma_sinh_vien=sinh_vien, dang_ky__trang_thai=TrangThaiDangKy.CON_HIEU_LUC,
+        ).values_list('hoc_ky', 'nam_hoc').distinct().order_by('-nam_hoc', '-hoc_ky')
+    )
+
+
+def chon_hoc_ky_thoi_khoa_bieu(request, sinh_vien):
+    """Học kỳ để xem thời khóa biểu: tham số ?ky=<hoc_ky>:<nam_hoc> nếu hợp lệ; nếu không thì
+    học kỳ đang diễn ra hôm nay (danh mục hoc_ky) khi sinh viên có lớp ở kỳ đó; nếu không nữa
+    thì học kỳ gần nhất sinh viên có lớp. Trả về ((hoc_ky, nam_hoc) hoặc None, danh sách lựa chọn)."""
+    cac_lua_chon = _cac_hoc_ky_cua_sinh_vien(sinh_vien)
+    if not cac_lua_chon:
+        return None, []
+    hoc_ky, _, nam_hoc = request.GET.get('ky', '').partition(':')
+    if (hoc_ky, nam_hoc) in cac_lua_chon:
+        return (hoc_ky, nam_hoc), cac_lua_chon
+    hom_nay = timezone.localdate()
+    dang_dien_ra = HocKy.objects.filter(ngay_bat_dau__lte=hom_nay, ngay_ket_thuc__gte=hom_nay).first()
+    if dang_dien_ra and (str(dang_dien_ra.hoc_ky), dang_dien_ra.nam_hoc) in cac_lua_chon:
+        return (str(dang_dien_ra.hoc_ky), dang_dien_ra.nam_hoc), cac_lua_chon
+    return cac_lua_chon[0], cac_lua_chon
+
+
+def _lich_hoc_cua_sinh_vien(sinh_vien, hoc_ky_chon):
+    if hoc_ky_chon is None:
+        return LichHoc.objects.none()
+    # Lọc thêm trang_thai=CON_HIEU_LUC ngay trong điều kiện join (không lọc sau) để
+    # đảm bảo mỗi lớp chỉ khớp tối đa một dòng đăng ký của sinh viên này (đúng theo
+    # UniqueConstraint uk_dang_ky_hoc_phan_dang_hieu_luc), annotate lấy được đúng
+    # ma_dang_ky duy nhất đó để làm URL nút "Hủy đăng ký" mà không cần lọc gì thêm.
+    return LichHoc.objects.filter(
+        ma_lop_hoc_phan__dang_ky__ma_sinh_vien=sinh_vien,
+        ma_lop_hoc_phan__dang_ky__trang_thai=TrangThaiDangKy.CON_HIEU_LUC,
+        ma_lop_hoc_phan__hoc_ky=hoc_ky_chon[0],
+        ma_lop_hoc_phan__nam_hoc=hoc_ky_chon[1],
+    ).annotate(
+        ma_dang_ky_hien_tai=F('ma_lop_hoc_phan__dang_ky__pk')
+    ).select_related('ma_lop_hoc_phan__ma_hoc_phan').order_by('thu', 'tiet_bat_dau')
+
+
 class ThoiKhoaBieuView(SinhVienMixin, ListView):
     template_name = 'enrollment/thoi_khoa_bieu.html'
     context_object_name = 'danh_sach'
@@ -133,20 +178,17 @@ class ThoiKhoaBieuView(SinhVienMixin, ListView):
     def get_queryset(self):
         sinh_vien = getattr(self.request.user, 'ho_so_sinh_vien', None)
         if sinh_vien is None:
+            self.hoc_ky_chon, self.cac_lua_chon = None, []
             return LichHoc.objects.none()
-        # Lọc thêm trang_thai=CON_HIEU_LUC ngay trong điều kiện join (không lọc sau) để
-        # đảm bảo mỗi lớp chỉ khớp tối đa một dòng đăng ký của sinh viên này (đúng theo
-        # UniqueConstraint uk_dang_ky_hoc_phan_dang_hieu_luc), annotate lấy được đúng
-        # ma_dang_ky duy nhất đó để làm URL nút "Hủy đăng ký" mà không cần lọc gì thêm.
-        return LichHoc.objects.filter(
-            ma_lop_hoc_phan__dang_ky__ma_sinh_vien=sinh_vien,
-            ma_lop_hoc_phan__dang_ky__trang_thai=TrangThaiDangKy.CON_HIEU_LUC,
-        ).annotate(
-            ma_dang_ky_hien_tai=F('ma_lop_hoc_phan__dang_ky__pk')
-        ).select_related('ma_lop_hoc_phan__ma_hoc_phan').order_by('thu', 'tiet_bat_dau')
+        self.hoc_ky_chon, self.cac_lua_chon = chon_hoc_ky_thoi_khoa_bieu(self.request, sinh_vien)
+        return _lich_hoc_cua_sinh_vien(sinh_vien, self.hoc_ky_chon)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['cac_ky'] = [
+            {'gia_tri': f'{hk}:{nh}', 'nhan': f'Học kỳ {hk} - {nh}'} for hk, nh in self.cac_lua_chon
+        ]
+        context['ky_chon'] = f'{self.hoc_ky_chon[0]}:{self.hoc_ky_chon[1]}' if self.hoc_ky_chon else ''
         context['xem_luoi'] = self.request.GET.get('xem') == 'luoi'
         context['cac_thu'] = CAC_THU
         context['luoi_tuan'] = xay_dung_luoi_tuan(context[self.context_object_name])
@@ -325,7 +367,7 @@ def xuat_lich_thi_pdf_view(request):
 
 
 _CAC_COT_THOI_KHOA_BIEU = [
-    ('Học phần', 6), ('Lớp học phần', 3), ('Thứ', 1.5), ('Tiết bắt đầu', 2), ('Số tiết', 1.8), ('Phòng học', 2.5),
+    ('Học phần', 5.3), ('Lớp học phần', 3.2), ('Thứ', 1.9), ('Tiết bắt đầu', 2.7), ('Số tiết', 1.6), ('Phòng học', 2.3),
 ]
 _TEN_THU = dict(CAC_THU)
 
@@ -337,10 +379,11 @@ def xuat_thoi_khoa_bieu_pdf_view(request):
         messages.error(request, 'Tài khoản của bạn chưa gắn hồ sơ sinh viên.')
         return redirect('enrollment:thoi_khoa_bieu')
 
-    danh_sach = LichHoc.objects.filter(
-        ma_lop_hoc_phan__dang_ky__ma_sinh_vien=sinh_vien,
-        ma_lop_hoc_phan__dang_ky__trang_thai=TrangThaiDangKy.CON_HIEU_LUC,
-    ).select_related('ma_lop_hoc_phan__ma_hoc_phan').order_by('thu', 'tiet_bat_dau')
+    hoc_ky_chon, _ = chon_hoc_ky_thoi_khoa_bieu(request, sinh_vien)
+    danh_sach = _lich_hoc_cua_sinh_vien(sinh_vien, hoc_ky_chon)
+    tieu_de = 'THỜI KHÓA BIỂU'
+    if hoc_ky_chon:
+        tieu_de += f' - HỌC KỲ {hoc_ky_chon[0]} NĂM HỌC {hoc_ky_chon[1]}'
     cac_dong = [
         [
             lich.ma_lop_hoc_phan.ma_hoc_phan.ten_hoc_phan, lich.ma_lop_hoc_phan_id,
@@ -349,6 +392,6 @@ def xuat_thoi_khoa_bieu_pdf_view(request):
         for lich in danh_sach
     ]
     buffer = tao_pdf_bang(
-        'THỜI KHÓA BIỂU', _CAC_COT_THOI_KHOA_BIEU, cac_dong, dong_trong='Bạn chưa đăng ký lớp học phần nào.',
+        tieu_de, _CAC_COT_THOI_KHOA_BIEU, cac_dong, dong_trong='Bạn chưa đăng ký lớp học phần nào.',
     )
     return FileResponse(buffer, as_attachment=True, filename='thoi_khoa_bieu.pdf')

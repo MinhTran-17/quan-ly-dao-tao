@@ -430,3 +430,68 @@ class GioiHanTanSuatDungChungTest(KiemThuCoDinhCauHinhAI):
             self.assertTrue(duoc_phep)
         duoc_phep, _ = kiem_tra_va_dem(khoa, so_toi_da=3, cua_so_giay=30)
         self.assertFalse(duoc_phep)
+
+
+class DocPhamViTest(TestCase):
+    """Code tự đọc học kỳ/năm học/toàn khóa từ câu gõ trong khung chat (không gửi câu gõ cho AI để hiểu)."""
+
+    def _doc(self, cau):
+        from .phan_tich_cau_hoi import doc_pham_vi
+        return doc_pham_vi(cau)
+
+    def test_ky_va_nam_hoc_nhieu_cach_viet(self):
+        for cau in ('tóm tắt kỳ 1 năm 2024-2025', 'Tóm tắt học kì 1 năm học 2024 - 2025', 'tom tat hk1 2024/2025'):
+            pham_vi = self._doc(cau)
+            self.assertEqual((pham_vi.hoc_ky, pham_vi.nam_hoc), ('1', '2024-2025'), cau)
+
+    def test_chi_co_ky_hoac_chi_co_nam(self):
+        self.assertEqual((self._doc('tóm tắt học tập của kì 2').hoc_ky, self._doc('tóm tắt học tập của kì 2').nam_hoc), ('2', ''))
+        pham_vi = self._doc('kết quả năm học 2025-2026 thế nào')
+        self.assertEqual((pham_vi.hoc_ky, pham_vi.nam_hoc), ('', '2025-2026'))
+
+    def test_so_trong_nam_hoc_khong_bi_hieu_nham_la_hoc_ky(self):
+        self.assertEqual(self._doc('năm 2021-2022').hoc_ky, '')
+
+    def test_nam_hoc_khong_lien_tiep_bi_bo_qua(self):
+        self.assertEqual(self._doc('năm 2024-2026').nam_hoc, '')
+
+    def test_toan_khoa_va_gan_nhat(self):
+        self.assertTrue(self._doc('Tóm tắt toàn khóa giúp em').toan_khoa)
+        self.assertTrue(self._doc('điểm tích lũy của em').toan_khoa)
+        self.assertTrue(self._doc('tóm tắt học kỳ gần nhất').gan_nhat)
+        self.assertFalse(self._doc('xin chào').co_noi_toi)
+
+    def test_bo_dau(self):
+        from .phan_tich_cau_hoi import bo_dau
+        self.assertEqual(bo_dau('  Học  KỲ Đầu '), 'hoc ky dau')
+
+
+class LichSuChatTest(TestCase):
+    def _request(self):
+        from django.contrib.sessions.backends.signed_cookies import SessionStore
+        from django.test import RequestFactory
+        request = RequestFactory().post('/', {'cau_hoi': ' câu gõ '})
+        request.session = SessionStore()
+        return request
+
+    def test_them_doc_xoa_va_gioi_han_so_luot(self):
+        from . import lich_su_chat
+        request = self._request()
+        for i in range(lich_su_chat.SO_LUOT_TOI_DA + 3):
+            lich_su_chat.them(request, 'thu', f'câu {i}', {'noi_dung': str(i)})
+        lich_su = lich_su_chat.doc(request, 'thu')
+        self.assertEqual(len(lich_su), lich_su_chat.SO_LUOT_TOI_DA)
+        self.assertEqual(lich_su[-1], {'cau_hoi': f'câu {lich_su_chat.SO_LUOT_TOI_DA + 2}', 'tra_loi': {'noi_dung': str(lich_su_chat.SO_LUOT_TOI_DA + 2)}})
+        self.assertEqual(lich_su_chat.doc(request, 'khoa_khac'), [])
+        lich_su_chat.xoa(request, 'thu')
+        self.assertEqual(lich_su_chat.doc(request, 'thu'), [])
+
+    def test_cau_gui_len_lay_o_nhap_bo_khoang_trang(self):
+        from django.contrib.sessions.backends.signed_cookies import SessionStore
+        from django.test import RequestFactory
+
+        from . import lich_su_chat
+        self.assertEqual(lich_su_chat.cau_gui_len(self._request()), 'câu gõ')
+        request = RequestFactory().post('/', {})
+        request.session = SessionStore()
+        self.assertEqual(lich_su_chat.cau_gui_len(request), '')

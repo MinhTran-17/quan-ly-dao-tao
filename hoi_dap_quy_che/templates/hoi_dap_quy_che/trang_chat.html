@@ -1,59 +1,9 @@
 {% extends 'base.html' %}
 {% block tieu_de %}Hỏi đáp quy chế đào tạo (AI){% endblock %}
 {% block noi_dung %}
-<h1>Hỏi đáp quy chế đào tạo</h1>
-<p>AI chỉ trả lời dựa trên các đoạn quy chế đã tải lên hệ thống, không thay quyết định của Phòng Đào tạo.</p>
-
-<div class="khung khung-chat">
-    <form method="post">
-        {% csrf_token %}
-        {% include '_truong_form.html' %}
-        <button type="submit" class="nut nut-chinh">Gửi câu hỏi</button>
-    </form>
+<div class="tieu-de-trang">
+    <h1>Hỏi đáp quy chế đào tạo</h1>
 </div>
-
-{% if ket_qua %}
-    <span class="nhan-ai">Trợ lý AI</span>
-
-    {% if ket_qua.loi_ai %}
-    <p class="thong-bao--error">{{ ket_qua.loi_ai }} Bạn vẫn có thể xem các đoạn quy chế liên quan bên dưới.</p>
-    {% elif ket_qua.khong_tim_thay %}
-    <p class="thong-bao--warning">{{ ket_qua.tra_loi }}</p>
-    {% else %}
-    <div class="khung khung-ket-qua-ai">
-    <h2>Trả lời</h2>
-    <p>{{ ket_qua.tra_loi|linebreaksbr }}</p>
-
-    {% if ket_qua.nguon %}
-    <h3>Nguồn</h3>
-    <ul>
-    {% for nguon in ket_qua.nguon %}
-        <li>
-            <strong>{{ nguon.ten_tai_lieu }}, Điều {{ nguon.dieu }}{% if nguon.khoan %}, khoản {{ nguon.khoan }}{% endif %}</strong>
-            <blockquote>{{ nguon.trich_doan|linebreaksbr }}</blockquote>
-        </li>
-    {% endfor %}
-    </ul>
-    {% endif %}
-    </div>
-    {% endif %}
-
-    {% if ket_qua.ghi_chu_loc %}
-    <ul class="thong-bao">
-        {% for gc in ket_qua.ghi_chu_loc %}<li class="thong-bao--warning">{{ gc }}</li>{% endfor %}
-    </ul>
-    {% endif %}
-
-    {% if ket_qua.doan_truy_hoi and ket_qua.loi_ai %}
-    <h3>Các đoạn quy chế liên quan (để bạn tự đọc)</h3>
-    <ul>
-    {% for doan, diem in ket_qua.doan_truy_hoi %}
-        <li>
-            <strong>{{ doan.ten_tai_lieu }}, Điều {{ doan.dieu }}{% if doan.khoan %}, khoản {{ doan.khoan }}{% endif %}</strong>
-            <blockquote>{{ doan.noi_dung|linebreaksbr }}</blockquote>
-        </li>
-    {% endfor %}
-    </ul>
-    {% endif %}
-{% endif %}
+<p class="ghi-chu-truong">AI chỉ trả lời dựa trên các đoạn quy chế đã tải lên hệ thống, không thay quyết định của Phòng Đào tạo.</p>
+{% include 'ai_core/_khung_chat.html' %}
 {% endblock %}

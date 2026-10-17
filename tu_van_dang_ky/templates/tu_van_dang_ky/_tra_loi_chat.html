@@ -1,0 +1,50 @@
+{% comment %}Một câu trả lời trong khung chat tư vấn đăng ký (tra_loi: dict từ tu_van_dang_ky.chat).{% endcomment %}
+{% if tra_loi.loai == 'thong_bao' %}
+<p>{{ tra_loi.noi_dung }}</p>
+{% else %}
+<span class="chat-pham-vi">Phạm vi: {{ tra_loi.pham_vi }}</span>
+{% if tra_loi.ghi_chu %}<p class="ghi-chu-truong">{{ tra_loi.ghi_chu }}</p>{% endif %}
+{% if tra_loi.loi_ai %}<p class="thong-bao--error">{{ tra_loi.loi_ai }} Bạn vẫn có thể xem trạng thái từng lớp bên dưới.</p>{% endif %}
+
+{% if tra_loi.goi_y or tra_loi.chua_nen_dang_ky %}
+<h3>Nên đăng ký</h3>
+<ul>
+{% for muc in tra_loi.goi_y %}
+    <li><strong>{{ muc.ma_lop_hoc_phan }}</strong> — {{ muc.ten_hoc_phan }} ({{ muc.lich }}): {{ muc.ly_do }}</li>
+{% empty %}
+    <li>Không có gợi ý nào.</li>
+{% endfor %}
+</ul>
+<h3>Chưa nên đăng ký</h3>
+<ul>
+{% for muc in tra_loi.chua_nen_dang_ky %}
+    <li><strong>{{ muc.ma_lop_hoc_phan }}</strong> — {{ muc.ten_hoc_phan }} ({{ muc.lich }}): {{ muc.ly_do }}</li>
+{% empty %}
+    <li>Không có mục nào.</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% if tra_loi.ghi_chu_loc %}
+<ul class="thong-bao">{% for gc in tra_loi.ghi_chu_loc %}<li class="thong-bao--warning">{{ gc }}</li>{% endfor %}</ul>
+{% endif %}
+{% if tra_loi.luu_y %}<p>{{ tra_loi.luu_y|linebreaksbr }}</p>{% endif %}
+
+<details>
+    <summary>Trạng thái các lớp do hệ thống tính ({{ tra_loi.danh_sach|length }} lớp)</summary>
+    <div class="khung-bang">
+    <table class="bang-sv">
+        <thead><tr><th>Mã lớp</th><th>Học phần</th><th>Lịch</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+        {% for muc in tra_loi.danh_sach %}
+        <tr class="hang-diem">
+            <td>{{ muc.ma }}</td><td>{{ muc.ten }}</td><td>{{ muc.lich }}</td>
+            <td><span class="chip chip--{{ muc.trang_thai }}">{{ muc.trang_thai_hien_thi }}</span></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</details>
+<p><a class="nut nut-nhe nut-nho" href="{% url 'enrollment:lop_dang_mo' %}?hoc_ky={{ tra_loi.hoc_ky|urlencode }}&amp;nam_hoc={{ tra_loi.nam_hoc|urlencode }}">Đi tới trang đăng ký học phần</a></p>
+{% endif %}

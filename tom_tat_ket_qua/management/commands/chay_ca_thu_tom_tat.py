@@ -234,7 +234,10 @@ def _ca_6(goi_ai_that):
     quan_ly_ai = nullcontext() if goi_ai_that else patch(_LAY_CLIENT_AI, return_value=ClientAIGia(phan_hoi=_JSON_RONG))
     with quan_ly_ai:
         with override_settings(ALLOWED_HOSTS=[*settings.ALLOWED_HOSTS, 'testserver']):
-            response = client.post(reverse('tom_tat_ket_qua:co_van'), {'ma_sinh_vien': sv.pk})
+            # Khung chat: gửi tin nhắn rồi chuyển hướng về trang chat (POST -> GET), nên theo chuyển hướng.
+            response = client.post(
+                reverse('tom_tat_ket_qua:co_van'), {'ma_sinh_vien': sv.pk, 'cau_hoi': 'Tóm tắt toàn khóa'}, follow=True,
+            )
 
     # response.context không khả dụng ngoài môi trường test (thiếu instrumentation của
     # test runner) -> kiểm tra riêng việc không rò rỉ PII bằng một lệnh gọi goi_ai=False
@@ -261,7 +264,7 @@ def _ca_7(_goi_ai_that_khong_dung):
     client = Client()
     client.force_login(co_van_a.ma_tai_khoan)
     with patch(_LAY_CLIENT_AI) as gia_lap, override_settings(ALLOWED_HOSTS=[*settings.ALLOWED_HOSTS, 'testserver']):
-        response = client.post(reverse('tom_tat_ket_qua:co_van'), {'ma_sinh_vien': sv_t.pk})
+        response = client.post(reverse('tom_tat_ket_qua:co_van'), {'ma_sinh_vien': sv_t.pk, 'cau_hoi': 'Tóm tắt toàn khóa'})
 
     kiem_tra = [
         ('Cố vấn A không xem được sinh viên T ngoài phạm vi (HTTP 403)', response.status_code == 403),

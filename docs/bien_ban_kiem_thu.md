@@ -18,7 +18,7 @@ app). Django tự tạo/xóa database test riêng (`test_qldt`), không ảnh h�
 | `people` | 24 | CRUD sinh viên/giảng viên/cố vấn, nhập sinh viên từ Excel, xóa hồ sơ có trang xác nhận |
 | `academics` | 71 | Ngành học, lớp hành chính, học phần, điều kiện tiên quyết (CHECK/UNIQUE), học kỳ, đợt đăng ký, chương trình đào tạo, xóa có kiểm tra ràng buộc |
 | `classes` | 27 | Lớp học phần, lịch học, lịch thi, quyền xem lớp/lịch giảng dạy của giảng viên |
-| `enrollment` | 65 | Đăng ký học phần: đợt đăng ký → tiên quyết → trùng lịch → sĩ số, khóa dòng khi tranh chấp sĩ số, hủy đăng ký, đăng ký lại sau khi hủy, thời khóa biểu, lịch thi, xuất PDF/Excel |
+| `enrollment` | 74 | Đăng ký học phần: đợt đăng ký → tiên quyết → trùng lịch → sĩ số, khóa dòng khi tranh chấp sĩ số, hủy đăng ký, đăng ký lại sau khi hủy, thời khóa biểu theo học kỳ, lịch thi, xuất PDF (chữ không tràn cột)/Excel |
 | `grades` | 68 | Nhập/sửa điểm theo vai trò, tính điểm tổng kết (làm tròn 0.5 lên), điểm trung bình, xếp loại, cảnh báo học vụ, công bố điểm, xuất PDF |
 | `tien_do_hoc_tap` | 21 | Tiến độ học tập theo chương trình đào tạo |
 | `diem_danh` | 8 | Điểm danh theo buổi, lịch sử điểm danh của lớp và của sinh viên |
@@ -29,14 +29,14 @@ app). Django tự tạo/xóa database test riêng (`test_qldt`), không ảnh h�
 | `tu_van_dang_ky` | 39 | Tư vấn đăng ký học phần: trạng thái lớp, lọc gợi ý bịa/chưa đủ điều kiện, không rò rỉ dữ liệu cá nhân, giới hạn tần suất, lệnh `chay_ca_thu_tu_van` |
 | `tom_tat_ket_qua` | 44 | Tóm tắt kết quả: số liệu tổng hợp, phạm vi cố vấn, lọc mã học phần bịa, giới hạn tần suất, lệnh `chay_ca_thu_tom_tat` |
 | `hoi_dap_quy_che` | 84 | Chia đoạn theo Điều/khoản, BM25 (v1/v2), lọc nguồn bịa, giới hạn tần suất, lệnh `chay_ca_thu_quy_che` |
-| **Tổng** | **745** | |
+| **Tổng** | **754** | |
 
 **Kết quả lần chạy gần nhất:** `python manage.py check` → 0 lỗi. `python manage.py test` →
-745/745 pass (`OK`), thời gian chạy 119 giây (Django báo `Ran 745 tests in 119.082s`). Ngày chạy: 2026-10-13.
+754/754 pass (`OK`), thời gian chạy 105 giây (Django báo `Ran 754 tests in 104.984s`). Ngày chạy: 2026-10-14.
 Máy chạy: Dell Latitude 3540, Intel Core i5-1335U, Windows 11 Pro, MySQL 8.0, Python 3.14, Django 6.0.8.
 Khi chạy test, `qldt/settings.py` dùng `MD5PasswordHasher` để nhanh (trước đó với PBKDF2 mặc định, bộ test chạy hơn 30 phút).
 
-Lịch sử: 317/317 pass ngày 2026-09-21 (sau KT3); số test tăng lên 745 sau các lượt mở rộng 1/6 đến 6/6 và giao diện.
+Lịch sử: 317/317 pass ngày 2026-09-21 (sau KT3); 745/745 ngày 2026-10-13 sau các lượt mở rộng và giao diện; 754/754 ngày 2026-10-14 sau khi sửa chữ đè trong PDF và lọc thời khóa biểu theo học kỳ.
 
 ---
 

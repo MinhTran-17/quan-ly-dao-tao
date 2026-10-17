@@ -1,0 +1,37 @@
+{% comment %}Một câu trả lời trong khung chat hỏi đáp quy chế (tra_loi: dict từ hoi_dap_quy_che.chat).{% endcomment %}
+{% if tra_loi.loi_ai %}
+<p class="thong-bao--error">{{ tra_loi.loi_ai }} Bạn vẫn có thể xem các đoạn quy chế liên quan bên dưới.</p>
+{% elif tra_loi.khong_tim_thay %}
+<p>{{ tra_loi.tra_loi }}</p>
+{% else %}
+<p>{{ tra_loi.tra_loi|linebreaksbr }}</p>
+{% if tra_loi.nguon %}
+<h3>Nguồn</h3>
+<ul>
+{% for nguon in tra_loi.nguon %}
+    <li>
+        <details>
+            <summary><strong>{{ nguon.ten_tai_lieu }}, Điều {{ nguon.dieu }}{% if nguon.khoan %}, khoản {{ nguon.khoan }}{% endif %}</strong></summary>
+            <blockquote>{{ nguon.noi_dung|linebreaksbr }}</blockquote>
+        </details>
+    </li>
+{% endfor %}
+</ul>
+{% endif %}
+{% endif %}
+
+{% if tra_loi.ghi_chu_loc %}
+<ul class="thong-bao">{% for gc in tra_loi.ghi_chu_loc %}<li class="thong-bao--warning">{{ gc }}</li>{% endfor %}</ul>
+{% endif %}
+
+{% if tra_loi.doan_lien_quan %}
+<h3>Các đoạn quy chế liên quan (để bạn tự đọc)</h3>
+<ul>
+{% for doan in tra_loi.doan_lien_quan %}
+    <li>
+        <strong>{{ doan.ten_tai_lieu }}, Điều {{ doan.dieu }}{% if doan.khoan %}, khoản {{ doan.khoan }}{% endif %}</strong>
+        <blockquote>{{ doan.noi_dung|linebreaksbr }}</blockquote>
+    </li>
+{% endfor %}
+</ul>
+{% endif %}

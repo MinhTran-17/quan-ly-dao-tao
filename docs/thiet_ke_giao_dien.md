@@ -1,47 +1,60 @@
 # Thiết kế giao diện
 
-Toàn bộ CSS dùng chung đặt trong một khối `<style>` duy nhất ở `templates/base.html` (không
-dùng CDN/thư viện ngoài, không lặp lại ở từng trang, chạy được cả khi `DEBUG=False` vì không
-phụ thuộc static files). Ngoại lệ duy nhất: CSS của layout riêng vai trò Sinh viên nằm ở
-`templates/sinh_vien/_css.html`, được `base.html` nạp trong một khối `<style>` thứ hai chỉ khi
-`user.vai_tro == 'SINH_VIEN'` (xem mục "Layout riêng của Sinh viên"). Đây là bản ghi lại bảng
-màu, hệ nút, và quy ước đặt tên lớp CSS để giữ nhất quán khi thêm trang mới.
+Toàn bộ CSS dùng chung đặt trong khối `<style>` ở `templates/base.html` (không dùng CDN/thư viện
+ngoài, không lặp lại ở từng trang). CSS của khung trang (sidebar, thanh trên) nằm ở
+`templates/sinh_vien/_css.html`, nạp trong khối `<style>` thứ hai cho mọi người đã đăng nhập;
+`templates/nhan_vien/_css.html` bổ sung CSS trang chủ của Phòng Đào tạo, Giảng viên, Cố vấn (xem mục
+"Khung sidebar dùng chung"). Thứ duy nhất lấy từ static files là font Be Vietnam Pro (xem mục "Bảng
+màu"): khi `DEBUG=False` mà máy chủ chưa phục vụ static thì trình duyệt tự dùng font hệ thống, giao
+diện vẫn đầy đủ. Đây là bản ghi lại bảng màu, hệ nút, và quy ước đặt tên lớp CSS để giữ nhất quán khi
+thêm trang mới.
 
 ## Bảng màu (biến CSS trong `:root`)
 
+Từ khung sidebar (nhánh `feat/giao-dien`) bảng màu đổi sang xanh dương chuyên nghiệp theo bản xem trước
+dashboard (skill ui-ux-pro-max, phong cách "Minimalism & Swiss Style"); tên biến giữ nguyên nên mọi
+trang đổi theo mà không sửa HTML. Bảng màu Facebook cũ (#1877F2, nền #F0F2F5) có trong lịch sử git
+trước commit này.
+
 | Biến | Giá trị | Dùng cho |
 |---|---|---|
-| `--mau-xanh-chinh` | `#1877F2` | Màu thương hiệu chính: nút chính, liên kết, tab đang chọn |
-| `--mau-xanh-chinh-hover` | `#166FE5` | Hover của nút chính |
-| `--mau-xanh-nhat` | `#E7F3FF` | Nền nút nhẹ, nhãn AI, chip "đã đăng ký", hover liên kết trong đoạn văn |
-| `--mau-nen-trang` | `#F0F2F5` | Nền toàn trang, nền tiêu đề bảng |
-| `--mau-the` | `#FFFFFF` | Nền thẻ, bảng |
-| `--mau-chu` | `#050505` | Màu chữ chính |
-| `--mau-chu-phu` | `#65676B` | Chữ phụ, nhãn, chữ tiêu đề bảng |
-| `--mau-vien` | `#CED0D4` | Viền input, viền dưới ô bảng |
-| `--mau-nut-xam` | `#E4E6EB` | Nền nút phụ |
-| `--mau-nut-xam-hover` | `#D8DADF` | Hover nút phụ |
-| `--mau-do` | `#E41E3F` | Chữ nút nguy hiểm, viền/khung thông báo lỗi |
-| `--mau-do-nhat` | `#FFEBE9` | Nền nút nguy hiểm, nền thông báo lỗi |
-| `--mau-xanh-la` | `#42B72A` | Viền thông báo thành công, chip "đủ điều kiện" |
-| `--mau-vang` | `#F7B928` | Viền thông báo cảnh báo, chip "thiếu tiên quyết" |
-| `--mau-cam-nhat` / `--mau-cam-chu` | `#FFE8D6` / `#9A4B00` | Chip "trùng lịch" |
-| `--mau-xam-nhat` | `#EDEDED` | Nút vô hiệu, chip "đã đầy"/"đã khóa" |
+| `--mau-xanh-chinh` | `#1E40AF` | Màu chính: nút chính, liên kết, mục đang chọn (chữ trắng 8,7:1) |
+| `--mau-xanh-chinh-hover` | `#1E3A8A` | Hover của nút chính |
+| `--mau-xanh-nhat` | `#EFF6FF` | Nền mục đang chọn ở sidebar, nút nhẹ, nhãn AI, chip "đã đăng ký" |
+| `--mau-nen-trang` | `#F5F7FB` | Nền toàn trang, nền tiêu đề bảng, hover mục menu |
+| `--mau-the` | `#FFFFFF` | Nền thẻ, bảng, sidebar |
+| `--mau-chu` | `#0F172A` | Màu chữ chính |
+| `--mau-chu-phu` | `#475569` | Chữ phụ, nhãn, mục menu thường (7,6:1 trên trắng) |
+| `--mau-vien` | `#CBD5E1` | Viền dưới tiêu đề bảng, viền hover |
+| `--mau-nut-xam` | `#EEF2F6` | Nền nút phụ, kẻ dòng bảng |
+| `--mau-nut-xam-hover` | `#E2E8F0` | Hover nút phụ; viền thẻ, sidebar, thanh trên |
+| `--mau-do` | `#DC2626` | Badge số thông báo, viền thông báo lỗi, viền trường lỗi |
+| `--mau-do-nhat` | `#FEE2E2` | Nền nút nguy hiểm, nền thông báo lỗi |
+| `--mau-xanh-la` / `--mau-xanh-la-nhat` | `#16A34A` / `#DCFCE7` | Thông báo thành công, chip "đủ điều kiện", thanh tiến độ |
+| `--mau-vang` / `--mau-vang-nhat` | `#D97706` / `#FEF3C7` | Thông báo cảnh báo, khối "Cảnh báo cần chú ý", chip "thiếu tiên quyết" |
+| `--mau-cam-nhat` / `--mau-cam-chu` | `#FFEDD5` / `#9A3412` | Chip "trùng lịch" |
+| `--mau-xam-nhat` | `#F1F5F9` | Nút vô hiệu, chip "đã đầy"/"đã khóa" |
 
-Font: `-apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`, cỡ chữ gốc `15px`,
-tiêu đề (`h1`-`h4`) đậm (`font-weight: 800`).
+Font: **Be Vietnam Pro** (4 độ đậm 400/500/600/700) đặt ở `accounts/static/qldt/fonts/` kèm giấy phép
+`OFL.txt` (SIL Open Font License 1.1), nạp bằng `@font-face` + `{% static %}` trong `base.html`, không dùng
+CDN; Django tự tìm thư mục `static/` của app nên không cần sửa `settings.py`. Dự phòng:
+`-apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`. Cỡ chữ gốc `15px`, giãn dòng `1.5`,
+tiêu đề (`h1`-`h4`) đậm `700` (không có tệp độ đậm 800 nên không dùng 800 để trình duyệt khỏi tự làm
+đậm giả). Bảng và giá trị ô tổng hợp dùng `font-variant-numeric: tabular-nums`. Chữ nhỏ nhất `12px`
+(trừ badge số thông báo và tiêu đề nhóm ở sidebar `11px` chữ hoa, đậm). Thẻ (`.khung`, `.khung-bang`,
+`.o-tong-hop`, `.the-chuc-nang`) bo góc 12px, viền 1px `--mau-nut-xam-hover` và bóng nhẹ.
 
 ## Hệ nút (`.nut`)
 
-Lớp gốc `.nut` định nghĩa hình dạng chung (bo góc 6px, đậm chữ, có hover/focus, chuyển màu
+Lớp gốc `.nut` định nghĩa hình dạng chung (bo góc 8px, đậm chữ, có hover/focus, chuyển màu
 mượt `.15s ease`); kết hợp với một lớp màu và (tùy chọn) một lớp cỡ:
 
 | Lớp màu | Dùng khi |
 |---|---|
-| `.nut-chinh` | Hành động chính của trang (Lưu, Đăng nhập, Đăng ký, Gửi câu hỏi, + Tạo...) |
+| `.nut-chinh` | Hành động chính của trang (Lưu, Đăng nhập, Đăng ký, Gửi câu hỏi, + Tạo...). Nền `--mau-xanh-chinh`, hover `--mau-xanh-chinh-hover` |
 | `.nut-phu` | Hành động phụ/trung tính (Hủy, Đăng xuất, Xóa lọc, phân trang) |
-| `.nut-nhe` | Hành động nhẹ liên quan tới AI hoặc "Sửa"/"Xem" trong bảng |
-| `.nut-nguy-hiem` | Hành động phá hủy/hạn chế (Khóa, Xóa) |
+| `.nut-nhe` | Hành động nhẹ liên quan tới AI hoặc "Sửa"/"Xem" trong bảng. Chữ `--mau-xanh-chinh` |
+| `.nut-nguy-hiem` | Hành động phá hủy/hạn chế (Khóa, Xóa). Chữ #B91C1C (5,4:1 trên `--mau-do-nhat`) |
 | `.nut-vo-hieu` | Trạng thái không thể thao tác (vd. "Đã đầy") — không phải liên kết thật |
 
 Lớp cỡ `.nut-nho` giảm padding/cỡ chữ, dùng cho nút trong cột "Thao tác" của bảng để
@@ -71,11 +84,10 @@ cha bọc ngoài theo đúng khuôn mẫu trên, không cần sửa `_logo.html`
 
 ## Bố cục trang
 
-- Thanh menu: mọi vai trò đã đăng nhập dùng cùng bộ lớp `.sv-*` (banner trắng có logo + thanh menu
-  xanh `#1877F2` cố định, xem "Layout riêng của Sinh viên" và "Menu Phòng Đào tạo, Giảng viên, Cố vấn
-  học tập" bên dưới). Trạng thái đang chọn xác định bằng `request.resolver_match.url_name`/`app_name`
-  ngay trong template, không cần sửa view.
-- `main`: khung nội dung tối đa `1100px`, căn giữa.
+- Khung: mọi vai trò đã đăng nhập dùng sidebar bên trái và thanh trên (bộ lớp `.sv-*`, xem "Khung sidebar
+  dùng chung"). Trạng thái đang chọn xác định bằng `request.resolver_match.url_name`/`app_name` ngay
+  trong template, không cần sửa view.
+- `main`: khung nội dung tối đa `1240px` khi đã đăng nhập (`1100px` ở trang chưa đăng nhập), căn giữa.
 - `.khung`: thẻ trắng bo góc 8px, bóng nhẹ — đơn vị hiển thị cơ bản (form, khối kết quả...).
 - `.luoi-the` / `.the-chuc-nang`: lưới thẻ chức năng ở trang chủ, mỗi thẻ có tiêu đề, mô tả
   một dòng, nút "Mở"; `.nhom-chuc-nang` gom các thẻ theo nhóm với tiêu đề nhóm viết hoa nhỏ.
@@ -90,60 +102,58 @@ cha bọc ngoài theo đúng khuôn mẫu trên, không cần sửa `_logo.html`
 - `templates/_truong_form.html`: partial dùng chung để render một `form` Django thành các
   khối `.truong` (nhãn, ô nhập, ghi chú, lỗi) — dùng ở mọi trang tạo/sửa để không lặp mã.
 
-## Layout riêng của Sinh viên (lượt giao diện 1/3)
+## Khung sidebar dùng chung (thay thanh menu ngang)
 
-Chỉ áp dụng khi `user.vai_tro == 'SINH_VIEN'`; các vai trò khác dùng khung riêng nhưng cùng kiểu dáng
-menu (mục "Menu Phòng Đào tạo, Giảng viên, Cố vấn học tập"). Chỉ đổi giao diện — không đổi view, URL, model, settings. Bảng màu Facebook giữ nguyên,
-phần CSS mới chỉ dùng lại biến `:root` có sẵn (có test kiểm tra không khai báo biến màu mới).
+Áp dụng cho cả 4 vai trò, thay thanh menu ngang của các lượt giao diện trước (thanh xanh #1877F2, dropdown
+#145DBF — xem lịch sử git trước commit "Giao diện: khung sidebar..."). Chỉ đổi template khung (`base.html`,
+`sinh_vien/_khung_dau.html`, `nhan_vien/_khung_dau.html`, `menu/_js.html`) và CSS; không đổi view, form, URL,
+model. **Mục menu, URL và điều kiện "đang chọn" của từng vai trò giữ nguyên từng chữ** (đã đối chiếu tự động
+với bản trước khi đổi). Bản xem trước tham chiếu: trang chủ Sinh viên dạng admin dashboard dựng ngoài dự án.
 
-Cấu trúc (`templates/base.html` rẽ nhánh và `{% include %}` 3 partial trong `templates/sinh_vien/`):
+**Bố cục** (`base.html`): khi đã đăng nhập, `<div class="sv-bo-cuc">` là lưới 2 cột `264px | 1fr`: sidebar
+(`<aside class="sv-sidebar">`) chiếm cột trái cả chiều cao; cột phải lần lượt là thanh trên
+(`<header class="sv-thanh-tren">`) và `<main>`. Không có chân trang (đã bỏ chân trang 3 cột của Sinh viên). Chưa đăng nhập (trang đăng nhập)
+không có lưới này.
 
 | Partial | Nội dung |
 |---|---|
-| `_khung_dau.html` | Sprite icon SVG nội tuyến (`<symbol id="sv-i-...">`, gọi bằng `<use>`), banner, thanh menu, chuông thông báo, chip người dùng, breadcrumb, JS mở/đóng dropdown |
-| `_chan_trang.html` | Footer 3 cột + dòng bản quyền |
-| `_css.html` | Toàn bộ CSS của layout này (tiền tố lớp `sv-`) |
+| `sinh_vien/_khung_dau.html` | Sidebar (logo + menu Sinh viên) và thanh trên (nút ☰, breadcrumb, chuông, menu người dùng) |
+| `nhan_vien/_khung_dau.html` | Như trên cho Phòng Đào tạo / Giảng viên / Cố vấn (`.sv-sidebar--nv`); thanh trên không có breadcrumb hay nhãn vai trò (vai trò đã hiện ở chip người dùng bên phải) |
+| `menu/_bieu_tuong.html` | Sprite icon SVG nội tuyến (`<symbol id="sv-i-...">`) dùng chung |
+| `menu/_js.html` | Mở/thu gọn nhóm trong sidebar, dropdown menu người dùng, ngăn trượt trên màn hình hẹp |
+| `sinh_vien/_css.html` | CSS của khung (tiền tố `sv-`), nạp cho mọi người đã đăng nhập |
 
-- **Banner** (`.sv-banner`): nền trắng, viền dưới 1px, `_logo.html` (icon vuông bo góc) cùng hai
-  dòng tên trường (`TEN_TRUONG`) và tên hệ thống (`TEN_HE_THONG`), đậm, màu `--mau-xanh-chinh`.
-- **Thanh menu** (`.sv-thanh-menu`): full width, nền `--mau-xanh-chinh` (#1877F2), chữ và icon
-  trắng, bóng nhẹ, `position: sticky`. Mỗi mục có icon + chữ; hover nền trắng mờ; mục đang chọn có
-  `border-bottom: 3px` **trắng** cộng nền trắng mờ (xanh đậm hơn sẽ không phân biệt được trên nền
-  xanh). Viền focus bàn phím của thanh là trắng. Bốn mục chính: Trang chủ,
-  Đăng ký học phần (Đăng ký học phần / Thời khóa biểu / Lịch sử đăng ký), Học tập (Tiến độ
-  chương trình đào tạo / Bảng điểm / Lịch thi / Điểm danh), Trợ lý AI (Tư vấn đăng ký / Tóm tắt
-  kết quả / Hỏi đáp quy chế). Chỉ liệt kê trang đã có thật; thêm trang Sinh viên mới thì phải
-  thêm vào đây (test `LayoutSinhVienTest.test_menu_chi_chua_cac_trang_sinh_vien_da_co_that`
-  liệt kê chính xác tập trang).
-- **Dropdown** (`.sv-nhom__xo`, gồm cả dropdown của chip người dùng): nền xanh đậm **#145DBF** (đậm hơn
-  thanh menu #1877F2 để thấy ranh giới giữa menu chính và menu con), chữ/icon trắng, bo góc 8px, bóng đổ
-  đậm hơn; mục hover nền **#0D47A1**; các mục ngăn cách bằng đường kẻ trắng 15%
-  (`.sv-nhom__xo > * + *`); mục đang chọn phân biệt bằng chữ đậm + vạch trắng 3px bên trái + nền trắng mờ
-  (không dùng xanh). Viền focus bàn phím trong dropdown là trắng. Hai màu xanh đậm là hằng số riêng
-  (không thêm biến vào `:root`). Bảng menu sổ xuống của hamburger (dưới 768px) vẫn nền trắng nên danh
-  sách con bên trong dùng nền trong suốt + chữ tối, không có đường kẻ. Desktop mở bằng hover/focus, cảm
-  ứng mở bằng bấm (`aria-expanded`), đóng khi bấm ra ngoài hoặc nhấn Esc.
-- **Trạng thái "đang chọn"**: xác định trong template bằng `request.resolver_match.app_name` +
-  `url_name`. Riêng "Bảng điểm" nhận cả `app_name == 'grades'` vì `bang_diem_cua_toi` chuyển
-  hướng sang `bang_diem_sinh_vien` (trước đây tab này không bao giờ sáng).
-- **Góc phải**: chip chuông (`.sv-chuong`) trỏ `thong_bao:danh_sach`, badge `.chip-thong-bao` màu
-  `--mau-do` lấy từ `SO_THONG_BAO_CHUA_DOC` (số thật, ẩn khi bằng 0, hiện `99+` nếu quá 99);
-  chip người dùng giữ định dạng "tên đăng nhập · Sinh viên", mở dropdown Thông tin cá nhân /
-  Đổi mật khẩu / Đăng xuất (form POST). Hai chip nền **trắng** chữ đen trên thanh xanh — badge đỏ
-  #E41E3F và nền xanh gần bằng nhau về độ sáng nên badge phải nằm trên nền chip trắng mới đọc rõ.
-- **Breadcrumb** (`.sv-breadcrumb`): "Trang chủ / Tên trang", chữ nhỏ `--mau-chu-phu`, không viền,
-  căn lề theo khung nội dung. Nhãn tra theo `app_name`/`url_name` ngay trong `_khung_dau.html`,
-  gồm cả trang không nằm trong menu (hủy đăng ký, chi tiết thông báo, thông tin cá nhân, đổi mật
-  khẩu). Trang không có nhãn (vd. 403/404) chỉ hiện "Trang chủ".
-- **Khung nội dung**: `main` giữ `max-width: 1100px`; banner/menu/breadcrumb/footer dùng
-  `.sv-container` cùng độ rộng để thẳng lề. `body.co-bo-cuc-sv` là flex dọc để footer luôn nằm dưới.
-- **Footer** (`.sv-chan-trang`): nền `--mau-xanh-chinh`, 3 cột — tiêu đề cột chữ trắng, phần phụ trắng
-  độ đục 85% — trường + địa chỉ, Liên hệ, Liên kết nhanh (Trang chủ / Thông báo / Thông tin cá
-  nhân; hover nền trắng mờ, ghi đè quy tắc chung `li a:hover` vì chữ trắng) — và dòng "© năm
-  `TEN_TRUONG`" căn giữa, ngăn cách bằng đường trắng mờ. Địa chỉ/điện thoại/email ghi cứng "(chưa cập nhật)" trong template (chưa có biến `.env`).
-- **Responsive**: dưới `960px` thu gọn padding và ẩn phần "· Sinh viên" trong chip; dưới `768px`
-  menu chính thành nút hamburger mở danh sách sổ xuống (nhóm bung theo kiểu accordion), chuông và
-  chip người dùng vẫn hiện.
+- **Sidebar** (`.sv-sidebar`): nền trắng, viền phải mảnh, `position: sticky` cao bằng màn hình, cuộn riêng
+  (`overflow-y: auto`) — Phòng Đào tạo nhiều mục vẫn vừa mà không cần ẩn icon như thanh ngang cũ. Trên cùng là
+  logo (`<header class="sv-banner">`, `_logo.html`: tên trường đậm, tên hệ thống chữ phụ).
+  Vị trí cuộn của sidebar được giữ khi chuyển trang (`menu/_js.html` lưu `scrollTop` vào `sessionStorage` lúc
+  `pagehide`, khôi phục khi tải trang; không có vị trí đã lưu thì cuộn cho mục đang chọn hiện ra).
+- **Mục menu** (`.sv-menu__muc`, `.sv-menu .sv-nhom__muc`): icon + chữ `--mau-chu-phu`, hover nền
+  `--mau-nen-trang`; **mục đang chọn** nền `--mau-xanh-nhat`, chữ `--mau-xanh-chinh` đậm, vạch trái 3px.
+- **Nhóm** (`.sv-nhom`): nút nhóm (`.sv-nhom__nut`) thành tiêu đề nhóm chữ hoa nhỏ `11px` màu #64748B kèm mũi
+  tên; nhóm chứa trang đang mở có tiêu đề màu `--mau-xanh-chinh`. Mặc định mở hết (`aria-expanded="true"`);
+  bấm tiêu đề để thu gọn tại chỗ (`.sv-nhom--dong`, mũi tên xoay), không tự đóng khi bấm ra ngoài. Mục đứng
+  riêng ngay sau một nhóm (vd. "Quy chế" sau "Lớp học phần") cách ra và có đường kẻ mảnh phía trên để không bị
+  hiểu là mục con.
+- **Thanh trên** (`.sv-thanh-tren`): sticky, nền `--mau-nen-trang` hơi trong, viền dưới mảnh. Sinh viên có
+  breadcrumb (`.sv-breadcrumb`, "Trang chủ / Tên trang", trang hiện tại đậm; nhãn tra theo `app_name`/`url_name`
+  như trước); ba vai trò khác hiện tên vai trò. Góc phải: chip chuông (`.sv-chuong`, badge `.chip-thong-bao`
+  đỏ lấy từ `SO_THONG_BAO_CHUA_DOC`, ẩn khi bằng 0, `99+` nếu quá 99) và chip người dùng ("tên đăng nhập · Vai
+  trò") mở **dropdown** nền trắng: Thông tin cá nhân / Đổi mật khẩu / Đăng xuất (form POST). Dropdown mở bằng
+  hover/focus trên máy tính, bấm trên cảm ứng; đóng khi bấm ra ngoài hoặc nhấn Esc.
+- **Không có chân trang**: chân trang 3 cột của Sinh viên (tên trường, liên hệ, liên kết nhanh, bản quyền) đã bỏ
+  theo yêu cầu; dòng bản quyền nhỏ ở trang đăng nhập (`.chan-trang-dang-nhap`) vẫn giữ.
+- **Phân nhóm theo vai trò** (giữ như trước): Sinh viên — Trang chủ, nhóm Đăng ký học phần (Đăng ký học phần /
+  Thời khóa biểu / Lịch sử đăng ký), Học tập (Tiến độ chương trình đào tạo / Bảng điểm / Lịch thi / Điểm danh),
+  Trợ lý AI (Tư vấn đăng ký / Tóm tắt kết quả / Hỏi đáp quy chế). Ba vai trò khác: xem bảng ở mục "Menu Phòng
+  Đào tạo, Giảng viên, Cố vấn học tập".
+- **Responsive**: dưới `1025px` lưới còn một cột; sidebar thành ngăn trượt từ trái (rộng 280px, tối đa 85% màn
+  hình), mở bằng nút ☰ ở thanh trên (`aria-controls="sv-sidebar"`), nội dung phía sau phủ lớp tối; bấm ra
+  ngoài hoặc nhấn Esc để đóng. Dưới `640px` ẩn phần "· Vai trò" trong chip và tên vai trò ở thanh trên.
+- **Độ tương phản** (WCAG): chữ menu thường #475569 trên trắng 7,6:1; mục đang chọn #1E40AF trên #EFF6FF 8,1:1;
+  tiêu đề nhóm #64748B 4,8:1; breadcrumb #475569 trên #F5F7FB 7,1:1; chữ trắng trên nút chính #1E40AF 8,7:1;
+  badge đỏ #DC2626 trên chip trắng 4,8:1 — đều đạt 4,5:1 (test
+  `test_do_tuong_phan_toi_thieu_cua_bang_mau_moi` ghi lại các mức này).
 
 ## Trang chủ và bảng điểm của Sinh viên (lượt giao diện 2/3)
 
@@ -229,48 +239,30 @@ cũng đổi theo.
 - **Trang AI**: đã kiểm tra bằng client AI giả (không gọi AI thật); chỉ đồng bộ header hai bảng, các
   phần còn lại giữ nguyên.
 
-**Độ tương phản** (WCAG, tính trên #1877F2): chữ/icon trắng 4,23:1; chữ phụ trắng 85% ở chân trang
-3,50:1; mục đang chọn (trắng trên nền trắng mờ 12%) 3,55:1; chip chữ đen trên trắng 20,4:1; badge đỏ
-#E41E3F trên chip trắng 4,61:1 (nhưng chỉ 1,09:1 nếu đặt thẳng lên nền xanh — vì vậy chip phải nền
-trắng). Các mức 3,5–4,2 đạt cho chữ đậm/thành phần giao diện (≥ 3:1) nhưng chưa đạt 4,5:1 của chữ
-thường: đây là giới hạn của việc dùng chính màu thương hiệu #1877F2 làm nền, nên thanh menu dùng
-trắng 100%, cỡ 14px đậm. Muốn đạt AA đầy đủ phải dùng xanh đậm hơn cho nền (ngoài bảng màu hiện tại).
-Riêng dropdown (#145DBF) chữ trắng đạt 6,3:1 và mục hover (#0D47A1) đạt 8,6:1 — đạt AA đầy đủ.
+**Độ tương phản**: xem mục "Khung sidebar dùng chung" (các mức tính trên bảng màu hiện tại đều đạt 4,5:1;
+giới hạn 4,23:1 của thanh menu trắng trên #1877F2 trước đây không còn vì không còn thanh menu nền xanh).
 
 ## Menu Phòng Đào tạo, Giảng viên, Cố vấn học tập
 
-Thay cho thanh trên trắng cũ (`.thanh-tren`, tab phẳng, không dropdown, không icon), ba vai trò này dùng
-khung `templates/nhan_vien/_khung_dau.html` (CSS bổ sung ở `templates/nhan_vien/_css.html`). Khung này
-**dùng lại đúng các lớp `.sv-*`** của menu Sinh viên nên đồng bộ về màu và kiểu dáng:
-- Màu: thanh chính nền `--mau-xanh-chinh` (`#1877F2`) chữ trắng; dropdown nền `#145DBF` chữ trắng; mục hover
-  `#0D47A1`.
-- Kiểu dáng: icon SVG nét ở mỗi mục; mục đang chọn ở thanh chính có gạch chân trắng 3px (`border-bottom`) và mục
-  đang chọn trong dropdown có vạch trắng bên trái; dropdown mở bằng hover trên máy tính, bấm trên cảm ứng.
-- Dùng chung với Sinh viên: `templates/menu/_bieu_tuong.html` (bộ icon SVG, thêm các icon mới cho menu
-  quản lý: nhóm người, giảng viên, tải lên, cảnh báo, gửi, tiên quyết, ngành) và `templates/menu/_js.html`
-  (mở/đóng dropdown, hamburger, Esc, bấm ra ngoài). Các quy tắc `.sv-*` nằm ở `sinh_vien/_css.html`, nạp cho mọi
-  người đã đăng nhập (`templates/base.html`).
-- Không có breadcrumb và chân trang (chỉ Sinh viên có). Chuông thông báo (kèm số chưa đọc) và dropdown
-  người dùng (Thông tin cá nhân, Đổi mật khẩu, Đăng xuất) ở góc phải, giống Sinh viên.
+Ba vai trò này dùng khung `templates/nhan_vien/_khung_dau.html` với **đúng các lớp `.sv-*` của khung Sinh viên**
+(sidebar, nhóm mở/thu gọn, mục đang chọn, thanh trên, menu người dùng — xem "Khung sidebar dùng chung"); sidebar
+có thêm lớp `.sv-sidebar--nv`. Không có breadcrumb (thanh trên hiện tên vai trò) và không có chân trang.
 
-**Cách phân nhóm** không ép giống Sinh viên: mỗi vai trò giữ đúng số tab/nhóm theo chức năng thật của mình.
+**Cách phân nhóm** không ép giống Sinh viên: mỗi vai trò giữ đúng số mục/nhóm theo chức năng thật của mình
+(thứ tự trong sidebar như bảng):
 
-| Vai trò | Thanh chính |
+| Vai trò | Mục trong sidebar |
 |---|---|
 | Phòng Đào tạo | Trang chủ, Tài khoản, **Người dùng** (Sinh viên, Giảng viên, Cố vấn học tập, Nhập sinh viên từ Excel), **Học vụ** (Ngành học, Lớp hành chính, Học phần, Điều kiện tiên quyết, Chương trình đào tạo, Danh mục học kỳ, Đợt đăng ký học phần), **Lớp học phần** (Lớp học phần, Lịch học, Lịch thi, Tra cứu lịch sử đăng ký), Quy chế, **Báo cáo** (Sĩ số theo lớp, Học phần nhiều đăng ký, Kết quả học tập), Cảnh báo học vụ, Gửi thông báo |
-| Giảng viên | Trang chủ, Lớp phụ trách, Lịch giảng dạy, Gửi thông báo (không có dropdown vì chỉ 3 chức năng) |
+| Giảng viên | Trang chủ, Lớp phụ trách, Lịch giảng dạy, Gửi thông báo (không có nhóm vì chỉ 3 chức năng) |
 | Cố vấn học tập | Trang chủ, Sinh viên phụ trách, Tiến độ học tập, Cảnh báo học vụ, Tóm tắt AI, Hỏi đáp AI, Gửi thông báo |
 
 Các trang tạo/sửa/xóa, xuất tệp và trang có tham số (bảng điểm lớp, điểm danh...) không nằm trên menu; vào từ
-nút trong trang danh sách tương ứng. Nhóm "Học vụ" có 7 mục — vẫn đủ ngắn để tìm nên chưa tách nhỏ hơn.
-
-Responsive: `.sv-container--rong` (tối đa 1440px) vì các vai trò này có nhiều tab; từ 1101px đến 1439px thanh của
-Phòng Đào tạo (9 mục) ẩn icon ở thanh chính để vừa một hàng (icon trong dropdown vẫn còn); dưới 1100px chuyển
-sang nút hamburger, dropdown xếp dọc trong menu xổ xuống (`.sv-thanh-menu--nv`).
+nút trong trang danh sách tương ứng (mục cha tương ứng trong sidebar vẫn sáng).
 
 ## Trang chủ Phòng Đào tạo: số liệu tổng quan, cảnh báo, thông báo gần đây
 
-Trang chủ Phòng Đào tạo chỉ gồm lời chào và 3 khối dưới đây; lưới thẻ chức năng cũ đã bỏ vì menu trên thanh đã
+Trang chủ Phòng Đào tạo chỉ gồm 3 khối dưới đây (không còn khối lời chào "Xin chào, ... / Vai trò" ở trang chủ Phòng Đào tạo, Giảng viên, Cố vấn vì tên đăng nhập và vai trò đã hiện ở chip thanh trên; trang có tiêu đề `<h1 class="an-chu">Trang chủ</h1>` ẩn cho trình đọc màn hình); lưới thẻ chức năng cũ đã bỏ vì menu trên thanh đã
 có đủ liên kết tới mọi trang quản lý (Giảng viên và Cố vấn vẫn dùng lưới thẻ chức năng). Dữ liệu do `accounts/tong_hop_phong_dao_tao.py`
 gom cho view `trang_chu` (chỉ gọi lại service/truy vấn có sẵn, không tính lại luật); partial
 `accounts/templates/accounts/_trang_chu_phong_dao_tao.html`; CSS ở `templates/nhan_vien/_css.html`.
@@ -340,6 +332,17 @@ khoản và `chip--ai` dự phòng cho nhãn liên quan AI.
 
 ## Trang AI (quy tắc riêng)
 
+**Khung chat dùng chung** (`ai_core/templates/ai_core/_khung_chat.html`, CSS ở `templates/base.html`): cả 3 trang AI
+(tóm tắt, hỏi đáp quy chế, tư vấn đăng ký) là một khung `.khung-chat-ai` gồm luồng tin nhắn `.chat-luong`
+(`role="log"`, cuộn riêng, tối đa 68% chiều cao màn hình, tự cuộn tới tin mới nhất), tin của người dùng
+`.chat-tin--nguoi-dung` (bong bóng nền `--mau-xanh-chinh` chữ trắng, bên phải) và tin của trợ lý `.chat-tin--tro-ly`
+(thẻ nền `--mau-nen-trang`, viền mảnh, bên trái, có nhãn `.nhan-ai` và dòng phạm vi `.chat-pham-vi`); bên dưới là
+`.chat-nhap`: ô nhập có chữ mờ ví dụ + nút "Gửi" (Enter để gửi,
+Shift + Enter xuống dòng), ghi chú giới hạn ký tự và nút "Xóa cuộc trò chuyện" (chỉ hiện khi có lịch sử). Bảng số liệu,
+bảng điểm, bảng trạng thái lớp và đoạn trích nguồn trong câu trả lời thu gọn trong `<details>` để luồng chat gọn.
+Trang tóm tắt của Cố vấn có thêm form chọn sinh viên (`.chat-chon-sinh-vien`) phía trên khung chat. Nhãn ẩn cho
+trình đọc màn hình dùng `.an-chu`. Dưới 640px bong bóng rộng tối đa 92%, luồng tin không giới hạn chiều cao.
+
 - `.nhan-ai`: chip nhỏ "Trợ lý AI" ở đầu khối kết quả AI.
 - `.khung-ket-qua-ai`: viền trái xanh 3px, dùng cho khối nhận xét/trả lời của AI.
 - `.nhom-goi-y` / `.nhom-chua-nen`: nền xanh lá nhạt / đỏ nhạt cho hai nhóm gợi ý của tư vấn
@@ -361,9 +364,66 @@ Việt Nam (dấu phẩy thập phân). Ngày/giờ hiển thị luôn ép đị
 template (`|date:"d/m/Y"` cho ngày, `|date:"d/m/Y H:i"` cho ngày giờ) thay vì dựa vào định
 dạng mặc định của locale, để chắc chắn ra đúng `dd/mm/yyyy` ở mọi nơi hiển thị ngày.
 
+## Chỉnh tương phản và khả năng đọc (WCAG)
+
+> Ghi chú: mục này ghi lại lượt chỉnh trước khi đổi sang khung sidebar. Các mã màu cụ thể dưới đây (#166FE5,
+> #0B5FCC, #B3122E, #8A8D91...) đã được thay bằng biến của bảng màu mới (xem mục "Bảng màu" và "Khung sidebar
+> dùng chung"); các nguyên tắc (giãn dòng, tabular-nums, viền ô nhập ≥ 3:1, vòng focus rõ, viền đỏ trường lỗi,
+> kích thước nút, responsive của bảng/bộ lọc, giảm chuyển động) vẫn giữ nguyên.
+
+Lượt chỉnh trên nhánh `feat/giao-dien`, chỉ sửa CSS (không đổi HTML, tên lớp, view). Phong cách tham
+chiếu: "Data-Dense Dashboard" (dashboard nhiều bảng và thẻ số liệu). Giữ nguyên bảng màu Facebook và
+các màu thanh menu, dropdown, chân trang (đã có test khóa); không thêm biến màu vào `:root`. Tỷ lệ
+tương phản tính theo công thức WCAG 2.x.
+
+**Màu** (chữ thường cần 4,5:1):
+
+| Thành phần | Trước | Sau |
+|---|---|---|
+| `.nut-chinh` (chữ trắng) | nền #1877F2, 4,23:1 | nền #166FE5 (`--mau-xanh-chinh-hover`), 4,73:1; hover #0B5FCC |
+| `.nut-nhe` | chữ #1877F2 trên #E7F3FF, 3,76:1 | chữ #0B5FCC, 5,30:1 |
+| `.nut-nguy-hiem` | chữ #E41E3F trên #FFEBE9, 4,02:1 | chữ #B3122E, 6,02:1 |
+| `.o-lich-hoc` (chữ) | #1877F2 trên #E7F3FF, 3,76:1 | #0B5FCC, 5,30:1 (nền, viền trái giữ nguyên) |
+| Liên kết trong văn bản (`p a`, `li a`...) | #1877F2 trên trắng, 4,23:1 | #0B5FCC, 5,96:1 |
+
+Các hằng số #0B5FCC, #B3122E viết thẳng trong quy tắc (cùng cách với #145DBF của dropdown), không thêm
+vào `:root`. Thanh menu chữ trắng trên #1877F2 (4,23:1) giữ nguyên, xem mục "Độ tương phản" ở trên.
+
+**Font và chữ**: `body` giãn dòng 1.5 (trước để mặc định khoảng 1.15); `tabular-nums` cho bảng và
+`.o-tong-hop__gia-tri`; `.logo__ten-he-thong` và `.o-tong-hop__ghi-chu--nho` từ 11px lên 12px.
+
+**Khoảng cách và thẻ**: `--bong-the` đổi giá trị thành bóng 2 lớp nhẹ
+(`0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.1)`, trước là `0 1px 2px rgba(0,0,0,.2)`);
+`.luoi-tong-hop` cách nhau 16px (trước 12px); `.nut` cao tối thiểu 36px, `.nut-nho` 32px (vượt mức
+24px của WCAG 2.2 về kích thước vùng bấm); nút bị vô hiệu (`:disabled`, `aria-disabled="true"`) mờ 60%,
+con trỏ `not-allowed`.
+
+**Bảng**: kẻ dòng dùng `--mau-nut-xam` (#E4E6EB, nhạt hơn #CED0D4 cũ), viền dưới tiêu đề bảng giữ
+`--mau-vien`; ô dữ liệu `padding: 11px 14px`, giãn dòng 1.4; dòng có phần tử đang focus bằng bàn phím
+(`tr:focus-within`) được tô nền như khi rê chuột (lưới tuần vẫn không tô).
+
+**Form**: viền ô nhập #8A8D91 (3,33:1 trên trắng; #CED0D4 cũ chỉ 1,54:1, dưới mức 3:1 cho thành phần
+giao diện), hover đậm sang `--mau-chu-phu`; ô nhập cao tối thiểu 40px; khi focus giữ viền
+`--mau-xanh-chinh` và vòng `rgba(24,119,242,.35)` (vòng #E7F3FF cũ chỉ 1,13:1, gần như không thấy),
+kèm `outline` trong suốt để chế độ tương phản cao của Windows vẫn hiện viền; trường có lỗi
+(`aria-invalid="true"`, Django tự gắn) viền `--mau-do` ngay tại ô. Mọi liên kết có viền focus bàn
+phím (`a:focus-visible`, xanh); liên kết ở chân trang Sinh viên dùng viền trắng vì nằm trên nền xanh.
+Các thành phần có viền focus riêng (thanh menu, dropdown, chip) giữ nguyên.
+
+**Ô chọn tệp** (`input[type="file"]`: nhập sinh viên từ Excel, tải lên/cập nhật tài liệu quy chế): vùng thả tệp
+viền nét đứt 2px `--mau-vien`, nền `--mau-nen-trang`, bo góc 12px, cao tối thiểu 64px; rê chuột đổi viền
+`--mau-xanh-chinh` nền `--mau-xanh-nhat`; nút chọn tệp của trình duyệt (`::file-selector-button`) thay bằng nút
+viền trắng chữ `--mau-xanh-chinh` (để nút gửi form vẫn là nút chính); kéo thả tệp vào vùng này được (trình duyệt hỗ
+trợ sẵn); vẫn giữ viền xanh khi focus và viền đỏ khi trường lỗi. Chỉ CSS trong `base.html`, không đổi form/template.
+
+**Responsive**: dưới 768px chữ trong ô nhập 16px (tránh Safari iPhone tự phóng to); dưới 640px
+`.khung` padding 16px, tiêu đề trang 20px, mỗi trường của `.bo-loc` một dòng và nút Lọc/Xóa lọc kéo
+rộng đều; `.phan-trang` tự xuống dòng; khi người dùng bật giảm chuyển động (`prefers-reduced-motion`)
+thì tắt mọi hiệu ứng chuyển tiếp trên toàn trang.
+
 ## Responsive
 
-Dưới `768px`: lưới thẻ chức năng chuyển thành một cột. Thanh menu chuyển sang nút hamburger dưới
-`768px` với Sinh viên (xem "Layout riêng của Sinh viên") và dưới `1100px` với Phòng Đào tạo,
-Giảng viên, Cố vấn học tập (nhiều tab hơn, xem mục "Menu Phòng Đào tạo, Giảng viên, Cố vấn học
-tập"). Bảng luôn cuộn ngang trong `.khung-bang` khi tràn.
+Khung: dưới `1025px` sidebar thành ngăn trượt mở bằng nút ☰ (cả 4 vai trò, xem "Khung sidebar dùng chung").
+Nội dung: dưới `768px` lưới thẻ chức năng một cột, chữ trong ô nhập 16px; dưới `640px` thẻ thu padding, bộ lọc
+mỗi trường một dòng. Bảng luôn cuộn ngang trong `.khung-bang` khi tràn.
+

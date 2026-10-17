@@ -15,7 +15,7 @@ _MOC_XEP_LOAI = [
 ]
 
 
-def bang_diem_chi_tiet(sinh_vien):
+def bang_diem_chi_tiet(sinh_vien, hoc_ky=None, nam_hoc=None):
     """Danh sách học phần sinh viên đã có đủ điểm (điểm quá trình + điểm thi) để tính
     điểm tổng kết, mỗi học phần một dòng đại diện (nếu học lại nhiều lần thì giữ lần có
     điểm tổng kết cao nhất). Dùng đúng Diem.tinh_diem_tong_ket() (bọc grades.tinh_diem),
@@ -24,6 +24,9 @@ def bang_diem_chi_tiet(sinh_vien):
     Chỉ xét đăng ký còn hiệu lực (một đăng ký đã hủy không thể có điểm — việc hủy bị chặn
     khi đã có điểm — nhưng lọc tường minh cho đúng yêu cầu "chỉ tính đăng ký còn hiệu lực").
 
+    hoc_ky/nam_hoc (tùy chọn) giới hạn trong một học kỳ hoặc một năm học (dùng cho tóm tắt AI theo phạm vi);
+    mặc định lấy mọi học kỳ như trước.
+
     Trả về list[dict]: {'hoc_phan', 'hoc_ky', 'nam_hoc', 'diem_qua_trinh', 'diem_thi',
     'diem_tong_ket', 'dat'}.
     """
@@ -31,6 +34,10 @@ def bang_diem_chi_tiet(sinh_vien):
     dang_ky_qs = DangKyHocPhan.objects.filter(
         ma_sinh_vien=sinh_vien, trang_thai=TrangThaiDangKy.CON_HIEU_LUC,
     ).select_related('ma_lop_hoc_phan__ma_hoc_phan', 'diem')
+    if hoc_ky is not None:
+        dang_ky_qs = dang_ky_qs.filter(ma_lop_hoc_phan__hoc_ky=hoc_ky)
+    if nam_hoc is not None:
+        dang_ky_qs = dang_ky_qs.filter(ma_lop_hoc_phan__nam_hoc=nam_hoc)
     for dang_ky in dang_ky_qs:
         diem = getattr(dang_ky, 'diem', None)
         if diem is None:
@@ -116,6 +123,12 @@ def diem_trung_binh_hoc_ky(sinh_vien, hoc_ky, nam_hoc, chi_diem_da_cong_bo=False
     """Điểm trung bình có trọng số tín chỉ của một học kỳ cụ thể, chỉ tính học phần có đủ
     điểm và đăng ký còn hiệu lực. None nếu học kỳ đó chưa có học phần nào đủ điểm."""
     return _trung_binh_co_trong_so(_danh_sach_diem_hop_le(sinh_vien, chi_diem_da_cong_bo, hoc_ky, nam_hoc))
+
+
+def diem_trung_binh_nam_hoc(sinh_vien, nam_hoc, chi_diem_da_cong_bo=False):
+    """Điểm trung bình có trọng số tín chỉ của cả một năm học (mọi học kỳ của năm đó), cùng quy tắc
+    với điểm trung bình học kỳ. None nếu năm học đó chưa có học phần nào đủ điểm."""
+    return _trung_binh_co_trong_so(_danh_sach_diem_hop_le(sinh_vien, chi_diem_da_cong_bo, nam_hoc=nam_hoc))
 
 
 def diem_trung_binh_tich_luy(sinh_vien, chi_diem_da_cong_bo=False):

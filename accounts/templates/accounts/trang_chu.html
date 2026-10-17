@@ -4,10 +4,8 @@
 {% if user.vai_tro == 'SINH_VIEN' %}
 {% include 'accounts/_trang_chu_sinh_vien.html' %}
 {% else %}
-<div class="khung">
-    <h1>Xin chào, {{ user.ten_dang_nhap }}</h1>
-    <p>Vai trò: {{ user.get_vai_tro_display }}</p>
-</div>
+{% comment %}Không có khối lời chào (tên đăng nhập và vai trò đã hiện ở chip thanh trên); tiêu đề ẩn cho trình đọc màn hình.{% endcomment %}
+<h1 class="an-chu">Trang chủ</h1>
 
 {% if user.vai_tro == 'PHONG_DAO_TAO' %}
 {% include 'accounts/_trang_chu_phong_dao_tao.html' %}

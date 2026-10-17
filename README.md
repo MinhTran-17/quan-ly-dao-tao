@@ -165,6 +165,12 @@ tắc **"code tính, AI diễn giải"**: mọi con số/điều kiện đều d
    viên và Cố vấn học tập) — trả lời câu hỏi dựa trên các đoạn quy chế truy hồi được (tự cài
    BM25, không dùng dịch vụ embedding ngoài) từ tài liệu đã tải lên ở "Tài liệu quy chế".
 
+Cả 3 chức năng là **khung chat**: gõ câu hỏi, ví dụ "Tóm tắt học kỳ 1 năm học
+2024-2025", "Tóm tắt năm học 2024-2025", "Tư vấn học kỳ 1 năm học 2025-2026, em muốn học các môn về AI",
+"Sinh viên bị cảnh báo học tập khi nào?". Code tự đọc học kỳ/năm học trong câu (không nhờ AI hiểu câu), mỗi tin
+nhắn gọi AI tối đa một lần; câu thiếu dữ liệu hoặc không liên quan được trả lời ngay mà không gọi AI. Lịch sử
+hội thoại lưu trong session (tối đa 10 lượt, không tạo bảng CSDL mới, không gửi lại cho AI).
+
 Chi tiết luồng xử lý, dữ liệu gửi/không gửi cho AI, các lớp kiểm tra sau khi AI trả lời, và
 cách xử lý từng loại lỗi của mỗi chức năng: xem `docs/thiet_ke_ai.md`.
 

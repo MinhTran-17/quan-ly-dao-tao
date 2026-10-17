@@ -15,29 +15,35 @@
     {% endif %}
 </div>
 
+{% if co_dang_ky %}
 <form method="get" class="khung bo-loc">
     <div class="truong">
-        <label>Học kỳ</label>
-        <select name="hoc_ky">
-            <option value="">-- Chọn --</option>
-            {% for hk in cac_hoc_ky %}
-            <option value="{{ hk }}" {% if hoc_ky_loc == hk %}selected{% endif %}>{{ hk }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="truong">
-        <label>Năm học</label>
-        <select name="nam_hoc">
-            <option value="">-- Chọn --</option>
+        <label for="loc-nam-hoc">Năm học</label>
+        <select name="nam_hoc" id="loc-nam-hoc">
+            <option value="" {% if tat_ca %}selected{% endif %}>-- Chọn năm học --</option>
             {% for nh in cac_nam_hoc %}
             <option value="{{ nh }}" {% if nam_hoc_loc == nh %}selected{% endif %}>{{ nh }}</option>
             {% endfor %}
         </select>
     </div>
+    <div class="truong">
+        <label for="loc-hoc-ky">Học kỳ</label>
+        <select name="hoc_ky" id="loc-hoc-ky">
+            <option value="" {% if ca_nam or tat_ca %}selected{% endif %}>{% if tat_ca %}-- Chọn học kỳ --{% else %}Cả năm{% endif %}</option>
+            {% for hk in cac_hoc_ky %}
+            <option value="{{ hk }}" {% if hoc_ky_loc == hk %}selected{% endif %}>Học kỳ {{ hk }}</option>
+            {% endfor %}
+        </select>
+    </div>
     <div class="bo-loc__nut">
-        <button type="submit" class="nut nut-chinh">Xem học kỳ</button>
+        <button type="submit" class="nut nut-chinh">Xem</button>
+        {% if not tat_ca %}<a class="nut nut-phu" href="{{ request.path }}">Xem tất cả</a>{% endif %}
     </div>
 </form>
+{% if chi_mot_ky %}
+<p class="thong-bao--info">Năm học {{ nam_hoc_loc }} mới có học kỳ {{ hoc_ky_loc }} nên chưa xem được cả năm; đang hiển thị học kỳ {{ hoc_ky_loc }}.</p>
+{% endif %}
+{% endif %}
 
 {% if canh_bao.canh_bao %}
 <div class="{% if canh_bao.ly_do|length >= 2 %}thong-bao--error{% else %}thong-bao--warning{% endif %} canh-bao-khoi">
@@ -48,25 +54,26 @@
 </div>
 {% endif %}
 
-<div class="luoi-tong-hop luoi-tong-hop--4">
+{% comment %}Chưa chọn năm học: chỉ hiện điểm trung bình và xếp loại tích lũy; đã chọn thì thêm hai ô của học kỳ/năm học.{% endcomment %}
+<div class="luoi-tong-hop {% if tat_ca %}luoi-tong-hop--2{% else %}luoi-tong-hop--4{% endif %}">
+    {% if not tat_ca %}
     <div class="o-tong-hop">
-        <div class="o-tong-hop__nhan">Điểm trung bình học kỳ{% if hoc_ky_loc and nam_hoc_loc %} {{ hoc_ky_loc }} - {{ nam_hoc_loc }}{% endif %}</div>
+        <div class="o-tong-hop__nhan">{% if ca_nam %}Điểm trung bình năm học {{ nam_hoc_loc }}{% else %}Điểm trung bình học kỳ {{ hoc_ky_loc }} - {{ nam_hoc_loc }}{% endif %}</div>
         {% if diem_tb_hoc_ky is not None %}
         <div class="o-tong-hop__gia-tri">{{ diem_tb_hoc_ky }}</div>
-        {% elif not hoc_ky_loc or not nam_hoc_loc %}
-        <div class="o-tong-hop__ghi-chu">Chưa có học kỳ nào có đủ điểm — chọn học kỳ ở trên để xem.</div>
         {% else %}
-        <div class="o-tong-hop__ghi-chu">Chưa có học phần nào đủ điểm trong học kỳ này.</div>
+        <div class="o-tong-hop__ghi-chu">Chưa có học phần nào đủ điểm trong {% if ca_nam %}năm học{% else %}học kỳ{% endif %} này.</div>
         {% endif %}
     </div>
     <div class="o-tong-hop">
-        <div class="o-tong-hop__nhan">Xếp loại học kỳ</div>
+        <div class="o-tong-hop__nhan">{% if ca_nam %}Xếp loại năm học{% else %}Xếp loại học kỳ{% endif %}</div>
         {% if xep_loai_hoc_ky %}
         <div class="o-tong-hop__gia-tri o-tong-hop__gia-tri--den">{{ xep_loai_hoc_ky }}</div>
         {% else %}
         <div class="o-tong-hop__ghi-chu">Chưa có điểm để xếp loại.</div>
         {% endif %}
     </div>
+    {% endif %}
     <div class="o-tong-hop">
         <div class="o-tong-hop__nhan">Điểm trung bình tích lũy</div>
         {% if diem_tb_tich_luy is not None %}
@@ -127,7 +134,7 @@
         </td>
     </tr>
     {% empty %}
-    <tr><td colspan="7">Chưa có dữ liệu điểm.</td></tr>
+    <tr><td colspan="7">{% if co_dang_ky %}Không có học phần nào trong {% if ca_nam %}năm học {{ nam_hoc_loc }}{% else %}học kỳ {{ hoc_ky_loc }} năm học {{ nam_hoc_loc }}{% endif %}.{% else %}Chưa có dữ liệu điểm.{% endif %}</td></tr>
     {% endfor %}
     </tbody>
 </table>

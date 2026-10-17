@@ -890,8 +890,8 @@ class ThoiKhoaBieuVaLichSuGiaoDienTest(TestCase):
     def test_thoi_khoa_bieu_nut_xuat_pdf_chinh_canh_tieu_de_va_nut_huy_nguy_hiem(self):
         response = self.client.get(reverse('enrollment:thoi_khoa_bieu'))
         phan_dau = re.search(r'<div class="tieu-de-trang">.*?</div>\s*</div>', response.content.decode(), re.S).group(0)
-        self.assertIn(f'<a class="nut nut-chinh" href="{reverse("enrollment:thoi_khoa_bieu_xuat_pdf")}">Xuất PDF</a>', phan_dau)
-        self.assertContains(response, '<a class="nut nut-phu" href="?xem=luoi">Xem dạng lưới tuần</a>')
+        self.assertIn(f'<a class="nut nut-chinh" href="{reverse("enrollment:thoi_khoa_bieu_xuat_pdf")}?ky=1%3A2025-2026">Xuất PDF</a>', phan_dau)
+        self.assertContains(response, '<a class="nut nut-phu" href="?xem=luoi&amp;ky=1%3A2025-2026">Xem dạng lưới tuần</a>')
         self.assertContains(response, 'class="nut nut-nguy-hiem nut-nho"')
         self.assertContains(response, '<table class="bang-sv">')
         for the in _the_a_trong_main(response):
@@ -903,7 +903,7 @@ class ThoiKhoaBieuVaLichSuGiaoDienTest(TestCase):
         self.assertContains(response, '<table class="bang-luoi-tuan bang-sv">')
         # Thứ 3, tiết 2-3: hai ô có lớp (mỗi tiết một ô); các ô khác đều trống.
         self.assertEqual(noi_dung.count('<div class="o-lich-hoc">'), 2)
-        self.assertContains(response, '<a class="nut nut-phu" href="?">Xem dạng danh sách</a>')
+        self.assertContains(response, '<a class="nut nut-phu" href="?ky=1%3A2025-2026">Xem dạng danh sách</a>')
         css = re.search(r'\.o-lich-hoc \{.*?\}', noi_dung, re.S).group(0)
         self.assertIn('background: var(--mau-xanh-nhat);', css)
         self.assertIn('border-left: 3px solid var(--mau-xanh-chinh);', css)
@@ -980,3 +980,105 @@ class LichThiGiaoDienTest(TestCase):
         self.assertContains(response, 'Bạn chưa có lịch thi nào.')
         loi, con_mo = kiem_tra_can_bang_the(response.content.decode())
         self.assertEqual((loi, con_mo), ([], []))
+
+
+class VuaCotPdfTest(TestCase):
+    """Chữ trong bảng PDF không được tràn sang cột bên cạnh (lỗi đè chữ ở thời khóa biểu)."""
+
+    def setUp(self):
+        from reportlab.lib.units import cm
+        from reportlab.pdfbase import pdfmetrics
+
+        from .pdf_utils import dam_bao_font_dejavu, vua_cot
+        dam_bao_font_dejavu()
+        self.cm, self.do_rong_chu, self.vua_cot = cm, pdfmetrics.stringWidth, vua_cot
+
+    def test_chu_ngan_giu_nguyen_co_chu(self):
+        chu, co = self.vua_cot('Thứ 2', 'DejaVuSans', 10, 3 * self.cm)
+        self.assertEqual((chu, co), ('Thứ 2', 10))
+
+    def test_tieu_de_dai_thu_nho_cho_vua_cot(self):
+        do_rong = 1.8 * self.cm
+        chu, co = self.vua_cot('Tiết bắt đầu', 'DejaVuSans-Bold', 10, do_rong)
+        self.assertEqual(chu, 'Tiết bắt đầu')
+        self.assertLess(co, 10)
+        self.assertLessEqual(self.do_rong_chu(chu, 'DejaVuSans-Bold', co), do_rong)
+
+    def test_chu_qua_dai_bi_cat_kem_dau_ba_cham(self):
+        do_rong = 2 * self.cm
+        chu, co = self.vua_cot('Cấu trúc dữ liệu và giải thuật nâng cao', 'DejaVuSans', 10, do_rong)
+        self.assertTrue(chu.endswith('…'))
+        self.assertEqual(co, 7)
+        self.assertLessEqual(self.do_rong_chu(chu, 'DejaVuSans', co), do_rong)
+
+    def test_tieu_de_thoi_khoa_bieu_vua_cot_o_co_chu_goc(self):
+        from .pdf_utils import _KHOANG_CACH_COT
+        from .views import _CAC_COT_THOI_KHOA_BIEU
+        for ten_cot, do_rong in _CAC_COT_THOI_KHOA_BIEU:
+            _, co = self.vua_cot(ten_cot, 'DejaVuSans-Bold', 10, do_rong * self.cm - _KHOANG_CACH_COT)
+            self.assertEqual(co, 10, ten_cot)
+
+
+class ThoiKhoaBieuTheoHocKyTest(TestCase):
+    """Thời khóa biểu (web và PDF) chỉ hiện lớp của một học kỳ: mặc định học kỳ đang diễn ra,
+    chọn được học kỳ khác bằng ?ky=<hoc_ky>:<nam_hoc>."""
+
+    def setUp(self):
+        tao_dot_dang_ky_mo('2', '2025-2026')  # học kỳ đang diễn ra hôm nay
+        HocKy.objects.create(
+            hoc_ky=1, nam_hoc='2024-2025', ngay_bat_dau=date(2024, 9, 1), ngay_ket_thuc=date(2025, 1, 15),
+        )
+        self.sinh_vien = tao_sinh_vien('SV420', tao_lop_hanh_chinh('CNTT1'))
+        giang_vien = tao_giang_vien('GV420')
+        hoc_phan_moi = HocPhan.objects.create(ma_hoc_phan='MMT', ten_hoc_phan='Mạng máy tính', so_tin_chi=3)
+        hoc_phan_cu = HocPhan.objects.create(ma_hoc_phan='TOAN', ten_hoc_phan='Toán cao cấp', so_tin_chi=3)
+        self.lop_moi = LopHocPhan.objects.create(
+            ma_lop_hoc_phan='MMT_KY_MOI', hoc_ky='2', nam_hoc='2025-2026', si_so_toi_da=40,
+            ma_hoc_phan=hoc_phan_moi, ma_giang_vien=giang_vien,
+        )
+        self.lop_cu = LopHocPhan.objects.create(
+            ma_lop_hoc_phan='TOAN_KY_CU', hoc_ky='1', nam_hoc='2024-2025', si_so_toi_da=40,
+            ma_hoc_phan=hoc_phan_cu, ma_giang_vien=giang_vien,
+        )
+        LichHoc.objects.create(ma_lop_hoc_phan=self.lop_moi, thu=2, tiet_bat_dau=4, so_tiet=3, phong_hoc='C201')
+        LichHoc.objects.create(ma_lop_hoc_phan=self.lop_cu, thu=2, tiet_bat_dau=1, so_tiet=3, phong_hoc='C101')
+        DangKyHocPhan.objects.create(
+            ma_sinh_vien=self.sinh_vien, ma_lop_hoc_phan=self.lop_cu, thoi_gian_dang_ky=timezone.now() - timedelta(days=400),
+        )
+        self.dang_ky_moi = DangKyHocPhan.objects.create(
+            ma_sinh_vien=self.sinh_vien, ma_lop_hoc_phan=self.lop_moi, thoi_gian_dang_ky=timezone.now(),
+        )
+        self.client.force_login(self.sinh_vien.ma_tai_khoan)
+
+    def _ma_lop(self, response):
+        return [lich.ma_lop_hoc_phan_id for lich in response.context['danh_sach']]
+
+    def test_mac_dinh_chi_hien_hoc_ky_dang_dien_ra(self):
+        response = self.client.get(reverse('enrollment:thoi_khoa_bieu'))
+        self.assertEqual(self._ma_lop(response), ['MMT_KY_MOI'])
+        self.assertEqual(response.context['ky_chon'], '2:2025-2026')
+        self.assertContains(response, '<option value="1:2024-2025" >Học kỳ 1 - 2024-2025</option>', html=False)
+
+    def test_chon_hoc_ky_cu_chi_hien_lop_ky_cu(self):
+        response = self.client.get(reverse('enrollment:thoi_khoa_bieu'), {'ky': '1:2024-2025'})
+        self.assertEqual(self._ma_lop(response), ['TOAN_KY_CU'])
+
+    def test_tham_so_ky_khong_hop_le_quay_ve_mac_dinh(self):
+        response = self.client.get(reverse('enrollment:thoi_khoa_bieu'), {'ky': '9:1999-2000'})
+        self.assertEqual(self._ma_lop(response), ['MMT_KY_MOI'])
+
+    def test_khong_co_lop_ky_hien_tai_thi_lay_ky_gan_nhat_co_lop(self):
+        self.dang_ky_moi.delete()
+        response = self.client.get(reverse('enrollment:thoi_khoa_bieu'))
+        self.assertEqual(self._ma_lop(response), ['TOAN_KY_CU'])
+
+    def test_xuat_pdf_dung_hoc_ky_dang_chon(self):
+        from unittest import mock
+
+        from . import views
+        with mock.patch.object(views, 'tao_pdf_bang', wraps=views.tao_pdf_bang) as gia:
+            response = self.client.get(reverse('enrollment:thoi_khoa_bieu_xuat_pdf'), {'ky': '1:2024-2025'})
+        self.assertEqual(response.status_code, 200)
+        tieu_de, _, cac_dong = gia.call_args.args[:3]
+        self.assertEqual(tieu_de, 'THỜI KHÓA BIỂU - HỌC KỲ 1 NĂM HỌC 2024-2025')
+        self.assertEqual([dong[1] for dong in cac_dong], ['TOAN_KY_CU'])
