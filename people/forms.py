@@ -1,9 +1,12 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 
+from accounts.forms import validate_so_dien_thoai
 from accounts.models import VaiTro
 
-from .lien_he import kiem_tra_lien_he
+from .lien_he import chuan_hoa_so_dien_thoai, kiem_tra_lien_he
 from .ma_ho_so import ma_hop_le, thong_bao_ma_khong_hop_le
 from .models import CoVanHocTap, GiangVien, SinhVien
 
@@ -20,26 +23,57 @@ def _tai_khoan_kha_dung(model, vai_tro, instance=None):
 
 
 def _kiem_tra_ma_ho_so(form, truong, nhan):
-    """Mã hồ sơ chỉ gồm chữ cái không dấu và chữ số. Khi sửa hồ sơ, mã bị khóa (disabled) nên giữ nguyên
-    giá trị cũ, kể cả dữ liệu cũ không hợp lệ — để vẫn sửa được các trường khác."""
+    """Mã hồ sơ chỉ gồm chữ cái không dấu và chữ số, không trùng mã có sẵn (không phân biệt hoa thường). Khi sửa
+    hồ sơ, mã bị khóa (disabled) nên giữ nguyên giá trị cũ, kể cả dữ liệu cũ không hợp lệ — để vẫn sửa được các
+    trường khác."""
     ma = form.cleaned_data.get(truong)
     if form.instance.pk:
         return ma
     ma = (ma or '').strip()
     if not ma_hop_le(ma):
         raise forms.ValidationError(thong_bao_ma_khong_hop_le(nhan, ma))
+    if form._meta.model.objects.filter(pk__iexact=ma).exists():
+        raise forms.ValidationError(f'{nhan} "{ma}" đã tồn tại.')
     return ma
 
 
-def _kiem_tra_trung_lien_he(form):
-    """Email/số điện thoại không trùng với hồ sơ sinh viên, giảng viên, cố vấn khác (xem people/lien_he.py)."""
-    ho_so_dang_sua = form.instance if form.instance.pk else None
-    loi = kiem_tra_lien_he(form.cleaned_data.get('email'), form.cleaned_data.get('so_dien_thoai'), ho_so_dang_sua)
-    for truong, thong_bao in loi.items():
-        form.add_error(truong, thong_bao)
+def _thay_doi(form, truong, gia_tri):
+    return not form.instance.pk or (gia_tri or '').strip() != (getattr(form.instance, truong) or '').strip()
 
 
-class SinhVienForm(forms.ModelForm):
+class _ThongTinLienHeHoSoMixin:
+    """Email, số điện thoại của hồ sơ: đúng định dạng (cùng quy tắc trang Thông tin cá nhân) và không trùng với
+    hồ sơ sinh viên, giảng viên, cố vấn khác (people/lien_he.py). Chỉ kiểm tra khi giá trị thay đổi, để dữ liệu cũ
+    sai định dạng không chặn việc sửa các trường khác."""
+
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip()
+        if _thay_doi(self, 'email', email):
+            try:
+                validate_email(email)
+            except ValidationError:
+                raise forms.ValidationError('Email không đúng định dạng (ví dụ: ten@gmail.com).')
+        return email
+
+    def clean_so_dien_thoai(self):
+        so_dien_thoai = (self.cleaned_data.get('so_dien_thoai') or '').strip()
+        if self.instance.pk and chuan_hoa_so_dien_thoai(so_dien_thoai) == chuan_hoa_so_dien_thoai(self.instance.so_dien_thoai):
+            return so_dien_thoai  # không đổi (kể cả dữ liệu cũ sai định dạng): giữ nguyên
+        # "0912 345 678", "0912.345.678" -> "0912345678" rồi mới kiểm tra định dạng.
+        so_dien_thoai = chuan_hoa_so_dien_thoai(so_dien_thoai)
+        validate_so_dien_thoai(so_dien_thoai)
+        return so_dien_thoai
+
+    def clean(self):
+        cleaned_data = super().clean()
+        ho_so_dang_sua = self.instance if self.instance.pk else None
+        loi = kiem_tra_lien_he(cleaned_data.get('email'), cleaned_data.get('so_dien_thoai'), ho_so_dang_sua)
+        for truong, thong_bao in loi.items():
+            self.add_error(truong, thong_bao)
+        return cleaned_data
+
+
+class SinhVienForm(_ThongTinLienHeHoSoMixin, forms.ModelForm):
     class Meta:
         model = SinhVien
         fields = ['ma_sinh_vien', 'ho_ten', 'ngay_sinh', 'email', 'so_dien_thoai', 'ma_lop', 'ma_tai_khoan']
@@ -63,13 +97,9 @@ class SinhVienForm(forms.ModelForm):
     def clean_ma_sinh_vien(self):
         return _kiem_tra_ma_ho_so(self, 'ma_sinh_vien', 'Mã sinh viên')
 
-    def clean(self):
-        cleaned_data = super().clean()
-        _kiem_tra_trung_lien_he(self)
-        return cleaned_data
 
 
-class GiangVienForm(forms.ModelForm):
+class GiangVienForm(_ThongTinLienHeHoSoMixin, forms.ModelForm):
     class Meta:
         model = GiangVien
         fields = ['ma_giang_vien', 'ho_ten', 'email', 'so_dien_thoai', 'ma_tai_khoan']
@@ -90,10 +120,6 @@ class GiangVienForm(forms.ModelForm):
     def clean_ma_giang_vien(self):
         return _kiem_tra_ma_ho_so(self, 'ma_giang_vien', 'Mã giảng viên')
 
-    def clean(self):
-        cleaned_data = super().clean()
-        _kiem_tra_trung_lien_he(self)
-        return cleaned_data
 
 
 class NhapSinhVienExcelForm(forms.Form):
@@ -106,7 +132,7 @@ class NhapSinhVienExcelForm(forms.Form):
         return file_excel
 
 
-class CoVanHocTapForm(forms.ModelForm):
+class CoVanHocTapForm(_ThongTinLienHeHoSoMixin, forms.ModelForm):
     class Meta:
         model = CoVanHocTap
         fields = ['ma_co_van', 'ho_ten', 'email', 'so_dien_thoai', 'ma_tai_khoan']
@@ -127,7 +153,3 @@ class CoVanHocTapForm(forms.ModelForm):
     def clean_ma_co_van(self):
         return _kiem_tra_ma_ho_so(self, 'ma_co_van', 'Mã cố vấn')
 
-    def clean(self):
-        cleaned_data = super().clean()
-        _kiem_tra_trung_lien_he(self)
-        return cleaned_data

@@ -3029,3 +3029,15 @@ class LenhTenDangNhapTest(TestCase):
         with self.assertRaisesMessage(CommandError, 'không hợp lệ'):
             call_command('tao_tai_khoan_phong_dao_tao', '....')
         self.assertFalse(TaiKhoan.objects.filter(ten_dang_nhap='....').exists())
+
+
+@tag('tich_hop')
+class TenDangNhapKhongPhanBietHoaThuongTest(TestCase):
+    def test_tao_tai_khoan_trung_ten_khac_hoa_thuong_bi_chan(self):
+        self.client.force_login(TaiKhoan.objects.create_user(ten_dang_nhap='pdt_hoa', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU_HOP_LE))
+        TaiKhoan.objects.create_user(ten_dang_nhap='sv001', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU_HOP_LE)
+        response = self.client.post(reverse('accounts:tai_khoan_tao'), {
+            'ten_dang_nhap': 'SV001', 'vai_tro': VaiTro.SINH_VIEN, 'is_active': 'on', 'mat_khau': 'MatKhauMoi456',
+        })
+        self.assertContains(response, 'Tên đăng nhập này đã tồn tại.')
+        self.assertEqual(TaiKhoan.objects.filter(ten_dang_nhap__iexact='sv001').count(), 1)

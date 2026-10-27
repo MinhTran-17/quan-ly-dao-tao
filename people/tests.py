@@ -619,7 +619,7 @@ class NhapExcelLienHeKhongTrungTest(TestCase):
         self.assertEqual(sorted(loi), [2, 4, 5])
         self.assertIn('đã được dùng cho cố vấn học tập', loi[2])
         self.assertIn('trùng với dòng 3 trong tệp', loi[4])
-        self.assertIn('Số điện thoại "0917 000 002" trùng với dòng 3', loi[4])
+        self.assertIn('Số điện thoại "0917000002" trùng với dòng 3', loi[4])  # đã chuẩn hóa từ "0917 000 002"
         self.assertIn('Số điện thoại "0900000000" đã được dùng cho', loi[5])
         self.assertEqual(ket_qua['so_thanh_cong'], 1)
         self.assertEqual(list(SinhVien.objects.values_list('pk', flat=True)), ['SVX02'])
@@ -671,3 +671,72 @@ class NhapExcelTenDangNhapKhongHopLeTest(TestCase):
         self.assertEqual([l['dong'] for l in ket_qua['loi']], [2])
         self.assertIn('Tên đăng nhập "...." không hợp lệ', ket_qua['loi'][0]['loi'])
         self.assertEqual(sorted(t['ten_dang_nhap'] for t in ket_qua['tao_moi']), ['sv_tdn2', 'svtdn3'])
+
+
+@tag('tich_hop')
+class DinhDangEmailSoDienThoaiHoSoTest(TestCase):
+    def setUp(self):
+        self.client.force_login(TaiKhoan.objects.create_user(ten_dang_nhap='pdt_dd', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU))
+        self.lop = _tao_lop_hanh_chinh('LOPDD')
+
+    def _tao_sinh_vien(self, ma='SVDD1', email='dd1@gmail.com', sdt='0919000001'):
+        tk = TaiKhoan.objects.create_user(ten_dang_nhap=f'tk_{ma.lower()}_{TaiKhoan.objects.count()}', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU)
+        return self.client.post(reverse('people:sinh_vien_tao'), {
+            'ma_sinh_vien': ma, 'ho_ten': 'SV', 'ngay_sinh': '2004-01-01', 'email': email,
+            'so_dien_thoai': sdt, 'ma_lop': self.lop.pk, 'ma_tai_khoan': tk.pk,
+        })
+
+    def test_email_sai_dinh_dang_bi_chan(self):
+        for email in ('abc', 'gmail', 'abc@', '@gmail.com', 'a b@gmail.com'):
+            response = self._tao_sinh_vien(email=email)
+            self.assertContains(response, 'Email không đúng định dạng', msg_prefix=email)
+        self.assertFalse(SinhVien.objects.exists())
+
+    def test_so_dien_thoai_sai_dinh_dang_bi_chan_dung_thi_tu_chuan_hoa(self):
+        for sdt in ('12ab', '091234567', '1912345678', '091234567890'):
+            response = self._tao_sinh_vien(sdt=sdt)
+            self.assertContains(response, 'Số điện thoại phải gồm 10 chữ số', msg_prefix=sdt)
+        self.assertRedirects(self._tao_sinh_vien(sdt='0919 000.001'), reverse('people:sinh_vien_danh_sach'))
+        self.assertEqual(SinhVien.objects.get(pk='SVDD1').so_dien_thoai, '0919000001')
+
+    def test_trung_ma_khac_hoa_thuong_bao_loi_tieng_viet(self):
+        self._tao_sinh_vien(ma='SVDD1')
+        response = self._tao_sinh_vien(ma='svdd1', email='dd2@gmail.com', sdt='0919000002')
+        self.assertContains(response, 'Mã sinh viên &quot;svdd1&quot; đã tồn tại.')
+        self.assertNotContains(response, 'Ma sinh vien')
+        self.assertEqual(SinhVien.objects.count(), 1)
+
+    def test_du_lieu_cu_sai_dinh_dang_van_sua_duoc_truong_khac(self):
+        tk = TaiKhoan.objects.create_user(ten_dang_nhap='gv_cu_dd', vai_tro=VaiTro.GIANG_VIEN, password=MAT_KHAU)
+        GiangVien.objects.create(ma_giang_vien='GVDD', ho_ten='Cũ', email='khong-phai-email', so_dien_thoai='12ab', ma_tai_khoan=tk)
+        response = self.client.post(reverse('people:giang_vien_sua', args=['GVDD']), {
+            'ma_giang_vien': 'GVDD', 'ho_ten': 'Đã sửa tên', 'email': 'khong-phai-email', 'so_dien_thoai': '12ab', 'ma_tai_khoan': tk.pk,
+        })
+        self.assertRedirects(response, reverse('people:giang_vien_danh_sach'))
+        # Đổi email sang giá trị sai định dạng khác thì bị chặn.
+        response = self.client.post(reverse('people:giang_vien_sua', args=['GVDD']), {
+            'ma_giang_vien': 'GVDD', 'ho_ten': 'Đã sửa tên', 'email': 'van-sai', 'so_dien_thoai': '12ab', 'ma_tai_khoan': tk.pk,
+        })
+        self.assertContains(response, 'Email không đúng định dạng')
+
+
+@tag('tich_hop')
+class NhapExcelDinhDangLienHeTest(TestCase):
+    def setUp(self):
+        self.client.force_login(TaiKhoan.objects.create_user(ten_dang_nhap='pdt_ddx', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU))
+        self.lop = _tao_lop_hanh_chinh('LOPDDX')
+
+    def test_email_so_dien_thoai_sai_bao_loi_o_so_bi_mat_so_0_tu_them_lai(self):
+        file_excel = _tao_file_excel([
+            ['SVDX1', 'A', '2004-05-01', 'gmail', '0919100001', self.lop.pk, ''],
+            ['SVDX2', 'B', '2004-05-01', 'b@gmail.com', '12ab', self.lop.pk, ''],
+            ['SVDX3', 'C', '2004-05-01', 'c@gmail.com', 919100003, self.lop.pk, ''],
+            ['SVDX4', 'D', '2004-05-01', 'd@gmail.com', '0919 100 004', self.lop.pk, ''],
+        ])
+        ket_qua = self.client.post(reverse('people:sinh_vien_nhap_excel'), {'file_excel': file_excel}).context['ket_qua']
+        loi = {l['dong']: l['loi'] for l in ket_qua['loi']}
+        self.assertEqual(sorted(loi), [2, 3])
+        self.assertIn('Email "gmail" không đúng định dạng', loi[2])
+        self.assertIn('Số điện thoại "12ab" không hợp lệ', loi[3])
+        self.assertEqual(SinhVien.objects.get(pk='SVDX3').so_dien_thoai, '0919100003')
+        self.assertEqual(SinhVien.objects.get(pk='SVDX4').so_dien_thoai, '0919100004')

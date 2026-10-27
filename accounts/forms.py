@@ -57,6 +57,12 @@ def _kiem_tra_ten_dang_nhap(form):
         return ten
     if not ten_dang_nhap_hop_le(ten):
         raise forms.ValidationError(thong_bao_ten_dang_nhap_khong_hop_le(ten))
+    # Không phân biệt hoa thường (sv001 và SV001 là một), không phụ thuộc collation của CSDL.
+    trung = TaiKhoan.objects.filter(ten_dang_nhap__iexact=ten)
+    if form.instance.pk:
+        trung = trung.exclude(pk=form.instance.pk)
+    if trung.exists():
+        raise forms.ValidationError('Tên đăng nhập này đã tồn tại.')
     return ten
 
 

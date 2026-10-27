@@ -1,12 +1,14 @@
 from datetime import date, datetime
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
 from openpyxl import load_workbook
 
 from academics.models import LopHanhChinh
 from accounts.models import VaiTro
-from accounts.forms import ten_dang_nhap_hop_le, thong_bao_ten_dang_nhap_khong_hop_le
+from accounts.forms import ten_dang_nhap_hop_le, thong_bao_ten_dang_nhap_khong_hop_le, validate_so_dien_thoai
 from accounts.services import tao_mat_khau_tam
 
 from .lien_he import chuan_hoa_so_dien_thoai, kiem_tra_lien_he
@@ -117,7 +119,24 @@ def xu_ly_file_excel_sinh_vien(file_excel):
             loi.append({'dong': so_dong, 'loi': f'Tên đăng nhập "{ten_dang_nhap}" đã tồn tại.'})
             continue
 
-        email, so_dien_thoai = str(email).strip(), str(so_dien_thoai).strip()
+        if isinstance(so_dien_thoai, (int, float)):
+            # Ô kiểu số trong Excel làm mất số 0 đầu (0912345678 -> 912345678): đọc lại thành chuỗi, thêm lại số 0.
+            so_dien_thoai = str(int(so_dien_thoai))
+            if len(so_dien_thoai) == 9:
+                so_dien_thoai = '0' + so_dien_thoai
+        email, so_dien_thoai = str(email).strip(), chuan_hoa_so_dien_thoai(str(so_dien_thoai))
+        loi_dinh_dang = []
+        try:
+            validate_email(email)
+        except ValidationError:
+            loi_dinh_dang.append(f'Email "{email}" không đúng định dạng (ví dụ: ten@gmail.com).')
+        try:
+            validate_so_dien_thoai(so_dien_thoai)
+        except ValidationError:
+            loi_dinh_dang.append(f'Số điện thoại "{so_dien_thoai}" không hợp lệ: phải gồm 10 chữ số và bắt đầu bằng số 0.')
+        if loi_dinh_dang:
+            loi.append({'dong': so_dong, 'loi': ' '.join(loi_dinh_dang)})
+            continue
         khoa_email, khoa_sdt = email.lower(), chuan_hoa_so_dien_thoai(so_dien_thoai)
         loi_lien_he = list(kiem_tra_lien_he(email, so_dien_thoai).values())
         if khoa_email in email_trong_tep:
