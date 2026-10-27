@@ -236,7 +236,7 @@ def thong_tin_ca_nhan(request):
     form = None
     if ho_so is not None:
         if request.method == 'POST':
-            form = ThongTinLienHeForm(request.POST)
+            form = ThongTinLienHeForm(request.POST, ho_so=ho_so)
             if form.is_valid():
                 ho_so.email = form.cleaned_data['email']
                 ho_so.so_dien_thoai = form.cleaned_data['so_dien_thoai']
@@ -244,5 +244,5 @@ def thong_tin_ca_nhan(request):
                 messages.success(request, 'Đã cập nhật thông tin liên hệ.')
                 return redirect('accounts:thong_tin_ca_nhan')
         else:
-            form = ThongTinLienHeForm(initial={'email': ho_so.email, 'so_dien_thoai': ho_so.so_dien_thoai})
+            form = ThongTinLienHeForm(initial={'email': ho_so.email, 'so_dien_thoai': ho_so.so_dien_thoai}, ho_so=ho_so)
     return render(request, 'accounts/thong_tin_ca_nhan.html', {'ho_so': ho_so, 'form': form})

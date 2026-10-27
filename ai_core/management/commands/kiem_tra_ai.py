@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand
 from ai_core.clients import lay_client_ai
 from ai_core.exceptions import LoiAI
 from ai_core.prompts import KhongTimThayPrompt, nap_prompt
+from ai_core.theo_doi import goi_ai_co_ghi_log
 
 
 class Command(BaseCommand):
@@ -24,7 +25,7 @@ class Command(BaseCommand):
         try:
             he_thong, nguoi_dung = nap_prompt('kiem_tra_ket_noi', 'v1')
             client = lay_client_ai()
-            ket_qua = client.sinh_noi_dung(he_thong=he_thong, nguoi_dung=nguoi_dung)
+            ket_qua = goi_ai_co_ghi_log('kiem_tra_ket_noi', client, he_thong=he_thong, nguoi_dung=nguoi_dung)
         except (LoiAI, KhongTimThayPrompt) as loi:
             self.stderr.write(self.style.ERROR(f'Kết nối AI thất bại: {loi}'))
             if options['chi_tiet']:

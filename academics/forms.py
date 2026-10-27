@@ -90,6 +90,20 @@ class HocPhanForm(forms.ModelForm):
         if self.instance.pk:
             self.fields['ma_hoc_phan'].disabled = True
 
+    def clean_ma_hoc_phan(self):
+        """Mã học phần lưu chữ in hoa; kiểm tra trùng không phân biệt hoa thường (TOAN và toan là một mã).
+        Khi sửa, mã bị khóa nên giữ nguyên giá trị cũ."""
+        ma = self.cleaned_data.get('ma_hoc_phan')
+        if self.instance.pk:
+            return ma
+        ma = (ma or '').strip().upper()
+        da_co = HocPhan.objects.filter(ma_hoc_phan__iexact=ma).values_list('ma_hoc_phan', flat=True).first()
+        if da_co is not None:
+            raise forms.ValidationError(
+                f'Mã học phần "{ma}" đã tồn tại (đã có "{da_co}"; mã không phân biệt chữ hoa, chữ thường).'
+            )
+        return ma
+
 
 class DieuKienTienQuyetForm(forms.ModelForm):
     class Meta:

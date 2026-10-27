@@ -3,7 +3,7 @@ import tempfile
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, tag
 from django.urls import reverse
 
 from accounts.models import VaiTro
@@ -19,6 +19,7 @@ def tep_pdf(ten='quy_che.pdf', noi_dung=b'%PDF-1.4 noi dung gia lap'):
     return SimpleUploadedFile(ten, noi_dung, content_type='application/pdf')
 
 
+@tag('tich_hop')
 @override_settings(MEDIA_ROOT=MEDIA_ROOT_TEST)
 class TaiLenTaiLieuTest(TestCase):
     @classmethod
@@ -89,6 +90,7 @@ class TaiLenTaiLieuTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@tag('tich_hop')
 @override_settings(MEDIA_ROOT=MEDIA_ROOT_TEST)
 class CapNhatXoaTaiLieuTest(TestCase):
     @classmethod
@@ -146,6 +148,7 @@ class CapNhatXoaTaiLieuTest(TestCase):
         self.assertContains(response, 'Quy chế cũ')
 
 
+@tag('tich_hop')
 @override_settings(MEDIA_ROOT=MEDIA_ROOT_TEST)
 class TaiVeTaiLieuTest(TestCase):
     @classmethod

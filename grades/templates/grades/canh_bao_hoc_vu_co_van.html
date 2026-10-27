@@ -11,7 +11,7 @@
     {% for muc in danh_sach %}
     <tr>
         <td>{{ muc.sinh_vien.ma_sinh_vien }}</td>
-        <td><a class="lien-ket-van-ban" href="{% url 'grades:bang_diem_sinh_vien' muc.sinh_vien.pk %}">{{ muc.sinh_vien.ho_ten }}</a></td>
+        <td>{% if muc.sinh_vien.ma_dung_duoc_trong_url %}<a class="lien-ket-van-ban" href="{% url 'grades:bang_diem_sinh_vien' muc.sinh_vien.pk %}">{{ muc.sinh_vien.ho_ten }}</a>{% else %}{{ muc.sinh_vien.ho_ten }}{% endif %}</td>
         <td>{{ muc.hoc_ky }}</td>
         <td>{{ muc.nam_hoc }}</td>
         <td class="so">{{ muc.diem_trung_binh }}</td>

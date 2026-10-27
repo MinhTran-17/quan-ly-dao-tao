@@ -1,0 +1,31 @@
+# Bí mật: không bao giờ đưa vào ảnh Docker (compose đọc .env lúc chạy)
+.env
+.env.*
+!.env.example
+
+# Môi trường và tệp sinh ra khi chạy
+venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+logs/
+media/
+staticfiles/
+db.sqlite3
+
+# Công cụ phát triển, không cần để chạy ứng dụng
+.git/
+.github/
+.agents/
+.vscode/
+.idea/
+# Bỏ tài liệu, trừ docs/ca_thu_ai/ (bộ ca thử của các lệnh chay_ca_thu_*) và đề bài, nhật ký AI
+# (lệnh chay_nha_may đọc docs/de-bai.md, ghi docs/ai-log.md)
+docs/*
+!docs/ca_thu_ai/
+!docs/de-bai.md
+!docs/ai-log.md
+tong_hop_hien_trang.md
+Dockerfile
+docker-compose.yml
+.dockerignore

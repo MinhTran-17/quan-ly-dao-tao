@@ -1,7 +1,7 @@
 from datetime import date
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.urls import reverse
 from django.utils import timezone
 
@@ -49,6 +49,7 @@ def tao_sinh_vien(ma_sinh_vien, ma_lop):
     )
 
 
+@tag('tich_hop')
 class DiemDanhLopTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh = tao_lop_hanh_chinh('CNTT_DD1')
@@ -120,6 +121,7 @@ class DiemDanhLopTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@tag('tich_hop')
 class LichSuDiemDanhTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh = tao_lop_hanh_chinh('CNTT_DD2')

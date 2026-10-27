@@ -1,4 +1,6 @@
 .env
+.env.*
+!.env.example
 venv/
 __pycache__/
 *.pyc
@@ -8,3 +10,10 @@ staticfiles/
 media/
 .vscode/
 .idea/
+
+
+# Log vận hành (logs/app.log và các tệp xoay vòng)
+logs/
+
+# Tệp sao lưu CSDL (chứa dữ liệu cá nhân, không commit)
+*.sql

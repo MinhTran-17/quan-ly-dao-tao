@@ -80,7 +80,7 @@ gì), sinh viên cần quan tâm và thông báo gần đây. Dùng lại kiểu
                     <span class="chip {% if muc.muc_do %}chip--muc-do{% else %}chip--muc-vang{% endif %}">{% if muc.muc_do %}Mức đỏ{% else %}Mức vàng{% endif %}</span></div>
                 <div class="khoi-gan-day__phu">Lớp {{ muc.sinh_vien.ma_lop_id }} &middot; Học kỳ {{ muc.hoc_ky }}, {{ muc.nam_hoc }} &middot; Điểm trung bình {{ muc.diem_trung_binh }} &middot; {{ muc.ly_do|join:" " }}</div>
             </div>
-            <a class="nut nut-phu nut-nho" href="{% url 'grades:bang_diem_sinh_vien' muc.sinh_vien.ma_sinh_vien %}">Xem bảng điểm</a>
+            {% if muc.sinh_vien.ma_dung_duoc_trong_url %}<a class="nut nut-phu nut-nho" href="{% url 'grades:bang_diem_sinh_vien' muc.sinh_vien.ma_sinh_vien %}">Xem bảng điểm</a>{% else %}<span class="gia-tri-trong" title="Mã chứa ký tự không hợp lệ, chạy python manage.py kiem_tra_ma_ho_so để xem danh sách">Mã không hợp lệ</span>{% endif %}
         </li>
         {% endfor %}
     </ul>

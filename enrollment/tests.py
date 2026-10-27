@@ -3,7 +3,7 @@ from datetime import date, time, timedelta
 from io import BytesIO
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.urls import reverse
 from django.utils import timezone
 from openpyxl import load_workbook
@@ -67,6 +67,7 @@ def tao_lop_hanh_chinh(ma_lop='CNTT1'):
     return LopHanhChinh.objects.create(ma_lop=ma_lop, ten_lop=f'Lớp {ma_lop}', ma_nganh=nganh, ma_co_van=co_van)
 
 
+@tag('don_vi')
 class DangKyHocPhanServiceTest(TestCase):
     def setUp(self):
         tao_dot_dang_ky_mo('1', '2025-2026')
@@ -203,6 +204,7 @@ class DangKyHocPhanServiceTest(TestCase):
         self.assertIn('tiên quyết', str(ngu_canh.exception))
 
 
+@tag('tich_hop')
 class QuyenDangKyViewTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh = tao_lop_hanh_chinh('CNTT1')
@@ -254,6 +256,7 @@ class QuyenDangKyViewTest(TestCase):
         self.assertEqual(response.status_code, 302)
 
 
+@tag('tich_hop')
 class DangKyQuaViewTest(TestCase):
     def setUp(self):
         tao_dot_dang_ky_mo('1', '2025-2026')
@@ -289,12 +292,14 @@ class DotDangKyGioiHanTest(TestCase):
             ma_hoc_phan=self.hoc_phan, ma_giang_vien=self.giang_vien,
         )
 
+    @tag('don_vi')
     def test_chan_khi_chua_co_dot_dang_ky_nao(self):
         with self.assertRaises(LoiDangKyHocPhan) as ngu_canh:
             dang_ky_hoc_phan(self.sinh_vien, self.lop_hoc_phan)
         self.assertIn('Chưa có đợt đăng ký', str(ngu_canh.exception))
         self.assertFalse(DangKyHocPhan.objects.filter(ma_lop_hoc_phan=self.lop_hoc_phan).exists())
 
+    @tag('don_vi')
     def test_chan_khi_dot_chua_mo(self):
         hoc_ky_obj = HocKy.objects.create(
             hoc_ky=1, nam_hoc='2025-2026', ngay_bat_dau=timezone.localdate(),
@@ -307,6 +312,7 @@ class DotDangKyGioiHanTest(TestCase):
             dang_ky_hoc_phan(self.sinh_vien, self.lop_hoc_phan)
         self.assertIn('chưa mở', str(ngu_canh.exception))
 
+    @tag('don_vi')
     def test_chan_khi_dot_da_dong(self):
         hoc_ky_obj = HocKy.objects.create(
             hoc_ky=1, nam_hoc='2025-2026', ngay_bat_dau=timezone.localdate(),
@@ -319,11 +325,13 @@ class DotDangKyGioiHanTest(TestCase):
             dang_ky_hoc_phan(self.sinh_vien, self.lop_hoc_phan)
         self.assertIn('đã đóng', str(ngu_canh.exception))
 
+    @tag('don_vi')
     def test_dang_ky_duoc_khi_dot_dang_mo(self):
         tao_dot_dang_ky_mo('1', '2025-2026')
         dang_ky = dang_ky_hoc_phan(self.sinh_vien, self.lop_hoc_phan)
         self.assertTrue(DangKyHocPhan.objects.filter(pk=dang_ky.pk).exists())
 
+    @tag('tich_hop')
     def test_trang_web_bao_ro_ly_do_ngoai_dot(self):
         self.client.force_login(self.sinh_vien.ma_tai_khoan)
         response = self.client.post(reverse('enrollment:dang_ky', args=[self.lop_hoc_phan.pk]))
@@ -349,6 +357,7 @@ class HuyDangKyTest(TestCase):
             ma_sinh_vien=self.sinh_vien, ma_lop_hoc_phan=self.lop_hoc_phan, thoi_gian_dang_ky=timezone.now(),
         )
 
+    @tag('don_vi')
     def test_huy_thanh_cong_qua_service(self):
         huy_dang_ky_hoc_phan(self.dang_ky)
         self.dang_ky.refresh_from_db()
@@ -356,12 +365,14 @@ class HuyDangKyTest(TestCase):
         # Dòng vẫn còn, không bị xóa (giữ lịch sử).
         self.assertTrue(DangKyHocPhan.objects.filter(pk=self.dang_ky.pk).exists())
 
+    @tag('don_vi')
     def test_khong_the_huy_hai_lan(self):
         huy_dang_ky_hoc_phan(self.dang_ky)
         with self.assertRaises(LoiDangKyHocPhan) as ngu_canh:
             huy_dang_ky_hoc_phan(self.dang_ky)
         self.assertIn('đã được hủy', str(ngu_canh.exception))
 
+    @tag('don_vi')
     def test_chan_huy_khi_da_co_diem(self):
         Diem.objects.create(ma_dang_ky=self.dang_ky, diem_qua_trinh=8, diem_thi=8)
         with self.assertRaises(LoiDangKyHocPhan) as ngu_canh:
@@ -370,6 +381,7 @@ class HuyDangKyTest(TestCase):
         self.dang_ky.refresh_from_db()
         self.assertEqual(self.dang_ky.trang_thai, TrangThaiDangKy.CON_HIEU_LUC)
 
+    @tag('don_vi')
     def test_van_huy_duoc_khi_diem_rong_chua_nhap_gi(self):
         # nhap_diem_view tạo Diem rỗng (get_or_create) ngay khi giảng viên mở trang, dù
         # chưa nhập điểm nào — trường hợp này vẫn phải hủy được bình thường.
@@ -378,6 +390,7 @@ class HuyDangKyTest(TestCase):
         self.dang_ky.refresh_from_db()
         self.assertEqual(self.dang_ky.trang_thai, TrangThaiDangKy.DA_HUY)
 
+    @tag('don_vi')
     def test_dang_ky_lai_sau_khi_huy_tao_dong_moi(self):
         huy_dang_ky_hoc_phan(self.dang_ky)
         dang_ky_moi = dang_ky_hoc_phan(self.sinh_vien, self.lop_hoc_phan)
@@ -388,6 +401,7 @@ class HuyDangKyTest(TestCase):
             DangKyHocPhan.objects.filter(ma_sinh_vien=self.sinh_vien, ma_lop_hoc_phan=self.lop_hoc_phan).count(), 2,
         )
 
+    @tag('tich_hop')
     def test_huy_qua_view_thanh_cong_va_xac_nhan_truoc(self):
         self.client.force_login(self.sinh_vien.ma_tai_khoan)
         response = self.client.get(reverse('enrollment:huy_dang_ky', args=[self.dang_ky.pk]))
@@ -401,6 +415,7 @@ class HuyDangKyTest(TestCase):
         self.dang_ky.refresh_from_db()
         self.assertEqual(self.dang_ky.trang_thai, TrangThaiDangKy.DA_HUY)
 
+    @tag('tich_hop')
     def test_khong_the_huy_dang_ky_cua_nguoi_khac(self):
         dang_ky_cua_khac = DangKyHocPhan.objects.create(
             ma_sinh_vien=self.sinh_vien_khac, ma_lop_hoc_phan=self.lop_hoc_phan, thoi_gian_dang_ky=timezone.now(),
@@ -411,6 +426,7 @@ class HuyDangKyTest(TestCase):
         dang_ky_cua_khac.refresh_from_db()
         self.assertEqual(dang_ky_cua_khac.trang_thai, TrangThaiDangKy.CON_HIEU_LUC)
 
+    @tag('tich_hop')
     def test_giang_vien_khong_duoc_huy_dang_ky(self):
         self.client.force_login(self.giang_vien.ma_tai_khoan)
         response = self.client.post(reverse('enrollment:huy_dang_ky', args=[self.dang_ky.pk]))
@@ -435,6 +451,7 @@ class SiSoVaThongKeSauKhiHuyTest(TestCase):
             ma_sinh_vien=self.sv1, ma_lop_hoc_phan=self.lop_hoc_phan, thoi_gian_dang_ky=timezone.now(),
         )
 
+    @tag('don_vi')
     def test_si_so_giam_sau_khi_huy_cho_phep_sinh_vien_khac_dang_ky(self):
         # Lớp sĩ số tối đa 1, đã đầy bởi sv1 -> sv2 bị chặn.
         with self.assertRaises(LoiDangKyHocPhan) as ngu_canh:
@@ -446,6 +463,7 @@ class SiSoVaThongKeSauKhiHuyTest(TestCase):
         dang_ky_sv2 = dang_ky_hoc_phan(self.sv2, self.lop_hoc_phan)
         self.assertTrue(DangKyHocPhan.objects.filter(pk=dang_ky_sv2.pk).exists())
 
+    @tag('tich_hop')
     def test_trang_danh_sach_lop_dang_mo_giam_si_so_sau_khi_huy(self):
         huy_dang_ky_hoc_phan(self.dang_ky_sv1)
         self.client.force_login(self.sv2.ma_tai_khoan)
@@ -453,6 +471,7 @@ class SiSoVaThongKeSauKhiHuyTest(TestCase):
         # Trang Sinh viên hiện sĩ số dạng "đã đăng ký/tối đa" trong chip (báo cáo của Phòng Đào tạo vẫn "x / y").
         self.assertContains(response, '0/1')
 
+    @tag('tich_hop')
     def test_bao_cao_si_so_theo_lop_chi_tinh_con_hieu_luc(self):
         pdt = TaiKhoan.objects.create_user(ten_dang_nhap='pdt_ss', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU)
         huy_dang_ky_hoc_phan(self.dang_ky_sv1)
@@ -460,6 +479,7 @@ class SiSoVaThongKeSauKhiHuyTest(TestCase):
         response = self.client.get(reverse('reports:si_so_theo_lop'))
         self.assertContains(response, '0 / 1')
 
+    @tag('tich_hop')
     def test_bao_cao_hoc_phan_nhieu_dang_ky_chi_tinh_con_hieu_luc(self):
         pdt = TaiKhoan.objects.create_user(ten_dang_nhap='pdt_hp', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU)
         huy_dang_ky_hoc_phan(self.dang_ky_sv1)
@@ -469,6 +489,7 @@ class SiSoVaThongKeSauKhiHuyTest(TestCase):
         hoc_phan = next(hp for hp in response.context['danh_sach'] if hp.pk == self.hoc_phan.pk)
         self.assertEqual(hoc_phan.so_dang_ky, 0)
 
+    @tag('tich_hop')
     def test_ket_qua_hoc_tap_bo_qua_dang_ky_da_huy(self):
         Diem.objects.create(ma_dang_ky=self.dang_ky_sv1, diem_qua_trinh=8, diem_thi=8)
         # sv2 đăng ký (thẳng qua ORM, bỏ qua kiểm tra sĩ số) rồi hủy TRƯỚC KHI có điểm —
@@ -489,6 +510,7 @@ class SiSoVaThongKeSauKhiHuyTest(TestCase):
         self.assertContains(response, 'Phân bố điểm tổng kết (1 lượt có đủ điểm)')
 
 
+@tag('don_vi')
 class TrungLichTienQuyetBoQuaDaHuyTest(TestCase):
     """Phần B: kiểm tra trùng lịch/tiên quyết khi đăng ký học phần khác chỉ tính các đăng
     ký còn hiệu lực — một đăng ký đã hủy không được coi là "đã đạt" hay "đã chiếm lịch"."""
@@ -555,6 +577,7 @@ class TrungLichTienQuyetBoQuaDaHuyTest(TestCase):
         self.assertIn('tiên quyết', str(ngu_canh.exception))
 
 
+@tag('tich_hop')
 class DanhSachSinhVienLopTrangThaiTest(TestCase):
     """Phòng Đào tạo phải thấy đủ trạng thái (không ẩn đăng ký đã hủy); giảng viên chỉ
     thấy sinh viên đang thực học (đăng ký còn hiệu lực)."""
@@ -619,6 +642,7 @@ class DanhSachSinhVienLopTrangThaiTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@tag('tich_hop')
 class XuatExcelSinhVienPhuTrachTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh = tao_lop_hanh_chinh('CNTT090')
@@ -639,6 +663,7 @@ class XuatExcelSinhVienPhuTrachTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@tag('tich_hop')
 class LuoiTuanSinhVienTest(TestCase):
     def setUp(self):
         tao_dot_dang_ky_mo('1', '2025-2026')
@@ -671,6 +696,7 @@ class LuoiTuanSinhVienTest(TestCase):
         self.assertTrue(noi_dung.startswith(b'%PDF'))
 
 
+@tag('tich_hop')
 class LichThiSinhVienTest(TestCase):
     def setUp(self):
         tao_dot_dang_ky_mo('1', '2025-2026')
@@ -731,6 +757,7 @@ def _the_a_trong_main(response):
     return re.findall(r'<a [^>]*>', phan_main)
 
 
+@tag('tich_hop')
 class LopDangMoGiaoDienTest(TestCase):
     """Giao diện trang "Lớp đang mở" của Sinh viên (lượt giao diện 3/3): sĩ số dạng chip theo
     mức đầy, chip trạng thái đầy đủ (tiên quyết, trùng lịch...), nút, dòng nhóm học kỳ."""
@@ -865,6 +892,7 @@ class LopDangMoGiaoDienTest(TestCase):
         self.assertEqual((loi, con_mo), ([], []))
 
 
+@tag('tich_hop')
 class ThoiKhoaBieuVaLichSuGiaoDienTest(TestCase):
     def setUp(self):
         tao_dot_dang_ky_mo('1', '2025-2026')
@@ -921,6 +949,7 @@ class ThoiKhoaBieuVaLichSuGiaoDienTest(TestCase):
         self.assertContains(response, '<table class="bang-sv">')
 
 
+@tag('tich_hop')
 class LichThiGiaoDienTest(TestCase):
     def setUp(self):
         tao_dot_dang_ky_mo('1', '2025-2026')
@@ -982,6 +1011,7 @@ class LichThiGiaoDienTest(TestCase):
         self.assertEqual((loi, con_mo), ([], []))
 
 
+@tag('don_vi')
 class VuaCotPdfTest(TestCase):
     """Chữ trong bảng PDF không được tràn sang cột bên cạnh (lỗi đè chữ ở thời khóa biểu)."""
 
@@ -1019,6 +1049,7 @@ class VuaCotPdfTest(TestCase):
             self.assertEqual(co, 10, ten_cot)
 
 
+@tag('tich_hop')
 class ThoiKhoaBieuTheoHocKyTest(TestCase):
     """Thời khóa biểu (web và PDF) chỉ hiện lớp của một học kỳ: mặc định học kỳ đang diễn ra,
     chọn được học kỳ khác bằng ?ky=<hoc_ky>:<nam_hoc>."""
@@ -1082,3 +1113,38 @@ class ThoiKhoaBieuTheoHocKyTest(TestCase):
         tieu_de, _, cac_dong = gia.call_args.args[:3]
         self.assertEqual(tieu_de, 'THỜI KHÓA BIỂU - HỌC KỲ 1 NĂM HỌC 2024-2025')
         self.assertEqual([dong[1] for dong in cac_dong], ['TOAN_KY_CU'])
+
+
+def kiem_tra_dinh_dang_excel(test, noi_dung_tep):
+    """Mọi sheet của file xuất: tiêu đề in đậm, cố định dòng 1, cột giãn theo nội dung dài nhất (tối đa 60)."""
+    from io import BytesIO as _BytesIO
+
+    from openpyxl import load_workbook as _load_workbook
+    from openpyxl.utils import get_column_letter as _cot
+    workbook = _load_workbook(_BytesIO(noi_dung_tep))
+    for sheet in workbook.worksheets:
+        test.assertEqual(sheet.freeze_panes, 'A2', sheet.title)
+        test.assertTrue(all(cell.font.bold for cell in sheet[1] if cell.value is not None), sheet.title)
+        for chi_so, cot in enumerate(sheet.iter_cols(values_only=True), start=1):
+            dai_nhat = max(len(str(v)) for v in cot if v is not None)
+            test.assertEqual(sheet.column_dimensions[_cot(chi_so)].width, min(max(dai_nhat + 2, 8), 60), (sheet.title, chi_so))
+    return workbook
+
+
+@tag('tich_hop')
+class DinhDangFileExcelDanhSachTest(TestCase):
+    def test_xuat_excel_sinh_vien_phu_trach_va_sinh_vien_lop_dung_dinh_dang(self):
+        lop_hanh_chinh = tao_lop_hanh_chinh('CNTTXL')
+        tao_sinh_vien('SVXL1', lop_hanh_chinh)
+        self.client.force_login(lop_hanh_chinh.ma_co_van.ma_tai_khoan)
+        response = self.client.get(reverse('enrollment:xuat_excel_sinh_vien_phu_trach'))
+        kiem_tra_dinh_dang_excel(self, response.content)
+
+        giang_vien = tao_giang_vien('GVXL1')
+        hoc_phan = HocPhan.objects.create(ma_hoc_phan='XLHP', ten_hoc_phan='Học phần có tên khá dài để giãn cột', so_tin_chi=3)
+        lop = LopHocPhan.objects.create(ma_lop_hoc_phan='XLHP_01', hoc_ky='1', nam_hoc='2025-2026', si_so_toi_da=40,
+                                        ma_hoc_phan=hoc_phan, ma_giang_vien=giang_vien)
+        self.client.force_login(giang_vien.ma_tai_khoan)
+        response = self.client.get(reverse('enrollment:xuat_excel_sinh_vien_lop', args=[lop.pk]))
+        self.assertEqual(response.status_code, 200)
+        kiem_tra_dinh_dang_excel(self, response.content)

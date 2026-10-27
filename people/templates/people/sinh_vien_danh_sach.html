@@ -55,8 +55,10 @@
         <td>{{ sv.ma_lop.ten_lop }}</td>
         <td>{{ sv.email }}</td>
         <td>
+            {% if sv.ma_dung_duoc_trong_url %}
             <a class="nut nut-nhe nut-nho" href="{% url 'people:sinh_vien_sua' sv.pk %}">Sửa</a>
             <a class="nut nut-nguy-hiem nut-nho" href="{% url 'people:sinh_vien_xoa' sv.pk %}">Xóa</a>
+            {% else %}<span class="gia-tri-trong" title="Mã chứa ký tự không hợp lệ, chạy python manage.py kiem_tra_ma_ho_so để xem danh sách">Mã không hợp lệ</span>{% endif %}
         </td>
     </tr>
     {% empty %}

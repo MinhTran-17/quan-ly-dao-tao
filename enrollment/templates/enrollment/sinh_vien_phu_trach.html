@@ -16,7 +16,7 @@
         <td>{{ sv.ho_ten }}</td>
         <td>{{ sv.ma_lop.ten_lop }}</td>
         <td>{{ sv.email }}</td>
-        <td><a class="nut nut-nhe nut-nho" href="{% url 'grades:bang_diem_sinh_vien' sv.pk %}">Xem điểm</a></td>
+        <td>{% if sv.ma_dung_duoc_trong_url %}<a class="nut nut-nhe nut-nho" href="{% url 'grades:bang_diem_sinh_vien' sv.pk %}">Xem điểm</a>{% else %}<span class="gia-tri-trong" title="Mã chứa ký tự không hợp lệ, chạy python manage.py kiem_tra_ma_ho_so để xem danh sách">Mã không hợp lệ</span>{% endif %}</td>
     </tr>
     {% empty %}
     <tr><td colspan="5">Chưa phụ trách sinh viên nào.</td></tr>

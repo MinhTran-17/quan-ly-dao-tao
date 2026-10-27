@@ -8,7 +8,7 @@ import httpx
 from django.conf import settings
 from django.core.cache import cache
 from django.core.management import call_command
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, tag
 from google.genai import errors as genai_errors
 from google.genai import types as genai_types
 
@@ -55,6 +55,7 @@ class KiemThuCoDinhCauHinhAI(TestCase):
     pass
 
 
+@tag('don_vi')
 class GoiVoiThuLaiTest(KiemThuCoDinhCauHinhAI):
     """Kiểm tra logic thử lại độc lập với mạng thật, dùng hàm giả lập mô phỏng lỗi."""
 
@@ -141,6 +142,7 @@ class GoiVoiThuLaiTest(KiemThuCoDinhCauHinhAI):
         gia_lap_sleep.assert_called_once_with(2.0)  # 2.0 * 2**(1-1)
 
 
+@tag('don_vi')
 class PhanLoaiGioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
     """Phân biệt HẾT HẠN MỨC THEO NGÀY với VƯỢT TẦN SUẤT THEO PHÚT từ chi tiết lỗi 429."""
 
@@ -181,6 +183,7 @@ class PhanLoaiGioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         self.assertEqual(_phan_loai_gioi_han_tan_suat(loi), 'ngay')
 
 
+@tag('don_vi')
 class LayThoiGianChoTu429Test(KiemThuCoDinhCauHinhAI):
     def test_doc_duoc_retry_delay_dang_lay_trong_details(self):
         loi = genai_errors.ClientError(429, {
@@ -199,6 +202,7 @@ class LayThoiGianChoTu429Test(KiemThuCoDinhCauHinhAI):
         self.assertIsNone(_lay_giay_tu_chuoi_thoi_luong(None))
 
 
+@tag('don_vi')
 class QuaGioiHanTanSuatAIThongDiepTest(KiemThuCoDinhCauHinhAI):
     def test_pham_vi_ngay_co_thong_diep_rieng(self):
         loi = QuaGioiHanTanSuatAI(pham_vi='ngay')
@@ -215,6 +219,7 @@ class QuaGioiHanTanSuatAIThongDiepTest(KiemThuCoDinhCauHinhAI):
         self.assertEqual(str(loi), 'Dịch vụ AI đang bị giới hạn tần suất sử dụng, vui lòng thử lại sau.')
 
 
+@tag('don_vi')
 class TrichVanBanTuPhanHoiTest(KiemThuCoDinhCauHinhAI):
     def test_phan_hoi_rong(self):
         with self.assertRaises(PhanHoiRongAI):
@@ -229,6 +234,7 @@ class TrichVanBanTuPhanHoiTest(KiemThuCoDinhCauHinhAI):
         self.assertEqual(van_ban, 'Xin chào')
 
 
+@tag('don_vi')
 class GeminiClientTest(KiemThuCoDinhCauHinhAI):
     @override_settings(GEMINI_API_KEY='')
     def test_thieu_khoa_bao_loi_ngay_khong_goi_mang(self):
@@ -270,6 +276,7 @@ class GeminiClientTest(KiemThuCoDinhCauHinhAI):
         self.assertTrue(cau_hinh_afc.disable)
 
 
+@tag('don_vi')
 class ClientAIGiaTest(KiemThuCoDinhCauHinhAI):
     def test_tra_ve_phan_hoi_co_dinh_va_luu_lai_lan_goi(self):
         client = ClientAIGia(phan_hoi='Xin chào từ AI giả')
@@ -283,6 +290,7 @@ class ClientAIGiaTest(KiemThuCoDinhCauHinhAI):
             client.sinh_noi_dung(he_thong='a', nguoi_dung='b')
 
 
+@tag('don_vi')
 class LayClientAiTest(KiemThuCoDinhCauHinhAI):
     @override_settings(AI_BACKEND='gia')
     def test_chon_client_gia_qua_cau_hinh(self):
@@ -293,6 +301,7 @@ class LayClientAiTest(KiemThuCoDinhCauHinhAI):
         self.assertIsInstance(lay_client_ai(), GeminiClient)
 
 
+@tag('don_vi')
 class DinhDangKetQuaTest(KiemThuCoDinhCauHinhAI):
     def test_luon_kem_canh_bao_co_dinh(self):
         ket_qua = dinh_dang_ket_qua('Nội dung trả lời của AI')
@@ -304,6 +313,7 @@ class DinhDangKetQuaTest(KiemThuCoDinhCauHinhAI):
         self.assertIn(CANH_BAO_AI, ket_qua)
 
 
+@tag('don_vi')
 class NapPromptTest(KiemThuCoDinhCauHinhAI):
     @classmethod
     def setUpClass(cls):
@@ -358,6 +368,7 @@ class NapPromptTest(KiemThuCoDinhCauHinhAI):
         self.assertNotIn('120 từ', he_thong)
 
 
+@tag('don_vi')
 class KiemTraAiCommandTest(KiemThuCoDinhCauHinhAI):
     @override_settings(AI_BACKEND='gia')
     def test_thanh_cong_voi_client_gia_khong_goi_mang(self):
@@ -401,6 +412,7 @@ class KiemTraAiCommandTest(KiemThuCoDinhCauHinhAI):
         self.assertIn('server busy', noi_dung)
 
 
+@tag('don_vi')
 class GioiHanTanSuatDungChungTest(KiemThuCoDinhCauHinhAI):
     """Hàm giới hạn tần suất dùng chung cho tu_van_dang_ky/tom_tat_ket_qua (hoi_dap_quy_che
     có bản riêng tương đương — xem hoi_dap_quy_che/gioi_han_tan_suat.py)."""
@@ -432,6 +444,7 @@ class GioiHanTanSuatDungChungTest(KiemThuCoDinhCauHinhAI):
         self.assertFalse(duoc_phep)
 
 
+@tag('don_vi')
 class DocPhamViTest(TestCase):
     """Code tự đọc học kỳ/năm học/toàn khóa từ câu gõ trong khung chat (không gửi câu gõ cho AI để hiểu)."""
 
@@ -466,6 +479,7 @@ class DocPhamViTest(TestCase):
         self.assertEqual(bo_dau('  Học  KỲ Đầu '), 'hoc ky dau')
 
 
+@tag('don_vi')
 class LichSuChatTest(TestCase):
     def _request(self):
         from django.contrib.sessions.backends.signed_cookies import SessionStore
@@ -495,3 +509,49 @@ class LichSuChatTest(TestCase):
         request = RequestFactory().post('/', {})
         request.session = SessionStore()
         self.assertEqual(lich_su_chat.cau_gui_len(request), '')
+
+
+@tag('don_vi')
+class TheoDoiGoiAiTest(TestCase):
+    """Log mỗi lượt gọi AI chỉ có chức năng, kết quả, loại lỗi, thời gian; không có prompt, câu trả lời, điểm."""
+
+    PROMPT_NHAY_CAM = 'Bảng điểm: CSDL điểm thi 3.5, điểm quá trình 4.0'
+    TRA_LOI_NHAY_CAM = 'Bạn nên học lại CSDL vì điểm tổng kết 3.8'
+
+    def test_thanh_cong_ghi_mot_dong_info_khong_chua_noi_dung(self):
+        from .clients import ClientAIGia
+        from .theo_doi import goi_ai_co_ghi_log
+        client = ClientAIGia(phan_hoi=self.TRA_LOI_NHAY_CAM)
+        with self.assertLogs('qldt.ai', level='INFO') as nhat_ky:
+            ket_qua = goi_ai_co_ghi_log('tom_tat_ket_qua', client, he_thong='HT', nguoi_dung=self.PROMPT_NHAY_CAM)
+        self.assertEqual(ket_qua, self.TRA_LOI_NHAY_CAM)
+        self.assertEqual(client.cac_lan_goi, [{'he_thong': 'HT', 'nguoi_dung': self.PROMPT_NHAY_CAM}])
+        self.assertEqual(len(nhat_ky.records), 1)
+        dong = nhat_ky.output[0]
+        self.assertIn('chuc_nang=tom_tat_ket_qua', dong)
+        self.assertIn('ket_qua=thanh_cong', dong)
+        self.assertRegex(dong, r'thoi_gian_ms=\d+')
+        for noi_dung in ('CSDL', '3.5', '3.8', 'HT', 'Bảng điểm'):
+            self.assertNotIn(noi_dung, dong)
+
+    def test_loi_ghi_loai_loi_nem_lai_ngoai_le_va_khong_ghi_thong_diep(self):
+        from .clients import ClientAIGia
+        from .theo_doi import goi_ai_co_ghi_log
+        loi = HetThoiGianChoAI({'loai': 'ReadTimeout', 'ma_http': None, 'thong_diep': self.PROMPT_NHAY_CAM})
+        with self.assertLogs('qldt.ai', level='WARNING') as nhat_ky:
+            with self.assertRaises(HetThoiGianChoAI):
+                goi_ai_co_ghi_log('tu_van_dang_ky', ClientAIGia(phan_hoi=loi), he_thong='HT', nguoi_dung=self.PROMPT_NHAY_CAM)
+        dong = nhat_ky.output[0]
+        self.assertIn('WARNING', dong)
+        self.assertIn('chuc_nang=tu_van_dang_ky ket_qua=loi loai_loi=HetThoiGianChoAI', dong)
+        self.assertNotIn('CSDL', dong)
+        self.assertNotIn(str(loi), dong)
+
+    def test_ba_chuc_nang_ai_deu_goi_qua_ham_ghi_log(self):
+        from hoi_dap_quy_che import services as quy_che
+        from tom_tat_ket_qua import services as tom_tat
+        from tu_van_dang_ky import services as tu_van
+        for module in (tu_van, tom_tat, quy_che):
+            nguon = Path(module.__file__).read_text(encoding='utf-8')
+            self.assertIn('goi_ai_co_ghi_log(', nguon, module.__name__)
+            self.assertNotIn('client.sinh_noi_dung(', nguon, module.__name__)

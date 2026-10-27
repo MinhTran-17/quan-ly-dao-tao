@@ -24,7 +24,7 @@ Mọi hành động là nút (.nut), không dùng liên kết chữ.
             {% for ly_do in tong_hop.canh_bao.ly_do %}<li>{{ ly_do }}</li>{% endfor %}
         </ul>
     </div>
-    <a class="nut nut-phu nut-nho" href="{% url 'grades:bang_diem_sinh_vien' sv.pk %}?hoc_ky={{ tong_hop.canh_bao.hoc_ky|urlencode }}&amp;nam_hoc={{ tong_hop.canh_bao.nam_hoc|urlencode }}">Xem chi tiết</a>
+    {% if sv.ma_dung_duoc_trong_url %}<a class="nut nut-phu nut-nho" href="{% url 'grades:bang_diem_sinh_vien' sv.pk %}?hoc_ky={{ tong_hop.canh_bao.hoc_ky|urlencode }}&amp;nam_hoc={{ tong_hop.canh_bao.nam_hoc|urlencode }}">Xem chi tiết</a>{% endif %}
 </section>
 {% endif %}
 

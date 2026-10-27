@@ -9,7 +9,7 @@ from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, tag
 from django.urls import reverse
 from docx import Document
 
@@ -93,6 +93,7 @@ def tao_tai_lieu(ten_tai_lieu, cac_dong, ngay='2025-01-01'):
     )
 
 
+@tag('don_vi')
 class ChiaDoanTest(KiemThuCoDinhCauHinhAI):
     def test_dieu_ngan_giu_nguyen_mot_doan(self):
         van_ban = 'Điều 1. Tiêu đề\nNội dung ngắn.'
@@ -142,6 +143,7 @@ class ChiaDoanTest(KiemThuCoDinhCauHinhAI):
         self.assertNotIn('Điều 9', doan[1]['noi_dung'])
 
 
+@tag('don_vi')
 class BM25Test(KiemThuCoDinhCauHinhAI):
     def test_tach_tu_bo_dau_va_tu_dung(self):
         tu = tach_tu('Sinh viên và Giảng viên của trường')
@@ -182,6 +184,7 @@ class BM25Test(KiemThuCoDinhCauHinhAI):
         self.assertGreater(diem[0], diem[1])
 
 
+@tag('don_vi')
 @override_settings(MEDIA_ROOT=MEDIA_ROOT_TEST)
 class ChiMucTest(KiemThuCoDinhCauHinhAI):
     @classmethod
@@ -273,6 +276,7 @@ class ChiMucTest(KiemThuCoDinhCauHinhAI):
         self.assertNotEqual(doan_lan1, doan_lan2)
 
 
+@tag('don_vi')
 @override_settings(MEDIA_ROOT=MEDIA_ROOT_TEST)
 class TruyHoiPhienBanTest(KiemThuCoDinhCauHinhAI):
     """So sánh công bằng v1 (bản cũ) và v2 (bigram + tiêu đề Điều + tối đa 6 đoạn), chọn
@@ -324,6 +328,7 @@ class TruyHoiPhienBanTest(KiemThuCoDinhCauHinhAI):
         self.assertEqual(doan_v1, doan_v2)
 
 
+@tag('don_vi')
 class LocNguonTest(KiemThuCoDinhCauHinhAI):
     """_loc_nguon phải chuẩn hóa Điều/khoản/tên tài liệu (tiền tố "Điều "/"khoản ", kiểu
     số/chuỗi, khoảng trắng, hoa/thường) khi so khớp nguồn AI trích với đoạn đã truy hồi,
@@ -414,6 +419,7 @@ class LocNguonTest(KiemThuCoDinhCauHinhAI):
         self.assertIn('99', ghi_chu[0])
 
 
+@tag('don_vi')
 @override_settings(MEDIA_ROOT=MEDIA_ROOT_TEST)
 class HoiDapServiceTest(KiemThuCoDinhCauHinhAI):
     @classmethod
@@ -577,6 +583,7 @@ class HoiDapServiceTest(KiemThuCoDinhCauHinhAI):
         self.assertTrue(vi_tri_mo < vi_tri_noi_dung < vi_tri_dong)
 
 
+@tag('tich_hop')
 class PhanQuyenHoiDapTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         self.sinh_vien_tk = TaiKhoan.objects.create_user(
@@ -624,6 +631,7 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
             ten_dang_nhap='sv001', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU
         )
 
+    @tag('don_vi')
     def test_duoc_phep_toi_da_10_lan_moi_phut(self):
         for _ in range(SO_CAU_HOI_TOI_DA_MOI_PHUT):
             duoc_phep, _ = kiem_tra_va_dem(self.sinh_vien_tk)
@@ -632,6 +640,7 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         self.assertFalse(duoc_phep)
         self.assertTrue(thong_bao)
 
+    @tag('don_vi')
     def test_moi_nguoi_dung_dem_rieng(self):
         sinh_vien_khac = TaiKhoan.objects.create_user(
             ten_dang_nhap='sv002', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU
@@ -641,6 +650,7 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         duoc_phep, _ = kiem_tra_va_dem(sinh_vien_khac)
         self.assertTrue(duoc_phep)
 
+    @tag('tich_hop')
     @override_settings(MEDIA_ROOT=MEDIA_ROOT_TEST)
     def test_view_bao_loi_than_thien_khi_vuot_gioi_han(self):
         for _ in range(SO_CAU_HOI_TOI_DA_MOI_PHUT):
@@ -652,6 +662,7 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         self.assertEqual(response.context['lich_su'], [])
 
 
+@tag('don_vi')
 class ChayCaThuQuyCheCommandTest(KiemThuCoDinhCauHinhAI):
     def test_doc_bang_cau_hoi_tu_tep_tam(self):
         noi_dung = (
@@ -684,6 +695,7 @@ class ChayCaThuQuyCheCommandTest(KiemThuCoDinhCauHinhAI):
             call_command('chay_ca_thu_quy_che', '--tep=khong_ton_tai.md', stdout=StringIO())
 
 
+@tag('don_vi')
 @override_settings(MEDIA_ROOT=MEDIA_ROOT_TEST)
 class ChayCaThuQuyCheTuyChonTest(KiemThuCoDinhCauHinhAI):
     """--cau, --khoang_cach và hành vi dừng hẳn khi bị giới hạn tần suất (429)."""
@@ -838,6 +850,7 @@ class ChayCaThuQuyCheTuyChonTest(KiemThuCoDinhCauHinhAI):
         gia_lap_sleep.assert_called_with(3.0)
 
 
+@tag('don_vi')
 @override_settings(MEDIA_ROOT=MEDIA_ROOT_TEST)
 class ChayCaThuQuyCheV2Test(KiemThuCoDinhCauHinhAI):
     """--phien_ban_prompt (ghi đè AI_PHIEN_BAN_QUY_CHE một lần chạy), --ghi_vao (nối kết
@@ -981,6 +994,7 @@ class ChayCaThuQuyCheV2Test(KiemThuCoDinhCauHinhAI):
         gia_lap_input.assert_not_called()
 
 
+@tag('tich_hop')
 class KhungChatHoiDapTest(KiemThuCoDinhCauHinhAI):
     """Khung chat hỏi đáp quy chế: lịch sử trong session, mỗi câu hỏi là một yêu cầu độc lập (chỉ câu hiện tại được
     truy hồi/gửi AI), gửi xong chuyển hướng về trang chat."""

@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, tag
 from django.urls import reverse
 from django.utils import timezone
 
@@ -105,6 +105,7 @@ def cham_diem(sinh_vien, lop_hoc_phan, diem_qua_trinh, diem_thi):
     return dang_ky
 
 
+@tag('tich_hop')
 class PhanQuyenTuVanTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         lop_hanh_chinh = tao_lop_hanh_chinh('CNTT1')
@@ -142,6 +143,7 @@ class PhanQuyenTuVanTest(KiemThuCoDinhCauHinhAI):
         self.assertEqual(response.status_code, 302)
 
 
+@tag('tich_hop')
 class TuVanViewTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         tao_dot_dang_ky_mo('1', '2025-2026')
@@ -185,6 +187,7 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         )
         self.client.force_login(self.sinh_vien.ma_tai_khoan)
 
+    @tag('tich_hop')
     @override_settings(AI_BACKEND='gia')
     def test_view_bao_loi_than_thien_khi_vuot_gioi_han_khong_goi_ai(self):
         for _ in range(SO_LAN_TOI_DA_MOI_PHUT_MAC_DINH):
@@ -198,6 +201,7 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         self.assertContains(response, 'quá')
         gia_lap.assert_not_called()
 
+    @tag('don_vi')
     @override_settings(AI_BACKEND='gia')
     def test_moi_sinh_vien_dem_rieng(self):
         sinh_vien_khac = tao_sinh_vien('SV002', self.sinh_vien.ma_lop)
@@ -207,6 +211,7 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         self.assertTrue(duoc_phep)
 
 
+@tag('don_vi')
 class KhongRoRiDuLieuGiuaSinhVienTest(KiemThuCoDinhCauHinhAI):
     """Sinh viên A không bao giờ được có dữ liệu của sinh viên B trong prompt, và
     không có thông tin định danh (họ tên, email, mã sinh viên, mã tài khoản) nào lọt vào."""
@@ -256,6 +261,7 @@ class KhongRoRiDuLieuGiuaSinhVienTest(KiemThuCoDinhCauHinhAI):
         self.assertNotIn(str(self.sv_a.ma_tai_khoan_id), noi_dung)
 
 
+@tag('don_vi')
 class GhiChuKhongTinCayTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         tao_dot_dang_ky_mo('1', '2025-2026')
@@ -280,6 +286,7 @@ class GhiChuKhongTinCayTest(KiemThuCoDinhCauHinhAI):
         self.assertTrue(vi_tri_mo < vi_tri_ghi_chu < vi_tri_dong)
 
 
+@tag('don_vi')
 class TinhTrangThaiVaLocKetQuaTest(KiemThuCoDinhCauHinhAI):
     """Ca ví dụ trong đề bài + thiếu tiên quyết, trùng lịch, đã đầy, đã đăng ký, và việc
     lọc kết quả AI trả về (mã lớp bịa, lớp không đủ điều kiện trong mục gợi ý)."""
@@ -408,6 +415,7 @@ class TinhTrangThaiVaLocKetQuaTest(KiemThuCoDinhCauHinhAI):
         self.assertIn('Không có lớp học phần', ket_qua.luu_y)
 
 
+@tag('don_vi')
 class LoiAiTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         tao_dot_dang_ky_mo('1', '2025-2026')
@@ -460,6 +468,7 @@ class LoiAiTest(KiemThuCoDinhCauHinhAI):
         self.assertEqual(len(ket_qua.danh_sach_trang_thai), 1)
 
 
+@tag('don_vi')
 class GoiAiFalseTest(TestCase):
     """goi_ai=False (dùng bởi chay_ca_thu_tu_van khi không --ai) phải dựng prompt đầy đủ
     nhưng KHÔNG gọi AI — hành vi trang web thật (goi_ai=True mặc định) không đổi."""
@@ -497,6 +506,7 @@ class GoiAiFalseTest(TestCase):
         self.assertEqual(len(client_gia.cac_lan_goi), 1)
 
 
+@tag('don_vi')
 class ChayCaThuTuVanCommandTest(TestCase):
     """Lệnh chay_ca_thu_tu_van: chạy qua đúng luồng services, dựng dữ liệu trong transaction
     rồi hoàn tác (không làm bẩn CSDL), có --cau/--phien_ban_prompt/--ghi_vao/--yes."""
@@ -571,6 +581,7 @@ class ChayCaThuTuVanCommandTest(TestCase):
         self.assertIn('Model thực tế API trả về:', noi_dung)
 
 
+@tag('tich_hop')
 class KhungChatTuVanTest(KiemThuCoDinhCauHinhAI):
     """Khung chat tư vấn: code đọc học kỳ cần tư vấn từ câu gõ; cả câu gõ là ghi chú (dữ liệu không tin cậy, trong
     khối dữ liệu của prompt); thiếu thông tin hoặc không liên quan thì trả lời ngay, không gọi AI."""

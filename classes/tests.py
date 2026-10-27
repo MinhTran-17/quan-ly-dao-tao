@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.urls import reverse
 
 from datetime import date, time
@@ -14,6 +14,7 @@ TaiKhoan = get_user_model()
 MAT_KHAU = 'MatKhauManh123'
 
 
+@tag('tich_hop')
 class LopHocPhanCrudTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -87,6 +88,7 @@ class LopHocPhanCrudTest(TestCase):
         self.assertNotContains(response, 'CSDL_HK2')
 
 
+@tag('tich_hop')
 class LichHocTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -119,6 +121,7 @@ class LichHocTest(TestCase):
         self.assertFalse(LichHoc.objects.filter(phong_hoc='A102').exists())
 
 
+@tag('tich_hop')
 class XoaLichHocTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -209,6 +212,7 @@ class XoaLichHocTest(TestCase):
         self.assertTrue(LichHoc.objects.filter(pk=self.lich.pk).exists())
 
 
+@tag('tich_hop')
 class GiangVienXemLopTest(TestCase):
     def setUp(self):
         self.hoc_phan = HocPhan.objects.create(ma_hoc_phan='CSDL', ten_hoc_phan='Cơ sở dữ liệu', so_tin_chi=3)
@@ -249,6 +253,7 @@ class GiangVienXemLopTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@tag('tich_hop')
 class PhanQuyenClassesTest(TestCase):
     def setUp(self):
         self.sinh_vien = TaiKhoan.objects.create_user(
@@ -265,6 +270,7 @@ class PhanQuyenClassesTest(TestCase):
         self.assertEqual(response.status_code, 302)
 
 
+@tag('tich_hop')
 class LuoiTuanGiangVienTest(TestCase):
     def setUp(self):
         self.hoc_phan = HocPhan.objects.create(ma_hoc_phan='CSDL', ten_hoc_phan='Cơ sở dữ liệu', so_tin_chi=3)
@@ -290,6 +296,7 @@ class LuoiTuanGiangVienTest(TestCase):
         self.assertNotContains(response, '<table class="bang-luoi-tuan">')
 
 
+@tag('tich_hop')
 class LichThiCrudTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(

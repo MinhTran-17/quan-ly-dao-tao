@@ -108,10 +108,165 @@ Mở `http://127.0.0.1:8000/`.
 ## Chạy test
 
 ```
-python manage.py test
+python manage.py test                     # toàn bộ test
+python manage.py test --tag don_vi        # test đơn vị: gọi trực tiếp hàm services / tính điểm
+python manage.py test --tag tich_hop      # test tích hợp: đi qua URL, view, phân quyền bằng test Client
 ```
 
 Django tự tạo và xóa database test riêng (`test_qldt`), không ảnh hưởng database `qldt` đang dùng.
+Test chức năng AI dùng client giả, không gọi Gemini thật. Test xuyên luồng nhiều vai trò (Phòng Đào tạo
+tạo lớp → sinh viên đăng ký → giảng viên nhập điểm → sinh viên xem bảng điểm) ở
+`enrollment/tests_luong_tich_hop.py`.
+
+CI (`.github/workflows/ci.yml`) tự chạy mỗi lần push hoặc mở pull request trên GitHub: dựng MySQL 8.0,
+cài thư viện, chạy `check`, kiểm tra không thiếu migration, rồi test đơn vị và test tích hợp.
+Xem kết quả ở tab **Actions** của repo.
+
+## Rào chắn khi commit (pre-commit)
+
+`.pre-commit-config.yaml` chạy 3 kiểm tra trước **mỗi lần commit**, không phụ thuộc công cụ AI nào:
+
+| Hook | Việc làm |
+|---|---|
+| `chan-commit-env` | Chặn commit `.env`, `.env.local`, ... (chỉ cho `.env.example`) |
+| `quet-khoa-api` | Quét tệp được commit tìm chuỗi giống khóa API (`AIza...`, `sk-...`, `GEMINI_API_KEY=<giá trị>`, private key); in tên tệp và số dòng, không in khóa (`nha_may_agent/quet_khoa.py`, dùng chung mẫu với rào chắn nhà máy agent) |
+| `django-check` | Chạy `python manage.py check` khi có tệp `.py`/`.html`/`.txt` thay đổi |
+
+Cài một lần, trong terminal **đã kích hoạt venv** (hook dùng `python` trong PATH để có Django):
+
+```
+venv\Scripts\activate
+pip install pre-commit
+pre-commit install            # gắn hook vào .git/hooks/pre-commit
+pre-commit run --all-files    # chạy thử trên toàn repo
+```
+
+Từ đó `git commit` tự chạy các hook; hook báo lỗi thì commit bị hủy, sửa xong commit lại. `pre-commit` là công
+cụ cho người phát triển nên không nằm trong `requirements.txt` (ảnh Docker và CI không cần).
+
+## Chạy bằng Docker
+
+Cần Docker Desktop (Windows/macOS) hoặc Docker Engine + Compose (Linux). Không cần cài Python, MySQL.
+
+1. Tạo `.env` từ `.env.example` (như mục "Cài đặt lần đầu"), **bắt buộc** đặt `DB_PASSWORD`
+   (mật khẩu root của MySQL trong container). `DB_HOST`, `DB_USER`, `DB_PORT` được compose tự ghi đè.
+2. Khởi động:
+
+   ```
+   docker compose up -d --build
+   ```
+
+   Container `db` (MySQL 8.0) chạy trước; khi `db` sẵn sàng, container `web` tự chạy `migrate` rồi mở
+   máy chủ ở `http://localhost:8000/`.
+3. Tạo tài khoản và dữ liệu mẫu (tùy chọn), chạy lệnh trong container `web`:
+
+   ```
+   docker compose exec web python manage.py tao_tai_khoan_phong_dao_tao pdt_admin
+   docker compose exec web python manage.py nap_du_lieu_mau
+   ```
+
+4. Dừng: `docker compose down` (giữ dữ liệu trong volume); `docker compose down -v` xóa cả dữ liệu.
+
+Dữ liệu MySQL, tệp tải lên và log nằm trong các volume `du_lieu_mysql`, `tep_tai_len`, `nhat_ky`, không mất
+khi build lại ảnh. `.env` không nằm trong ảnh (`.dockerignore`), chỉ được đọc lúc chạy.
+
+Khi chạy thật đặt `DJANGO_DEBUG=False`; lúc đó **bắt buộc** có `DJANGO_SECRET_KEY`, thiếu thì ứng dụng
+báo lỗi và dừng (không dùng khóa mặc định). Nhớ thêm tên miền/IP vào `DJANGO_ALLOWED_HOSTS`.
+
+## Vận hành và theo dõi
+
+### Kiểm tra sức khỏe: `/health/`
+
+```
+curl http://127.0.0.1:8000/health/
+```
+
+Trả `{"trang_thai": "ok", "ung_dung": "ok", "csdl": "ok"}` (HTTP 200) khi ứng dụng chạy và kết nối được
+MySQL; mất kết nối CSDL thì trả `"csdl": "loi"` với HTTP 503. Không cần đăng nhập, không trả thông tin cấu
+hình. Docker dùng endpoint này làm `HEALTHCHECK`: `docker compose ps` hiện `(healthy)` khi mọi thứ ổn.
+
+### Xem log
+
+Log ghi ra `logs/app.log`, tự xoay vòng khi đạt 5 MB (giữ 5 tệp cũ `app.log.1` … `app.log.5`).
+
+```
+Get-Content logs\app.log -Tail 50 -Wait                 # Windows PowerShell
+tail -f logs/app.log                                      # Linux/macOS
+docker compose exec web tail -f logs/app.log              # khi chạy bằng Docker
+```
+
+Nội dung log:
+- Mỗi lượt gọi AI một dòng, ví dụ
+  `INFO qldt.ai goi_ai chuc_nang=tu_van_dang_ky ket_qua=thanh_cong loai_loi=- thoi_gian_ms=1840` hoặc
+  `WARNING qldt.ai goi_ai chuc_nang=tom_tat_ket_qua ket_qua=loi loai_loi=QuaGioiHanTanSuatAI thoi_gian_ms=320`.
+  **Không bao giờ** ghi nội dung prompt, câu trả lời của AI hay điểm (xem `ai_core/theo_doi.py`).
+- Lỗi máy chủ (500) của Django và cảnh báo bảo mật (`django.security`, ví dụ lỗi CSRF).
+
+Đếm nhanh tỉ lệ lỗi AI: `Select-String -Path logs\app.log -Pattern "ket_qua=loi"` (PowerShell) hoặc
+`grep -c "ket_qua=loi" logs/app.log`.
+
+### Sao lưu và khôi phục CSDL (mysqldump)
+
+Tệp sao lưu chứa dữ liệu cá nhân sinh viên: cất ở nơi an toàn, **không commit** lên Git.
+
+Cài MySQL trên máy:
+
+```
+mysqldump -u root -p --single-transaction --routines --default-character-set=utf8mb4 qldt > sao_luu_qldt.sql
+mysql -u root -p --default-character-set=utf8mb4 qldt < sao_luu_qldt.sql
+```
+
+Chạy bằng Docker (mật khẩu lấy từ biến môi trường trong container, không gõ ra dòng lệnh):
+
+```
+docker compose exec db sh -c 'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --routines qldt' > sao_luu_qldt.sql
+docker compose exec -T db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" qldt' < sao_luu_qldt.sql
+```
+
+Khôi phục ghi đè dữ liệu hiện có của database `qldt`. Sao lưu cả thư mục `media/` (tài liệu quy chế đã tải
+lên) nếu cần khôi phục đầy đủ.
+
+## Nhà máy Agent AI
+
+Dự án tổ chức việc phát triển phần mềm bằng AI như một "nhà máy": mỗi agent đóng một vai trò trong SDLC,
+dây chuyền nối các agent theo thứ tự với hai cổng người duyệt, và rào chắn ở nhiều lớp chặn thao tác nguy
+hiểm. Mọi thành phần **trung lập với công cụ**: đặc tả bằng Markdown theo chuẩn mở, nhà máy tự động chạy
+bằng Gemini qua chính hạ tầng `ai_core` của dự án.
+
+| Thành phần | Vị trí | Vai trò |
+|---|---|---|
+| Ngữ cảnh (context engineering) | `AGENTS.md`, `docs/agent/ngu_canh_du_an.md` | Mọi agent đọc trước: vai trò, app, quy ước, "code tính, AI diễn giải", quy tắc dữ liệu gửi AI, lệnh test, điều cấm. `AGENTS.md` theo chuẩn mở, công cụ lập trình AI nào cũng đọc được |
+| Đặc tả 5 vai trò | `agents/*.md` | `phan_tich_yeu_cau` (chỉ đọc) → `lap_trinh_vien` → `kiem_thu_vien` → `review_code`, `kiem_tra_bao_mat` (chỉ đọc) |
+| Dây chuyền | `agents/quy_trinh.md` | Phân tích → **người duyệt đặc tả** → lập trình → viết test → **người duyệt diff** → chạy test (sửa tối đa 2 vòng, vẫn lỗi thì hoàn tác) → review + bảo mật → nhật ký |
+| Nhà máy tự động (Gemini) | `nha_may_agent/`, `prompts/nha_may_*/` | `python manage.py chay_nha_may "<yêu cầu>"` chạy đủ dây chuyền; `--chay-thu` chỉ in đặc tả và diff, không ghi gì |
+| Rào chắn trong nhà máy | `nha_may_agent/rao_chan.py` | Chỉ ghi trong thư mục app, `templates/`, `prompts/`; cấm `.env`, migration đã có, `settings.py`, `nha_may_agent/`, đường dẫn tuyệt đối/`..`; chặn nội dung giống khóa API và thay đổi làm giảm số test; không đưa `.env`/`venv`/`.git` vào prompt; giới hạn số lượt gọi AI (`NHA_MAY_SO_LUOT_AI_TOI_DA`) |
+| Rào chắn mức git | `.pre-commit-config.yaml` | Chặn commit `.env`, quét khóa API, chạy `manage.py check` trước mỗi commit (xem mục "Rào chắn khi commit") |
+| Kiểm thử + CI | `@tag('don_vi')`, `@tag('tich_hop')`, `.github/workflows/ci.yml` | Mỗi push/pull request chạy check, kiểm tra migration, test đơn vị và tích hợp trên MySQL 8.0 |
+| Theo dõi | `logs/app.log`, `/health/` | Log từng lượt gọi AI kể cả của nhà máy (`chuc_nang=nha_may_<vai_tro>`, không ghi nội dung), kiểm tra sức khỏe ứng dụng và CSDL |
+| Nhật ký | `docs/ai-log.md` | Mục "Nhật ký nhà máy agent": mỗi lần chạy nhà máy (trừ chạy thử) thêm yêu cầu, agent đã chạy, số lượt gọi AI, tệp đã đổi, kết quả test, nhận xét review/bảo mật, phần người cần kiểm tra |
+
+### Chạy thử nhà máy
+
+Cần `GEMINI_API_KEY` trong `.env`. Mỗi lần chạy tốn tối đa 3 lượt gọi AI khi chạy thử, tối đa 7 lượt khi chạy đủ.
+
+```
+venv\Scripts\python manage.py chay_nha_may "Giảng viên xem số sinh viên đã có đủ điểm trong lớp phụ trách" --chay-thu
+```
+
+Nhà máy in đặc tả rồi hỏi `Duyệt đặc tả ...? (y/n)`; gõ `y` để agent lập trình và kiểm thử viên đề xuất thay đổi,
+nhà máy in diff rồi dừng (chạy thử không ghi tệp, không chạy test, không ghi nhật ký). Bỏ `--chay-thu` để chạy đủ:
+nhà máy hỏi thêm `Áp dụng ...? (y/n)` trước khi ghi tệp và chạy test, cuối cùng ghi nhật ký. Nhà máy **không
+commit, không push**: người đọc `git diff` và tự commit.
+
+Nhà máy báo lỗi AI (ví dụ "Dịch vụ AI gặp lỗi") thì chạy lại với `--chi-tiet`: in cấu hình, độ dài prompt và
+thời gian từng lượt gọi, agent bị lỗi, loại lỗi gốc, mã HTTP, thông điệp từ API và gợi ý khắc phục (không in khóa API).
+Nhà máy dùng cấu hình riêng, không đụng giới hạn của 3 chức năng AI trong sản phẩm: `NHA_MAY_GIOI_HAN_KY_TU`
+(ký tự mỗi prompt, phần nội dung tệp/diff tự cắt cho vừa), `NHA_MAY_TIMEOUT_GIAY` (mặc định 180 giây — prompt chứa
+mã nguồn và đầu ra dài cần lâu hơn `AI_TIMEOUT_GIAY`; không kịp thì máy chủ trả 504 DEADLINE_EXCEEDED),
+`NHA_MAY_SO_LAN_THU_LAI` (mặc định 1).
+
+Dùng công cụ lập trình AI khác thay cho nhà máy: đưa `AGENTS.md` và tệp vai trò của bước đang làm, giữ đúng
+hai cổng người duyệt như `agents/quy_trinh.md`.
 
 ## Hướng dẫn demo theo vai trò
 
@@ -270,7 +425,13 @@ UDTTNT/
 ├── manage.py
 ├── requirements.txt
 ├── .env.example              # mẫu biến môi trường, không có giá trị thật
-├── qldt/                      # cấu hình dự án Django (settings, urls)
+├── Dockerfile, docker-compose.yml, .dockerignore   # đóng gói: web Django + MySQL 8.0
+├── .github/workflows/ci.yml   # CI: check + test đơn vị + test tích hợp trên MySQL 8.0
+├── .pre-commit-config.yaml   # rào chắn khi commit: chặn .env, quét khóa API, manage.py check
+├── AGENTS.md                 # ngữ cảnh cho agent lập trình AI (chuẩn mở)
+├── agents/                   # đặc tả 5 vai trò agent + quy_trinh.md (dây chuyền)
+├── nha_may_agent/            # nhà máy agent chạy bằng Gemini: lệnh chay_nha_may, rào chắn, test
+├── qldt/                      # cấu hình dự án Django (settings, urls, /health/)
 ├── accounts/                  # tai_khoan: đăng nhập, phân quyền, quản lý tài khoản
 ├── people/                    # sinh_vien, giang_vien, co_van_hoc_tap
 ├── academics/                 # nganh_hoc, lop_hanh_chinh, hoc_phan, dieu_kien_tien_quyet
@@ -284,15 +445,17 @@ UDTTNT/
 ├── tu_van_dang_ky/               # chức năng AI tư vấn đăng ký học phần, lệnh chay_ca_thu_tu_van
 ├── tom_tat_ket_qua/               # chức năng AI tóm tắt kết quả học tập, lệnh chay_ca_thu_tom_tat
 ├── hoi_dap_quy_che/                # chatbot hỏi đáp quy chế (BM25 tự cài), lệnh chay_ca_thu_quy_che
-├── prompts/                        # prompt tách khỏi code: <chức_năng>/<phiên_bản>/{system,user}.txt
+├── prompts/                        # prompt tách khỏi code: <chức_năng>/<phiên_bản>/{system,user}.txt (cả prompt nhà máy nha_may_*)
 ├── templates/                       # template dùng chung (base.html, trang lỗi 403/404/500)
 ├── media/                            # tệp tải lên (quy_che/...), không commit, chỉ tải về qua view có đăng nhập
+├── logs/                             # app.log (xoay vòng), không commit
 └── docs/
+    ├── agent/ngu_canh_du_an.md         # ngữ cảnh dự án cho các agent AI
     ├── de-bai.md, rubric.md, erd.md   # đề bài, tiêu chí chấm, sơ đồ dữ liệu
     ├── thiet_ke_ai.md                  # thiết kế chi tiết 3 chức năng AI
     ├── review_code_ai.md                # báo cáo review bảo mật/chất lượng code các app AI
     ├── bien_ban_kiem_thu.md              # bảng kiểm thử tự động + thủ công theo vai trò
-    ├── ai-log.md                          # nhật ký các vòng thử nghiệm/tối ưu prompt
+    ├── ai-log.md                          # nhật ký sử dụng AI và nhật ký dây chuyền agent
     └── ca_thu_ai/                          # bộ câu hỏi/ca thử cho từng chức năng AI
 ```
 

@@ -249,6 +249,10 @@ def bang_diem_cua_toi_view(request):
     if sinh_vien is None:
         messages.error(request, 'Tài khoản của bạn chưa gắn hồ sơ sinh viên.')
         return redirect('accounts:trang_chu')
+    if not sinh_vien.ma_dung_duoc_trong_url:
+        messages.error(request, 'Mã sinh viên của bạn chứa ký tự không hợp lệ nên chưa mở được bảng điểm. '
+                                'Hãy liên hệ Phòng Đào tạo để sửa mã.')
+        return redirect('accounts:trang_chu')
     return redirect('grades:bang_diem_sinh_vien', ma_sinh_vien=sinh_vien.pk)
 
 

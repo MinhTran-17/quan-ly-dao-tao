@@ -13,7 +13,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, tag
 from django.urls import resolve, reverse
 from django.utils import timezone
 
@@ -75,6 +75,7 @@ def kiem_tra_can_bang_the(html):
     return bo_kiem_tra.loi, bo_kiem_tra.ngan_xep
 
 
+@tag('tich_hop')
 class DangNhapTest(TestCase):
     def setUp(self):
         self.tai_khoan = TaiKhoan.objects.create_user(
@@ -108,6 +109,7 @@ class DangNhapTest(TestCase):
         self.assertFalse(response.context['user'].is_authenticated)
 
 
+@tag('tich_hop')
 class MoKhoaVaXoaTaiKhoanTest(TestCase):
     def setUp(self):
         self.pdt = TaiKhoan.objects.create_user(ten_dang_nhap='pdt_mk', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU_HOP_LE)
@@ -231,6 +233,7 @@ class MoKhoaVaXoaTaiKhoanTest(TestCase):
         self.assertTrue(TaiKhoan.objects.filter(pk=self.tk.pk).exists())
 
 
+@tag('tich_hop')
 class TaoTaiKhoanCoVanTest(TestCase):
     """Tạo tài khoản cố vấn (và gắn hồ sơ), thông báo lỗi luôn bằng tiếng Việt."""
 
@@ -253,11 +256,11 @@ class TaoTaiKhoanCoVanTest(TestCase):
         self.assertEqual(tai_khoan.vai_tro, VaiTro.CO_VAN_HOC_TAP)
         self.assertTrue(tai_khoan.check_password(MAT_KHAU_HOP_LE))
         response = self.client.post(reverse('people:co_van_tao'), {
-            'ma_co_van': 'CV_MOI_TK', 'ho_ten': 'Cố vấn mới', 'email': 'cv@test.local',
+            'ma_co_van': 'CVMOITK', 'ho_ten': 'Cố vấn mới', 'email': 'cv@test.local',
             'so_dien_thoai': '0912345678', 'ma_tai_khoan': tai_khoan.pk,
         })
         self.assertRedirects(response, reverse('people:co_van_danh_sach'))
-        self.assertTrue(CoVanHocTap.objects.filter(pk='CV_MOI_TK', ma_tai_khoan=tai_khoan).exists())
+        self.assertTrue(CoVanHocTap.objects.filter(pk='CVMOITK', ma_tai_khoan=tai_khoan).exists())
 
     def test_ten_dang_nhap_co_dau_va_khoang_trang_van_tao_duoc(self):
         self.assertRedirects(self._tao(ten='Cố vấn 1'), reverse('accounts:tai_khoan_danh_sach'))
@@ -296,6 +299,7 @@ class TaoTaiKhoanCoVanTest(TestCase):
         self.assertNotIn('This password', noi_dung)
 
 
+@tag('tich_hop')
 class PhanQuyenTest(TestCase):
     def setUp(self):
         self.sinh_vien = TaiKhoan.objects.create_user(
@@ -321,6 +325,7 @@ class PhanQuyenTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
+@tag('tich_hop')
 class QuanLyTaiKhoanTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -414,6 +419,7 @@ class QuanLyTaiKhoanTest(TestCase):
         self.assertEqual(tai_khoan.vai_tro, VaiTro.GIANG_VIEN)
 
 
+@tag('tich_hop')
 class DoiMatKhauTest(TestCase):
     def setUp(self):
         self.tai_khoan = TaiKhoan.objects.create_user(
@@ -466,6 +472,7 @@ class DoiMatKhauTest(TestCase):
         self.assertTrue(self.tai_khoan.check_password(MAT_KHAU_HOP_LE))
 
 
+@tag('tich_hop')
 class DatLaiMatKhauTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -527,6 +534,7 @@ class DatLaiMatKhauTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
+@tag('tich_hop')
 class ThongTinCaNhanTest(TestCase):
     def setUp(self):
         self.nganh = NganhHoc.objects.create(ma_nganh='CNTT', ten_nganh='Công nghệ thông tin')
@@ -597,6 +605,7 @@ def tep_pdf_test(ten='qc.pdf'):
     return SimpleUploadedFile(ten, b'%PDF-1.4 noi dung gia lap', content_type='application/pdf')
 
 
+@tag('tich_hop')
 @override_settings(MEDIA_ROOT=MEDIA_ROOT_TEST)
 class PhanQuyenToanHeThongTest(TestCase):
     """Rà soát phân quyền toàn hệ thống: mỗi URL chính thử với cả 4 vai trò và
@@ -810,6 +819,7 @@ class PhanQuyenToanHeThongTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@tag('don_vi')
 class NapDuLieuMauTest(TestCase):
     def test_lenh_chay_thanh_cong_va_tao_du_lieu(self):
         call_command('nap_du_lieu_mau', '--force')
@@ -868,6 +878,7 @@ class NapDuLieuDayDuTest(TestCase):
     def setUpTestData(cls):
         _nap_day_du()
 
+    @tag('don_vi')
     def test_so_luong_theo_thiet_ke(self):
         self.assertEqual(SinhVien.objects.count(), 90)
         self.assertEqual(GiangVien.objects.count(), 5)
@@ -890,17 +901,20 @@ class NapDuLieuDayDuTest(TestCase):
         for gv in GiangVien.objects.all():
             self.assertGreaterEqual(LopHocPhan.objects.filter(ma_giang_vien=gv).count(), 4)
 
+    @tag('tich_hop')
     def test_ten_sinh_vien_khong_trung_va_dang_nhap_bang_mat_khau_demo(self):
         ho_ten = list(SinhVien.objects.values_list('ho_ten', flat=True))
         self.assertEqual(len(ho_ten), len(set(ho_ten)))
         self.assertTrue(self.client.login(username='sv050', password='MatKhauDemo123'))
         self.assertEqual(self.client.get(reverse('accounts:trang_chu')).status_code, 200)
 
+    @tag('don_vi')
     def test_ma_sinh_vien_ten_dang_nhap_va_lop(self):
         self.assertTrue(SinhVien.objects.filter(pk='SV090', ma_tai_khoan__ten_dang_nhap='sv090').exists())
         self.assertEqual(SinhVien.objects.get(pk='SV045').ma_lop_id, 'CNTT_K2')
         self.assertEqual(SinhVien.objects.get(pk='SV075').ma_lop_id, 'ATTT_K1')
 
+    @tag('don_vi')
     def test_dang_ky_ky_dang_mo_dung_tien_quyet_trung_lich_va_si_so(self):
         dang_ky = DangKyHocPhan.objects.filter(
             ma_lop_hoc_phan__nam_hoc='2025-2026', trang_thai=TrangThaiDangKy.CON_HIEU_LUC,
@@ -930,6 +944,7 @@ class NapDuLieuDayDuTest(TestCase):
                 for thu_b, dau_b, cuoi_b in cac_lich[i + 1:]:
                     self.assertFalse(thu_a == thu_b and dau_a <= cuoi_b and dau_b <= cuoi_a, ma_sv)
 
+    @tag('don_vi')
     def test_diem_ky_da_qua(self):
         diem = list(Diem.objects.select_related('ma_dang_ky__ma_lop_hoc_phan'))
         self.assertGreater(len(diem), 300)
@@ -946,6 +961,7 @@ class NapDuLieuDayDuTest(TestCase):
         for d in diem:
             self.assertTrue(0 <= d.diem_qua_trinh <= 10 and 0 <= d.diem_thi <= 10)
 
+    @tag('tich_hop')
     def test_co_sinh_vien_bi_canh_bao_hoc_vu_va_moi_co_van_thay_nhieu_hon_mot(self):
         do, vang = [], []
         for sv in SinhVien.objects.all():
@@ -969,6 +985,7 @@ class NapDuLieuDayDuTest(TestCase):
                 else:
                     self.assertNotContains(response, ma_sv)
 
+    @tag('tich_hop')
     def test_co_van_chi_thay_sinh_vien_lop_minh(self):
         self.client.force_login(TaiKhoan.objects.get(ho_so_co_van__pk='CV002'))
         response = self.client.get(reverse('enrollment:sinh_vien_phu_trach'))
@@ -976,6 +993,7 @@ class NapDuLieuDayDuTest(TestCase):
         self.assertNotContains(response, 'SV030')
         self.assertNotContains(response, 'SV061')
 
+    @tag('tich_hop')
     def test_diem_chua_cong_bo_hien_dang_cho_cong_bo_cho_sinh_vien(self):
         diem = Diem.objects.filter(da_cong_bo=False).select_related(
             'ma_dang_ky__ma_sinh_vien__ma_tai_khoan', 'ma_dang_ky__ma_lop_hoc_phan',
@@ -987,6 +1005,7 @@ class NapDuLieuDayDuTest(TestCase):
         response = self.client.get(response.request['PATH_INFO'], {'nam_hoc': lop.nam_hoc, 'hoc_ky': lop.hoc_ky})
         self.assertContains(response, 'Đang chờ công bố')
 
+    @tag('don_vi')
     def test_diem_danh_lich_thi_va_thong_bao(self):
         lop_mo = LopHocPhan.objects.filter(nam_hoc='2025-2026')
         self.assertEqual(lop_mo.count(), 13)
@@ -1008,6 +1027,7 @@ class NapDuLieuDayDuTest(TestCase):
         so_chua_doc = {so_luong_chua_doc(sv.ma_tai_khoan) for sv in SinhVien.objects.select_related('ma_tai_khoan')}
         self.assertGreaterEqual(len(so_chua_doc), 3)
 
+    @tag('don_vi')
     def test_bon_ca_loi_dang_ky_goc_van_dung(self):
         sv001, sv002, sv003, sv005 = (SinhVien.objects.get(pk=f'SV00{i}') for i in (1, 2, 3, 5))
         cnpm_2025 = LopHocPhan.objects.get(pk='CNPM_2025')
@@ -1025,6 +1045,7 @@ class NapDuLieuDayDuTest(TestCase):
             dang_ky_hoc_phan(sv005, ctdlgt_2025)
         self.assertIn('sĩ số', str(ngu_canh.exception))
 
+    @tag('tich_hop')
     def test_trang_chinh_cua_bon_vai_tro_tra_ve_200(self):
         trang_theo_vai_tro = {
             'pdt_demo': [
@@ -1047,6 +1068,7 @@ class NapDuLieuDayDuTest(TestCase):
                 with self.subTest(tai_khoan=ten_dang_nhap, trang=ten_trang):
                     self.assertEqual(self.client.get(reverse(ten_trang), follow=True).status_code, 200)
 
+    @tag('don_vi')
     def test_chan_chay_lai_lan_hai_va_khong_thay_doi_du_lieu(self):
         so_sinh_vien, so_dang_ky = SinhVien.objects.count(), DangKyHocPhan.objects.count()
         with self.assertRaises(CommandError):
@@ -1055,6 +1077,7 @@ class NapDuLieuDayDuTest(TestCase):
         self.assertEqual(DangKyHocPhan.objects.count(), so_dang_ky)
 
 
+@tag('don_vi')
 class NapDuLieuDayDuChayRiengTest(TestCase):
     def test_chay_sau_nap_du_lieu_mau_chi_bo_sung_khong_trung(self):
         call_command('nap_du_lieu_mau', '--force', stdout=io.StringIO())
@@ -1144,12 +1167,14 @@ class LayoutSinhVienTest(TestCase):
             so_dien_thoai='0900000000', ma_lop=lop, ma_tai_khoan=self.tk_sinh_vien,
         )
 
+    @tag('tich_hop')
     def test_banner_co_logo_ten_truong_va_ten_he_thong(self):
         banner = self._khoi(self.client.get(reverse('accounts:trang_chu')), r'<header class="sv-banner">.*?</header>')
         self.assertIn('logo__icon', banner)
         self.assertIn(settings.TEN_TRUONG, banner)
         self.assertIn(settings.TEN_HE_THONG, banner)
 
+    @tag('tich_hop')
     def test_menu_chi_chua_cac_trang_sinh_vien_da_co_that(self):
         response = self.client.get(reverse('accounts:trang_chu'))
         ten_url = set()
@@ -1163,22 +1188,26 @@ class LayoutSinhVienTest(TestCase):
             'tu_van_dang_ky:trang_tu_van', 'tom_tat_ket_qua:toi', 'hoi_dap_quy_che:trang_chat',
         })
 
+    @tag('tich_hop')
     def test_menu_co_bon_muc_chinh_dung_ten(self):
         khoi = self._khoi_menu(self.client.get(reverse('accounts:trang_chu')))
         for nhan in ('Trang chủ', 'Đăng ký học phần', 'Học tập', 'Trợ lý AI'):
             self.assertIn(f'<span>{nhan}</span>', khoi)
         self.assertEqual(khoi.count('sv-nhom__nut'), 3)
 
+    @tag('tich_hop')
     def test_trang_chu_sang_muc_trang_chu_va_khong_sang_nhom_nao(self):
         khoi = self._khoi_menu(self.client.get(reverse('accounts:trang_chu')))
         self.assertIn(f'sv-menu__muc sv-menu__muc--chon" href="{reverse("accounts:trang_chu")}"', khoi)
         self.assertEqual(khoi.count('sv-nhom--chon'), 0)
 
+    @tag('tich_hop')
     def test_thoi_khoa_bieu_sang_dung_nhom_va_muc(self):
         khoi = self._khoi_menu(self.client.get(reverse('enrollment:thoi_khoa_bieu')))
         self.assertEqual(khoi.count('sv-nhom--chon'), 1)
         self.assertIn(f'sv-nhom__muc sv-nhom__muc--chon" href="{reverse("enrollment:thoi_khoa_bieu")}"', khoi)
 
+    @tag('tich_hop')
     def test_lich_thi_thuoc_nhom_hoc_tap_khong_phai_nhom_dang_ky(self):
         khoi = self._khoi_menu(self.client.get(reverse('enrollment:lich_thi')))
         self.assertEqual(khoi.count('sv-nhom--chon'), 1)
@@ -1186,6 +1215,7 @@ class LayoutSinhVienTest(TestCase):
         dau_nhom_dang_ky = re.search(r'<div class="sv-nhom[^"]*">\s*<button[^>]*>.*?Đăng ký học phần</span>', khoi, re.S)
         self.assertNotIn('sv-nhom--chon', dau_nhom_dang_ky.group(0))
 
+    @tag('tich_hop')
     def test_bang_diem_sang_sau_khi_chuyen_huong(self):
         # Trước đây tab "Bảng điểm" không bao giờ sáng vì view redirect sang bang_diem_sinh_vien.
         self._tao_ho_so_sinh_vien()
@@ -1195,27 +1225,32 @@ class LayoutSinhVienTest(TestCase):
         self.assertEqual(khoi.count('sv-nhom--chon'), 1)
         self.assertIn(f'sv-nhom__muc sv-nhom__muc--chon" href="{reverse("grades:bang_diem_cua_toi")}"', khoi)
 
+    @tag('tich_hop')
     def test_tro_ly_ai_sang_dung_muc(self):
         khoi = self._khoi_menu(self.client.get(reverse('hoi_dap_quy_che:trang_chat')))
         self.assertEqual(khoi.count('sv-nhom--chon'), 1)
         self.assertIn(f'sv-nhom__muc sv-nhom__muc--chon" href="{reverse("hoi_dap_quy_che:trang_chat")}"', khoi)
 
+    @tag('tich_hop')
     def test_breadcrumb_trang_chu_chi_co_chu_trang_chu(self):
         khoi = self._khoi_breadcrumb(self.client.get(reverse('accounts:trang_chu')))
         self.assertIn('aria-current="page">Trang chủ</span>', khoi)
         self.assertNotIn('sv-breadcrumb__buoc', khoi)
 
+    @tag('tich_hop')
     def test_breadcrumb_trang_con_co_dang_trang_chu_va_ten_trang(self):
         khoi = self._khoi_breadcrumb(self.client.get(reverse('enrollment:thoi_khoa_bieu')))
         self.assertIn(f'<a href="{reverse("accounts:trang_chu")}">Trang chủ</a>', khoi)
         self.assertIn('aria-current="page">Thời khóa biểu</span>', khoi)
 
+    @tag('tich_hop')
     def test_breadcrumb_trang_khong_nam_trong_menu(self):
         khoi = self._khoi_breadcrumb(self.client.get(reverse('accounts:doi_mat_khau')))
         self.assertIn('aria-current="page">Đổi mật khẩu</span>', khoi)
         khoi = self._khoi_breadcrumb(self.client.get(reverse('accounts:thong_tin_ca_nhan')))
         self.assertIn('aria-current="page">Thông tin cá nhân</span>', khoi)
 
+    @tag('tich_hop')
     def test_breadcrumb_chi_tiet_thong_bao_co_ba_cap(self):
         thong_bao = ThongBao.objects.create(
             tieu_de='Nghỉ lễ', noi_dung='Nội dung.', nguoi_gui=self.tk_pdt, doi_tuong=DoiTuongThongBao.TAT_CA,
@@ -1224,6 +1259,7 @@ class LayoutSinhVienTest(TestCase):
         self.assertIn(f'href="{reverse("thong_bao:danh_sach")}">Thông báo</a>', khoi)
         self.assertIn('aria-current="page">Chi tiết</span>', khoi)
 
+    @tag('tich_hop')
     def test_chip_thong_bao_dung_so_chua_doc_that(self):
         for so in range(3):
             ThongBao.objects.create(
@@ -1237,6 +1273,7 @@ class LayoutSinhVienTest(TestCase):
         self.assertContains(response, '<span class="chip-thong-bao">3</span>')
         self.assertContains(response, f'href="{reverse("thong_bao:danh_sach")}" aria-label="Thông báo, 3 chưa đọc"')
 
+    @tag('tich_hop')
     def test_chip_thong_bao_giam_sau_khi_doc_va_an_khi_bang_khong(self):
         thong_bao = ThongBao.objects.create(
             tieu_de='Một thông báo', noi_dung='...', nguoi_gui=self.tk_pdt, doi_tuong=DoiTuongThongBao.TAT_CA,
@@ -1246,6 +1283,7 @@ class LayoutSinhVienTest(TestCase):
         response = self.client.get(reverse('accounts:trang_chu'))
         self.assertNotContains(response, '<span class="chip-thong-bao">')
 
+    @tag('tich_hop')
     def test_menu_nguoi_dung_giu_dinh_dang_ten_va_co_ba_muc(self):
         response = self.client.get(reverse('accounts:trang_chu'))
         self.assertContains(response, 'sv_layout<span class="sv-chip__vai-tro"> · Sinh viên</span>')
@@ -1255,12 +1293,14 @@ class LayoutSinhVienTest(TestCase):
         self.assertContains(response, 'Đổi mật khẩu</a>')
         self.assertContains(response, f'<form method="post" action="{reverse("accounts:dang_xuat")}">')
 
+    @tag('tich_hop')
     def test_co_nut_hamburger_va_css_thu_gon_cho_man_hinh_nho(self):
         # Dưới 1025px sidebar thành ngăn trượt từ trái, mở bằng nút ☰ ở thanh trên.
         response = self.client.get(reverse('accounts:trang_chu'))
         self.assertContains(response, 'id="sv-hamburger" aria-label="Mở menu" aria-controls="sv-sidebar" aria-expanded="false"')
         self.assertContains(response, '@media (max-width: 1024px)')
         self.assertContains(response, '.sv-bo-cuc--mo .sv-sidebar { transform: none; visibility: visible;')
+    @tag('tich_hop')
     def test_khong_con_chan_trang(self):
         # Chân trang 3 cột (địa chỉ, liên hệ, liên kết nhanh) đã bỏ theo yêu cầu.
         noi_dung = self.client.get(reverse('accounts:trang_chu')).content.decode()
@@ -1268,6 +1308,7 @@ class LayoutSinhVienTest(TestCase):
         self.assertNotIn('Liên kết nhanh', noi_dung)
         self.assertNotIn('sv-chan-trang', noi_dung)
 
+    @tag('tich_hop')
     def test_bang_mau_moi_va_khong_them_bien_moi(self):
         # Bảng màu đổi giá trị (giữ tên biến cũ); CSS của khung không tự khai báo biến riêng.
         noi_dung = self.client.get(reverse('accounts:trang_chu')).content.decode()
@@ -1276,6 +1317,7 @@ class LayoutSinhVienTest(TestCase):
         khoi_css_sinh_vien = noi_dung.split('Layout Sinh viên: banner')[1].split('</style>')[0]
         self.assertIsNone(re.search(r'(^|[\s;{])--[a-z-]+\s*:', khoi_css_sinh_vien))
 
+    @tag('tich_hop')
     def test_font_be_vietnam_pro_dung_cuc_bo_kem_giay_phep(self):
         noi_dung = self.client.get(reverse('accounts:trang_chu')).content.decode()
         for ten in ('Regular', 'Medium', 'SemiBold', 'Bold'):
@@ -1293,12 +1335,14 @@ class LayoutSinhVienTest(TestCase):
         self.assertIsNotNone(khop, f'Không thấy quy tắc CSS {bo_chon!r}.')
         return khop.group(1)
 
+    @tag('tich_hop')
     def test_sidebar_nen_trang_va_muc_menu_chu_phu(self):
         response = self.client.get(reverse('accounts:trang_chu'))
         sidebar = self._quy_tac_css('.sv-sidebar', response)
         self.assertIn('background: var(--mau-the)', sidebar)
         self.assertIn('position: sticky', sidebar)
         self.assertIn('color: var(--mau-chu-phu);', self._quy_tac_css('.sv-menu__muc, .sv-menu .sv-nhom__muc', response))
+    @tag('tich_hop')
     def test_muc_dang_chon_nen_xanh_nhat_chu_xanh_va_vach_trai(self):
         quy_tac = self._quy_tac_css('.sv-menu__muc--chon:hover, .sv-menu .sv-nhom__muc--chon:hover')
         self.assertIn('background: var(--mau-xanh-nhat)', quy_tac)
@@ -1309,6 +1353,7 @@ class LayoutSinhVienTest(TestCase):
             'outline: 2px solid var(--mau-xanh-chinh)',
             self._quy_tac_css('.sv-menu__muc:focus-visible, .sv-nhom__muc:focus-visible, .sv-hamburger:focus-visible'),
         )
+    @tag('tich_hop')
     def test_nhom_sidebar_thu_gon_duoc_va_menu_nguoi_dung_la_dropdown_nen_trang(self):
         response = self.client.get(reverse('accounts:trang_chu'))
         noi_dung = response.content.decode()
@@ -1322,6 +1367,7 @@ class LayoutSinhVienTest(TestCase):
         self.assertIn('background: var(--mau-the)', khung)
         self.assertIn('background: var(--mau-nen-trang)', self._quy_tac_css('.sv-nhom__muc:hover', response))
         self.assertIn('.sv-phai .sv-nhom:hover > .sv-nhom__xo, .sv-phai .sv-nhom:focus-within > .sv-nhom__xo { display: block; }', noi_dung)
+    @tag('tich_hop')
     def test_sidebar_thanh_ngan_truot_co_lop_phu_tren_man_hinh_hep(self):
         response = self.client.get(reverse('accounts:trang_chu'))
         noi_dung = response.content.decode()
@@ -1330,12 +1376,14 @@ class LayoutSinhVienTest(TestCase):
         self.assertIn("var mo = boCuc.classList.toggle('sv-bo-cuc--mo');", noi_dung)
         # Bấm ra ngoài sidebar hoặc nhấn Esc thì đóng ngăn trượt.
         self.assertIn('if (!sidebar.contains(su_kien.target)) { dongSidebar(); }', noi_dung)
+    @tag('tich_hop')
     def test_sidebar_giu_vi_tri_cuon_khi_chuyen_trang(self):
         noi_dung = self.client.get(reverse('accounts:trang_chu')).content.decode()
         # Lưu scrollTop khi rời trang, khôi phục khi tải trang mới; không có thì cuộn tới mục đang chọn.
         self.assertIn("try { sessionStorage.setItem(KHOA_CUON, String(sidebar.scrollTop)); } catch (loi) {}", noi_dung)
         self.assertIn("sidebar.scrollTop = parseInt(viTri, 10) || 0;", noi_dung)
         self.assertIn("mucChon.scrollIntoView({ block: 'nearest' });", noi_dung)
+    @tag('tich_hop')
     def test_chip_nen_trang_de_chu_den_va_badge_do_doc_ro_tren_nen_xanh(self):
         response = self.client.get(reverse('accounts:trang_chu'))
         chip = self._quy_tac_css('.sv-chip', response)
@@ -1343,6 +1391,7 @@ class LayoutSinhVienTest(TestCase):
         self.assertIn('color: var(--mau-chu)', chip)
         self.assertIn('background: var(--mau-do)', self._quy_tac_css('.chip-thong-bao', response))
 
+    @tag('don_vi')
     def test_do_tuong_phan_toi_thieu_cua_bang_mau_moi(self):
         # Ghi lại tương phản thật (WCAG) của các tổ hợp chữ/nền chính để không bị hạ vô tình.
         def do_sang(rgb):
@@ -1364,6 +1413,7 @@ class LayoutSinhVienTest(TestCase):
         self.assertGreaterEqual(tuong_phan(CHU_PHU, NEN), 4.5)                     # breadcrumb trên thanh trên
         self.assertGreaterEqual(tuong_phan((100, 116, 139), TRANG), 4.5)           # tiêu đề nhóm #64748B
         self.assertGreaterEqual(tuong_phan(DO, TRANG), 4.5)                        # badge đỏ trên chip trắng
+    @tag('tich_hop')
     def test_vai_tro_khac_dung_sidebar_giong_sinh_vien(self):
         """Phòng Đào tạo, Giảng viên, Cố vấn dùng cùng kiểu sidebar và thanh trên với Sinh viên
         (khung riêng nhan_vien/_khung_dau.html, có kiểm thử chi tiết ở MenuNhanVienTest)."""
@@ -1381,15 +1431,18 @@ class LayoutSinhVienTest(TestCase):
             self.assertNotContains(response, 'class="thanh-tren')
             self.assertNotContains(response, '<footer class="sv-chan-trang">')
             self.assertNotContains(response, '<nav class="sv-breadcrumb"')
+    @tag('tich_hop')
     def test_sinh_vien_khong_dung_khung_nhan_vien(self):
         response = self.client.get(reverse('accounts:trang_chu'))
         self.assertContains(response, '<aside class="sv-sidebar" id="sv-sidebar"')
         self.assertNotContains(response, 'sv-sidebar--nv')
+    @tag('tich_hop')
     def test_trang_loi_403_van_hien_layout_sinh_vien(self):
         response = self.client.get(reverse('people:sinh_vien_danh_sach'))
         self.assertContains(response, 'sv-banner', status_code=403)
         self.assertContains(response, '<aside class="sv-sidebar"', status_code=403)
 
+    @tag('tich_hop')
     def test_chua_dang_nhap_khong_co_layout_sinh_vien(self):
         self.client.logout()
         response = self.client.get(reverse('accounts:dang_nhap'))
@@ -1397,6 +1450,7 @@ class LayoutSinhVienTest(TestCase):
         self.assertNotContains(response, 'sv-sidebar')
 
 
+@tag('tich_hop')
 class MenuNhanVienTest(TestCase):
     """Menu của Phòng Đào tạo, Giảng viên, Cố vấn học tập (templates/nhan_vien/_khung_dau.html): đủ liên kết tới
     mọi trang danh mục mà vai trò được vào, đúng nhóm dropdown, dùng chung kiểu dáng với menu Sinh viên."""
@@ -1623,6 +1677,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
     def _trang(self):
         return self.client.get(self.url)
 
+    @tag('tich_hop')
     def test_so_lieu_tong_quan(self):
         tt = self._trang().context['tong_hop']
         self.assertEqual(tt['so_sinh_vien_hoat_dong'], 2)  # không tính tài khoản bị khóa
@@ -1632,6 +1687,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
         self.assertEqual(tt['so_lop_day'], 1)
         self.assertEqual(tt['hoc_ky_xet'], {'hoc_ky': '1', 'nam_hoc': '2025-2026', 'nguon': 'dot'})
 
+    @tag('tich_hop')
     def test_nam_o_tong_quan_co_nhan_gia_tri_va_lien_ket_xem_chi_tiet(self):
         response = self._trang()
         for nhan in (
@@ -1649,11 +1705,13 @@ class TrangChuPhongDaoTaoTest(TestCase):
         ):
             self.assertContains(response, f'href="{url}"')
 
+    @tag('tich_hop')
     def test_moi_lien_ket_xem_chi_tiet_mo_duoc(self):
         tt = self._trang().context['tong_hop']
         for khoa in ('url_sinh_vien', 'url_lop_hoc_phan', 'url_dot_dang_ky', 'url_canh_bao', 'url_si_so', 'url_thong_bao_da_gui'):
             self.assertEqual(self.client.get(tt[khoa]).status_code, 200, khoa)
 
+    @tag('tich_hop')
     def test_o_canh_bao_hoc_vu_co_ghi_chu_xam_ve_hoc_ky_gan_nhat(self):
         response = self._trang()
         self.assertContains(
@@ -1662,6 +1720,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
         self.assertContains(response, '(1 mức đỏ)')
         self.assertRegex(response.content.decode(), r'\.o-tong-hop__ghi-chu \{[^}]*color: var\(--mau-chu-phu\)')
 
+    @tag('tich_hop')
     def test_khoi_canh_bao_moi_loai_mot_dong_dung_thu_tu_uu_tien(self):
         response = self._trang()
         dong = response.context['tong_hop']['dong_canh_bao']
@@ -1676,6 +1735,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
             self.assertContains(response, f'href="{d["url"].replace("&", "&amp;")}"')
             self.assertEqual(self.client.get(d['url']).status_code, 200, d['url'])
 
+    @tag('tich_hop')
     def test_khoi_canh_bao_toi_da_5_dong_va_gop_lop_day(self):
         bay_gio = timezone.now()
         for i, nam_hoc in enumerate(('2020-2021', '2021-2022', '2022-2023', '2023-2024'), start=1):
@@ -1689,6 +1749,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
         for d, nam_hoc in zip(dong[2:], ('2020-2021', '2021-2022', '2022-2023')):
             self.assertIn(f'năm học {nam_hoc} sắp đóng', d['noi_dung'])
 
+    @tag('tich_hop')
     def test_nhieu_lop_day_chi_hien_ba_ma_va_gop_so_con_lai(self):
         hoc_phan = HocPhan.objects.get(pk='HP_TC')
         for i in range(4):
@@ -1697,6 +1758,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
         noi_dung = self._trang().context['tong_hop']['dong_canh_bao'][1]['noi_dung']
         self.assertIn('5 lớp học phần đã đầy chỗ: LHP_DAY0, LHP_DAY1, LHP_DAY2 và 2 lớp khác.', noi_dung)
 
+    @tag('tich_hop')
     def test_an_khoi_canh_bao_khi_khong_co_gi_dang_chu_y(self):
         Diem.objects.all().delete()
         DangKyHocPhan.objects.filter(ma_lop_hoc_phan=self.lop_day).delete()
@@ -1707,6 +1769,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
         self.assertNotContains(response, '<section class="khoi-chu-y"')
         self.assertContains(response, 'Số liệu tổng quan')
 
+    @tag('don_vi')
     def test_chon_hoc_ky_dang_xet(self):
         from accounts.tong_hop_phong_dao_tao import hoc_ky_dang_xet
 
@@ -1724,6 +1787,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
         DotDangKy.objects.create(hoc_ky=self.hk_cu, ngay_mo=bay_gio - timedelta(days=1), ngay_dong=bay_gio + timedelta(days=20))
         self.assertEqual(hoc_ky_dang_xet(bay_gio), {'hoc_ky': '2', 'nam_hoc': '2024-2025', 'nguon': 'dot'})
 
+    @tag('tich_hop')
     def test_danh_muc_hoc_ky_trong_van_hien_trang(self):
         DotDangKy.objects.all().delete()
         HocKy.objects.all().delete()
@@ -1735,6 +1799,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
         self.assertEqual(tt['so_lop_day'], 0)
         self.assertContains(response, 'Chưa có học kỳ nào trong danh mục.')
 
+    @tag('tich_hop')
     def test_thong_bao_da_gui_gan_day_nam_dong_moi_nhat_cua_phong_dao_tao(self):
         goc = timezone.now() - timedelta(days=10)
         for i in range(7):
@@ -1760,9 +1825,11 @@ class TrangChuPhongDaoTaoTest(TestCase):
         self.assertContains(response, 'Xem tất cả')
         self.assertContains(response, 'Gửi cho tất cả người dùng')
 
+    @tag('tich_hop')
     def test_chua_co_thong_bao_nao_da_gui(self):
         self.assertContains(self._trang(), 'Chưa có thông báo nào được gửi.')
 
+    @tag('tich_hop')
     def test_mo_ta_doi_tuong_lop_hoc_phan_va_lop_hanh_chinh(self):
         ThongBao.objects.create(
             tieu_de='Gửi lớp học phần', noi_dung='x', nguoi_gui=self.tk_pdt, doi_tuong=DoiTuongThongBao.LOP_HOC_PHAN, lop_hoc_phan=self.lop_con,
@@ -1775,6 +1842,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
         self.assertContains(response, 'cho lớp học phần LHP_NAY2')
         self.assertContains(response, 'cho lớp hành chính L_TC')
 
+    @tag('tich_hop')
     def test_mo_ta_doi_tuong_theo_vai_tro_co_dau_tieng_viet(self):
         for doi_tuong in (DoiTuongThongBao.SINH_VIEN, DoiTuongThongBao.GIANG_VIEN, DoiTuongThongBao.CO_VAN_HOC_TAP):
             ThongBao.objects.create(tieu_de=f'TB {doi_tuong}', noi_dung='x', nguoi_gui=self.tk_pdt, doi_tuong=doi_tuong)
@@ -1783,6 +1851,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
             self.assertIn(mo_ta, noi_dung)
         self.assertNotIn('Giang Vien', noi_dung)
 
+    @tag('tich_hop')
     def test_chi_con_ba_khoi_va_khong_con_luoi_the_chuc_nang(self):
         noi_dung = self._trang().content.decode()
         for khoi in ('Số liệu tổng quan', 'Cảnh báo cần chú ý', 'Thông báo đã gửi gần đây'):
@@ -1800,6 +1869,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
         self.assertNotContains(trang, 'Xin chào, pdt_tc')
         self.assertContains(trang, '<h1 class="an-chu">Trang chủ</h1>')
 
+    @tag('tich_hop')
     def test_moi_lien_ket_da_bo_khoi_trang_chu_van_co_tren_menu(self):
         noi_dung = self._trang().content.decode()
         menu = re.search(r'<nav class="sv-menu".*?</nav>', noi_dung, re.S).group(0)
@@ -1816,6 +1886,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
         # "Thông báo của tôi" (trước là thẻ ở trang chủ) vẫn vào được qua chuông thông báo.
         self.assertIn(f'href="{reverse("thong_bao:danh_sach")}"', noi_dung)
 
+    @tag('tich_hop')
     def test_khong_vai_tro_nao_con_luoi_the_chuc_nang(self):
         for ten, vai_tro in (('gv_tc3', VaiTro.GIANG_VIEN), ('cv_tc3', VaiTro.CO_VAN_HOC_TAP), ('sv_tc3', VaiTro.SINH_VIEN)):
             self.client.force_login(TaiKhoan.objects.create_user(ten_dang_nhap=ten, vai_tro=vai_tro, password=MAT_KHAU_HOP_LE))
@@ -1823,6 +1894,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
             for dau_hieu in ('<div class="nhom-chuc-nang', '<div class="luoi-the"', '<div class="the-chuc-nang"'):
                 self.assertNotIn(dau_hieu, noi_dung, (vai_tro, dau_hieu))
 
+    @tag('tich_hop')
     def test_moi_hanh_dong_trong_ba_khoi_la_nut_hoac_lien_ket_ro_rang(self):
         noi_dung = self._trang().content.decode()
         bat_dau = noi_dung.index('<section class="khoi-tong-quan"')
@@ -1837,6 +1909,7 @@ class TrangChuPhongDaoTaoTest(TestCase):
     def _quy_tac_khoi_chu_y(noi_dung):
         return ''.join(re.findall(r'\.(?:khoi-chu-y|khoi-gan-day|khoi-tong-quan|o-tong-hop)[^{]*\{[^}]*\}', noi_dung))
 
+    @tag('tich_hop')
     def test_vai_tro_khac_khong_thay_ba_khoi(self):
         for ten, vai_tro in (('sv_tc2', VaiTro.SINH_VIEN),):
             self.client.force_login(TaiKhoan.objects.create_user(ten_dang_nhap=ten, vai_tro=vai_tro, password=MAT_KHAU_HOP_LE))
@@ -1845,12 +1918,14 @@ class TrangChuPhongDaoTaoTest(TestCase):
             self.assertNotContains(response, 'Cảnh báo cần chú ý')
             self.assertNotContains(response, 'Thông báo đã gửi gần đây')
 
+    @tag('tich_hop')
     def test_html_can_bang_the(self):
         ThongBao.objects.create(tieu_de='TB', noi_dung='x', nguoi_gui=self.tk_pdt, doi_tuong=DoiTuongThongBao.TAT_CA)
         loi, con_mo = kiem_tra_can_bang_the(self._trang().content.decode())
         self.assertEqual((loi, con_mo), ([], []))
 
 
+@tag('tich_hop')
 class DanhSachThongBaoDaGuiTest(TestCase):
     def setUp(self):
         self.tk_pdt = TaiKhoan.objects.create_user(ten_dang_nhap='pdt_dg', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU_HOP_LE)
@@ -1900,6 +1975,7 @@ class DanhSachThongBaoDaGuiTest(TestCase):
         self.assertIn(f'sv-menu__muc sv-menu__muc--chon" href="{reverse("thong_bao:gui_phong_dao_tao")}"', menu)
 
 
+@tag('tich_hop')
 class TrangChuGiangVienTest(TestCase):
     """Trang chủ Giảng viên: số liệu tổng quan, cảnh báo cần chú ý, buổi dạy hôm nay, thông báo gần đây."""
 
@@ -2160,6 +2236,7 @@ class TrangChuGiangVienTest(TestCase):
         self.assertNotContains(response, 'Buổi dạy hôm nay')  # Cố vấn có bộ khối riêng của mình
 
 
+@tag('tich_hop')
 class TrangChuCoVanTest(TestCase):
     """Trang chủ Cố vấn học tập: số liệu tổng quan, cảnh báo cần chú ý, sinh viên cần quan tâm, thông báo gần đây."""
 
@@ -2406,6 +2483,7 @@ class TrangChuCoVanTest(TestCase):
         self.assertEqual((loi, con_mo), ([], []))
 
 
+@tag('tich_hop')
 class TrangChuSinhVienTest(TestCase):
     """Trang chủ Sinh viên (lượt giao diện 2/3): tóm tắt học tập, cảnh báo, sắp diễn ra, thông báo."""
 
@@ -2729,6 +2807,7 @@ class TrangChuSinhVienTest(TestCase):
         self.assertEqual(con_mo, [])
 
 
+@tag('tich_hop')
 class ThongBaoTuAnTest(TestCase):
     """Thông báo (django messages) dùng chung ở templates/base.html: tự mờ dần rồi ẩn sau 4 giây, có
     nút × tắt tay. JS không chạy được trong test Django nên kiểm tra mã nguồn hiển thị (cấu trúc,
@@ -2811,3 +2890,59 @@ class ThongBaoTuAnTest(TestCase):
             '<span class="thong-bao__noi-dung">Đã tạo tài khoản &quot;&lt;i&gt;x&lt;/i&gt;&quot;.</span>',
         )
         self.assertNotContains(response, '<i>x</i>')
+
+
+@tag('tich_hop')
+class MatKhauMoiKhongTrungMatKhauHienTaiTest(TestCase):
+    def setUp(self):
+        self.tai_khoan = TaiKhoan.objects.create_user(
+            ten_dang_nhap='mk_trung', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU_HOP_LE
+        )
+        self.client.force_login(self.tai_khoan)
+
+    def _doi(self, cu, moi):
+        return self.client.post(reverse('accounts:doi_mat_khau'), {
+            'mat_khau_cu': cu, 'mat_khau_moi': moi, 'mat_khau_moi_xac_nhan': moi,
+        })
+
+    def test_doi_mat_khau_trung_mat_khau_hien_tai_bi_bao_loi(self):
+        response = self._doi(MAT_KHAU_HOP_LE, MAT_KHAU_HOP_LE)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Mật khẩu mới không được trùng mật khẩu hiện tại.')
+        self.tai_khoan.refresh_from_db()
+        self.assertTrue(self.tai_khoan.check_password(MAT_KHAU_HOP_LE))
+
+    def test_sau_khi_dat_lai_khong_duoc_giu_nguyen_mat_khau_tam(self):
+        phong_dao_tao = TaiKhoan.objects.create_user(
+            ten_dang_nhap='mk_pdt', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU_HOP_LE
+        )
+        self.client.force_login(phong_dao_tao)
+        response = self.client.post(reverse('accounts:tai_khoan_dat_lai_mat_khau', args=[self.tai_khoan.pk]))
+        mat_khau_tam = response.context['mat_khau_tam']
+        self.tai_khoan.refresh_from_db()
+        self.assertTrue(self.tai_khoan.phai_doi_mat_khau)
+        self.assertFalse(self.tai_khoan.check_password(MAT_KHAU_HOP_LE))  # mật khẩu tạm khác mật khẩu cũ
+
+        self.client.force_login(self.tai_khoan)
+        response = self._doi(mat_khau_tam, mat_khau_tam)
+        self.assertContains(response, 'Mật khẩu mới không được trùng mật khẩu hiện tại.')
+        self.tai_khoan.refresh_from_db()
+        self.assertTrue(self.tai_khoan.phai_doi_mat_khau)
+        self.assertRedirects(self._doi(mat_khau_tam, 'MatKhauRiengMoi789'), reverse('accounts:trang_chu'))
+
+
+@tag('don_vi')
+class MatKhauTamKhongTrungMatKhauHienTaiTest(TestCase):
+    def test_bo_qua_chuoi_ngau_nhien_trung_mat_khau_hien_tai(self):
+        from unittest.mock import patch
+
+        from .services import tao_mat_khau_tam
+        tai_khoan = TaiKhoan.objects.create_user(ten_dang_nhap='mk_tam', vai_tro=VaiTro.SINH_VIEN, password='TrungHienTai1')
+        with patch('accounts.services._sinh_chuoi_ngau_nhien', side_effect=['TrungHienTai1', 'KhacHanNe2468']) as sinh:
+            self.assertEqual(tao_mat_khau_tam(tai_khoan), 'KhacHanNe2468')
+        self.assertEqual(sinh.call_count, 2)
+
+    def test_tai_khoan_moi_chua_luu_van_tao_duoc(self):
+        from .services import tao_mat_khau_tam
+        mat_khau = tao_mat_khau_tam(TaiKhoan(ten_dang_nhap='moi_tinh', vai_tro=VaiTro.SINH_VIEN))
+        self.assertEqual(len(mat_khau), 12)

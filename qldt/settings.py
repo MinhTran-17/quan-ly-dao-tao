@@ -15,6 +15,7 @@ import sys
 from decimal import Decimal
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,11 +27,20 @@ load_dotenv(BASE_DIR / '.env')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-changeme')
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
+
+# SECURITY WARNING: keep the secret key used in production secret!
+# Khi chạy thật (DEBUG=False) bắt buộc đặt DJANGO_SECRET_KEY trong .env, không dùng khóa mặc định;
+# khóa dự phòng bên dưới chỉ dành cho máy phát triển (DEBUG=True).
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured(
+            'Thiếu DJANGO_SECRET_KEY trong .env khi DJANGO_DEBUG=False. Tạo khóa bằng lệnh: '
+            'python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"'
+        )
+    SECRET_KEY = 'django-insecure-chi-dung-khi-phat-trien'
 
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
@@ -60,6 +70,7 @@ INSTALLED_APPS = [
     'tu_van_dang_ky',
     'tom_tat_ket_qua',
     'hoi_dap_quy_che',
+    'nha_may_agent',
 ]
 
 # Công thức điểm tổng kết: TY_LE_DIEM_QUA_TRINH * diem_qua_trinh + TY_LE_DIEM_THI * diem_thi,
@@ -113,6 +124,18 @@ AI_NGUONG_DIEM_TRUY_HOI = float(os.environ.get('AI_NGUONG_DIEM_TRUY_HOI', '0.5')
 # - 'v1': bản cũ (tách từ đơn âm tiết, tối đa 4 đoạn).
 # - 'v2': bản mới (thêm bigram âm tiết liền nhau, chỉ mục hóa gộp tiêu đề Điều, tối đa 6 đoạn).
 AI_TRUY_HOI_PHIEN_BAN = os.environ.get('AI_TRUY_HOI_PHIEN_BAN', 'v2')
+
+# Nhà máy agent (nha_may_agent, lệnh chay_nha_may): gọi Gemini qua ai_core để phân tích, lập trình, viết
+# test, review mã nguồn của chính dự án. Prompt chứa mã nguồn nên giới hạn ký tự riêng (lớn hơn
+# AI_GIOI_HAN_KY_TU của các chức năng nghiệp vụ); số lượt gọi AI tối đa mỗi lần chạy để chặn tốn hạn mức.
+NHA_MAY_GIOI_HAN_KY_TU = int(os.environ.get('NHA_MAY_GIOI_HAN_KY_TU', '120000'))
+NHA_MAY_SO_LUOT_AI_TOI_DA = int(os.environ.get('NHA_MAY_SO_LUOT_AI_TOI_DA', '8'))
+# Thời gian chờ và số lần thử lại riêng cho nhà máy (không dùng AI_TIMEOUT_GIAY/AI_SO_LAN_THU_LAI của sản phẩm):
+# SDK gửi thời gian chờ lên máy chủ (X-Server-Timeout), prompt chứa mã nguồn + đầu ra dài không kịp thì máy chủ
+# trả 504 DEADLINE_EXCEEDED ("Dịch vụ AI gặp lỗi"); mỗi lần thử lại một prompt dài đều tốn hạn mức.
+NHA_MAY_TIMEOUT_GIAY = float(os.environ.get('NHA_MAY_TIMEOUT_GIAY', '180'))
+NHA_MAY_SO_LAN_THU_LAI = int(os.environ.get('NHA_MAY_SO_LAN_THU_LAI', '1'))
+NHA_MAY_PHIEN_BAN_PROMPT = os.environ.get('NHA_MAY_PHIEN_BAN_PROMPT', 'v1')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -220,5 +243,52 @@ MEDIA_URL = '/media/'
 MAILERS = {
     'default': {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+    },
+}
+
+
+# Ghi log (theo dõi vận hành)
+# Ghi ra logs/app.log, tự xoay vòng khi tệp đạt 5 MB, giữ 5 tệp cũ (app.log.1 ... app.log.5).
+# - 'qldt.ai': mỗi lượt gọi AI một dòng (chức năng, kết quả, loại lỗi, thời gian) — xem ai_core/theo_doi.py.
+#   Không ghi nội dung prompt, câu trả lời hay điểm.
+# - 'django': lỗi của Django (lỗi 500), để biết khi ứng dụng gặp sự cố. Không ghi 403/404 thường gặp
+#   (tránh log phình to và lộ mã sinh viên trong URL); 'django.security' (CSRF, yêu cầu đáng ngờ) vẫn ghi từ WARNING.
+LOG_DIR = Path(os.environ.get('LOG_DIR', BASE_DIR / 'logs'))
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'chuan': {
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'tep_xoay_vong': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_DIR / 'app.log',
+            'maxBytes': 5 * 1024 * 1024,
+            'backupCount': 5,
+            'encoding': 'utf-8',
+            'formatter': 'chuan',
+        },
+    },
+    'loggers': {
+        'qldt': {
+            'handlers': ['tep_xoay_vong'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['tep_xoay_vong'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['tep_xoay_vong'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
     },
 }

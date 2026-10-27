@@ -2,7 +2,7 @@ import re
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.urls import reverse
 from django.utils import timezone
 
@@ -57,6 +57,7 @@ def tao_giang_vien(ma_giang_vien):
     )
 
 
+@tag('don_vi')
 class TinhDiemTongKetTest(TestCase):
     def test_8_0_va_7_5_ra_7_7(self):
         ket_qua = tinh_diem_tong_ket(Decimal('8.0'), Decimal('7.5'))
@@ -73,6 +74,7 @@ class TinhDiemTongKetTest(TestCase):
         self.assertIsNone(tinh_diem_tong_ket(Decimal('8.0'), None))
 
 
+@tag('tich_hop')
 class NhapSuaDiemTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh, self.co_van = tao_lop_hanh_chinh('CNTT1')
@@ -134,6 +136,7 @@ class NhapSuaDiemTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+@tag('tich_hop')
 class XemBangDiemTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh, self.co_van = tao_lop_hanh_chinh('CNTT1')
@@ -174,6 +177,7 @@ class XemBangDiemTest(TestCase):
         self.assertEqual(response.status_code, 302)
 
 
+@tag('don_vi')
 class BangDiemChiTietTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh, _ = tao_lop_hanh_chinh('CNTT1')
@@ -218,6 +222,7 @@ class BangDiemChiTietTest(TestCase):
         self.assertEqual(ket_qua[0]['nam_hoc'], '2025-2026')
 
 
+@tag('don_vi')
 class XepLoaiHocLucTest(TestCase):
     def test_xuat_sac(self):
         self.assertEqual(xep_loai_hoc_luc(Decimal('9.0')), 'Xuất sắc')
@@ -247,6 +252,7 @@ class XepLoaiHocLucTest(TestCase):
         self.assertIsNone(xep_loai_hoc_luc(None))
 
 
+@tag('don_vi')
 class DiemTrungBinhTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh, _ = tao_lop_hanh_chinh('CNTT_TB')
@@ -306,6 +312,7 @@ class DiemTrungBinhTest(TestCase):
         self.assertIsNone(tb_cong_bo)
 
 
+@tag('don_vi')
 class CanhBaoHocVuServiceTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh, _ = tao_lop_hanh_chinh('CNTT_CB')
@@ -353,6 +360,7 @@ class CanhBaoHocVuServiceTest(TestCase):
         self.assertFalse(ket_qua['canh_bao'])
 
 
+@tag('tich_hop')
 class CongBoDiemTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh, self.co_van = tao_lop_hanh_chinh('CNTT_CB2')
@@ -438,6 +446,7 @@ class CongBoDiemTest(TestCase):
         self.assertNotContains(response, 'Đang chờ công bố')
 
 
+@tag('tich_hop')
 class XuatBangDiemPdfTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh, self.co_van = tao_lop_hanh_chinh('CNTT_PDF1')
@@ -467,6 +476,7 @@ class XuatBangDiemPdfTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@tag('tich_hop')
 class CanhBaoHocVuViewTest(TestCase):
     def setUp(self):
         self.lop_hanh_chinh, self.co_van = tao_lop_hanh_chinh('CNTT_CB4')
@@ -520,6 +530,7 @@ class CanhBaoHocVuViewTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@tag('tich_hop')
 class GiaoDienBangDiemSinhVienTest(TestCase):
     """Giao diện trang bảng điểm (lượt giao diện 2/3): khối tổng hợp, bảng nhóm theo học kỳ,
     chip trạng thái, nút thay cho liên kết chữ. Chỉ đổi template, không đổi view."""

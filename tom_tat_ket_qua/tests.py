@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, tag
 from django.urls import reverse
 from django.utils import timezone
 
@@ -97,6 +97,7 @@ def cham_diem(sinh_vien, giang_vien, ma_lop_hoc_phan, hoc_phan, hoc_ky, nam_hoc,
     return lop, dang_ky
 
 
+@tag('tich_hop')
 class PhanQuyenTomTatTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         co_van = tao_co_van('CV001')
@@ -157,6 +158,7 @@ class PhanQuyenTomTatTest(KiemThuCoDinhCauHinhAI):
         self.assertEqual(response.status_code, 302)
 
 
+@tag('tich_hop')
 class PhamViCoVanTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         self.co_van_a = tao_co_van('CVA')
@@ -204,6 +206,7 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         cham_diem(self.sinh_vien, self.giang_vien, 'CSDL_01', hoc_phan, '1', '2025-2026', Decimal('8'), Decimal('8'))
         self.co_van = co_van
 
+    @tag('tich_hop')
     @override_settings(AI_BACKEND='gia')
     def test_trang_cua_toi_bao_loi_than_thien_khi_vuot_gioi_han(self):
         for _ in range(SO_LAN_TOI_DA_MOI_PHUT_MAC_DINH):
@@ -216,6 +219,7 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         self.assertContains(response, 'quá')
         gia_lap.assert_not_called()
 
+    @tag('tich_hop')
     @override_settings(AI_BACKEND='gia')
     def test_trang_co_van_bao_loi_than_thien_khi_vuot_gioi_han(self):
         for _ in range(SO_LAN_TOI_DA_MOI_PHUT_MAC_DINH):
@@ -231,6 +235,7 @@ class GioiHanTanSuatTest(KiemThuCoDinhCauHinhAI):
         self.assertContains(response, 'quá')
         gia_lap.assert_not_called()
 
+    @tag('don_vi')
     def test_moi_nguoi_dung_dem_rieng(self):
         for _ in range(SO_LAN_TOI_DA_MOI_PHUT_MAC_DINH):
             kiem_tra_va_dem(f'tom_tat_ket_qua:{self.sinh_vien.ma_tai_khoan_id}')
@@ -245,6 +250,7 @@ class KhongCoDiemTest(KiemThuCoDinhCauHinhAI):
         self.sinh_vien = tao_sinh_vien('SV001', lop_hanh_chinh)
         self.client.force_login(self.sinh_vien.ma_tai_khoan)
 
+    @tag('don_vi')
     def test_khong_goi_ai_khi_chua_co_diem(self):
         with patch(_LAY_CLIENT_AI) as gia_lap:
             ket_qua = tom_tat_ket_qua_hoc_tap(self.sinh_vien)
@@ -252,6 +258,7 @@ class KhongCoDiemTest(KiemThuCoDinhCauHinhAI):
         self.assertTrue(ket_qua.chua_co_du_lieu)
         self.assertIn('chưa có điểm', ket_qua.luu_y.lower())
 
+    @tag('tich_hop')
     def test_trang_hien_thong_bao_chua_co_du_lieu(self):
         with patch(_LAY_CLIENT_AI) as gia_lap:
             response = self.client.post(reverse('tom_tat_ket_qua:toi'), {'cau_hoi': 'Tóm tắt toàn khóa'}, follow=True)
@@ -260,6 +267,7 @@ class KhongCoDiemTest(KiemThuCoDinhCauHinhAI):
         gia_lap.assert_not_called()
 
 
+@tag('tich_hop')
 class GiaoDienBangDiemChiTietTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         cache.clear()
@@ -280,6 +288,7 @@ class GiaoDienBangDiemChiTietTest(KiemThuCoDinhCauHinhAI):
         self.assertNotIn('underline', response.content.decode())
 
 
+@tag('don_vi')
 class KhongRoRiDuLieuTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         co_van = tao_co_van('CV001')
@@ -301,6 +310,7 @@ class KhongRoRiDuLieuTest(KiemThuCoDinhCauHinhAI):
         self.assertNotIn(str(self.sinh_vien.ma_tai_khoan_id), noi_dung)
 
 
+@tag('don_vi')
 class NoiDungGaiLenhVanTrongKhoiDuLieuTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         co_van = tao_co_van('CV001')
@@ -325,6 +335,7 @@ class NoiDungGaiLenhVanTrongKhoiDuLieuTest(KiemThuCoDinhCauHinhAI):
         self.assertTrue(vi_tri_mo < vi_tri_noi_dung < vi_tri_dong)
 
 
+@tag('don_vi')
 class SoLieuVaLocKetQuaTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         co_van = tao_co_van('CV001')
@@ -384,6 +395,7 @@ class SoLieuVaLocKetQuaTest(KiemThuCoDinhCauHinhAI):
         self.assertEqual(ket_qua.can_cai_thien[0]['diem_tong_ket'], Decimal('3.0'))
 
 
+@tag('don_vi')
 class LoiAiTest(KiemThuCoDinhCauHinhAI):
     def setUp(self):
         co_van = tao_co_van('CV001')
@@ -433,6 +445,7 @@ class LoiAiTest(KiemThuCoDinhCauHinhAI):
         self.assertEqual(len(ket_qua.bang_diem), 1)
 
 
+@tag('don_vi')
 class GoiAiFalseTest(KiemThuCoDinhCauHinhAI):
     """goi_ai=False (dùng bởi chay_ca_thu_tom_tat khi không --ai) phải dựng prompt đầy đủ
     nhưng KHÔNG gọi AI — hành vi trang web thật (goi_ai=True mặc định) không đổi."""
@@ -468,6 +481,7 @@ class GoiAiFalseTest(KiemThuCoDinhCauHinhAI):
         self.assertEqual(len(client_gia.cac_lan_goi), 1)
 
 
+@tag('don_vi')
 class ChayCaThuTomTatCommandTest(TestCase):
     """Lệnh chay_ca_thu_tom_tat: chạy qua đúng luồng services (ca 6, 7 qua view thật),
     dựng dữ liệu trong transaction rồi hoàn tác (không làm bẩn CSDL)."""
@@ -543,6 +557,7 @@ class ChayCaThuTomTatCommandTest(TestCase):
         self.assertIn('Model thực tế API trả về:', noi_dung)
 
 
+@tag('tich_hop')
 class KhungChatTomTatTest(KiemThuCoDinhCauHinhAI):
     """Khung chat tóm tắt: code tự đọc phạm vi (kỳ/năm/toàn khóa) từ câu gõ, chỉ gửi điểm của đúng phạm vi cho AI,
     lưu lịch sử trong session, gửi xong chuyển hướng về trang chat."""

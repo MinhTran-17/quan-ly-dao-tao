@@ -112,6 +112,19 @@ class ThongTinLienHeForm(forms.Form):
     email = forms.EmailField(label='Email', max_length=100)
     so_dien_thoai = forms.CharField(label='Số điện thoại', max_length=15, validators=[validate_so_dien_thoai])
 
+    def __init__(self, *args, ho_so, **kwargs):
+        self.ho_so = ho_so
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        # Không trùng email/số điện thoại của hồ sơ khác; thông báo chung, không nêu hồ sơ nào (tránh lộ thông tin người khác).
+        from people.lien_he import kiem_tra_lien_he
+        cleaned_data = super().clean()
+        loi = kiem_tra_lien_he(cleaned_data.get('email'), cleaned_data.get('so_dien_thoai'), self.ho_so, chi_tiet=False)
+        for truong, thong_bao in loi.items():
+            self.add_error(truong, thong_bao)
+        return cleaned_data
+
 
 class DoiMatKhauForm(forms.Form):
     mat_khau_cu = forms.CharField(label='Mật khẩu hiện tại', widget=forms.PasswordInput)
@@ -134,6 +147,9 @@ class DoiMatKhauForm(forms.Form):
         xac_nhan = cleaned_data.get('mat_khau_moi_xac_nhan')
         if moi and xac_nhan and moi != xac_nhan:
             self.add_error('mat_khau_moi_xac_nhan', 'Xác nhận mật khẩu mới không khớp với mật khẩu mới.')
-        if moi:
+        # Kể cả lần đổi bắt buộc sau khi được đặt lại: không giữ nguyên mật khẩu tạm.
+        if moi and self.tai_khoan.check_password(moi):
+            self.add_error('mat_khau_moi', 'Mật khẩu mới không được trùng mật khẩu hiện tại.')
+        elif moi:
             kiem_tra_mat_khau(moi, user=self.tai_khoan)
         return cleaned_data

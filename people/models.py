@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from .ma_ho_so import ma_dung_duoc_trong_url as _ma_dung_duoc_trong_url
+
 
 class SinhVien(models.Model):
     ma_sinh_vien = models.CharField(max_length=20, primary_key=True)
@@ -20,6 +22,11 @@ class SinhVien(models.Model):
     class Meta:
         db_table = 'sinh_vien'
 
+    @property
+    def ma_dung_duoc_trong_url(self):
+        """False với dữ liệu cũ có mã chứa "/"...: template không tạo liên kết theo mã (tránh NoReverseMatch)."""
+        return _ma_dung_duoc_trong_url(self.ma_sinh_vien)
+
     def __str__(self):
         return f'{self.ma_sinh_vien} - {self.ho_ten}'
 
@@ -37,6 +44,10 @@ class GiangVien(models.Model):
     class Meta:
         db_table = 'giang_vien'
 
+    @property
+    def ma_dung_duoc_trong_url(self):
+        return _ma_dung_duoc_trong_url(self.ma_giang_vien)
+
     def __str__(self):
         return f'{self.ma_giang_vien} - {self.ho_ten}'
 
@@ -53,6 +64,10 @@ class CoVanHocTap(models.Model):
 
     class Meta:
         db_table = 'co_van_hoc_tap'
+
+    @property
+    def ma_dung_duoc_trong_url(self):
+        return _ma_dung_duoc_trong_url(self.ma_co_van)
 
     def __str__(self):
         return f'{self.ma_co_van} - {self.ho_ten}'

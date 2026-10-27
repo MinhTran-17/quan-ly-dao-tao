@@ -1,0 +1,62 @@
+# CI: mỗi lần push hoặc mở pull request, dựng MySQL 8.0, cài thư viện, chạy check,
+# test đơn vị (--tag don_vi) rồi test tích hợp (--tag tich_hop).
+# Không cần GEMINI_API_KEY thật: test AI dùng client giả (ai_core.clients.ClientAIGia).
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  kiem-thu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_mat_khau
+          MYSQL_DATABASE: qldt
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci_mat_khau"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DJANGO_SECRET_KEY: khoa-chi-dung-cho-ci-khong-phai-bi-mat
+      DJANGO_DEBUG: 'True'
+      DB_NAME: qldt
+      DB_USER: root
+      DB_PASSWORD: ci_mat_khau
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      GEMINI_API_KEY: ''
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+
+      - name: Cài thư viện
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Kiểm tra cấu hình (manage.py check)
+        run: python manage.py check
+
+      - name: Kiểm tra không thiếu migration
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Test đơn vị
+        run: python manage.py test --tag don_vi --noinput -v 1
+
+      - name: Test tích hợp
+        run: python manage.py test --tag tich_hop --noinput -v 1

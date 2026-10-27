@@ -1,6 +1,9 @@
 from django.urls import include, path
 
+from .views import kiem_tra_suc_khoe
+
 urlpatterns = [
+    path('health/', kiem_tra_suc_khoe, name='health'),
     path('', include('accounts.urls')),
     path('nhan-su/', include('people.urls')),
     path('dao-tao/', include('academics.urls')),

@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.urls import reverse
 from django.utils import timezone
 
@@ -51,6 +51,7 @@ def tao_sinh_vien(ma_sinh_vien, ma_lop):
     )
 
 
+@tag('tich_hop')
 class ThongBaoPhongDaoTaoTest(TestCase):
     def setUp(self):
         self.pdt = TaiKhoan.objects.create_user(ten_dang_nhap='pdt_tb', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU)
@@ -85,6 +86,7 @@ class ThongBaoPhongDaoTaoTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@tag('tich_hop')
 class ThongBaoLopHocPhanTest(TestCase):
     def setUp(self):
         self.co_van = tao_co_van('CV_TB02')
@@ -138,6 +140,7 @@ class ThongBaoLopHocPhanTest(TestCase):
         self.assertFalse(ThongBao.objects.filter(tieu_de='X').exists())
 
 
+@tag('tich_hop')
 class ThongBaoLopHanhChinhTest(TestCase):
     def setUp(self):
         self.co_van = tao_co_van('CV_TB04')
@@ -162,6 +165,7 @@ class ThongBaoLopHanhChinhTest(TestCase):
         self.assertNotIn(thong_bao, thong_bao_lien_quan(self.co_van_khac.ma_tai_khoan))
 
 
+@tag('tich_hop')
 class DanhDauDaDocTest(TestCase):
     def setUp(self):
         self.pdt = TaiKhoan.objects.create_user(ten_dang_nhap='pdt_dd', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU)
@@ -205,6 +209,7 @@ class DanhDauDaDocTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+@tag('tich_hop')
 class DanhSachThongBaoTest(TestCase):
     def test_chua_dang_nhap_bi_chuyen_huong(self):
         response = self.client.get(reverse('thong_bao:danh_sach'))

@@ -2,7 +2,7 @@ import re
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.urls import reverse
 from django.utils import timezone
 
@@ -56,12 +56,14 @@ class TinhTienDoTest(TestCase):
         self.ctdl = HocPhan.objects.create(ma_hoc_phan='CTDL', ten_hoc_phan='Cấu trúc dữ liệu', so_tin_chi=3)
         self.tu_chon = HocPhan.objects.create(ma_hoc_phan='TUCHON', ten_hoc_phan='Học phần tự chọn', so_tin_chi=2)
 
+    @tag('don_vi')
     def test_chua_gan_chuong_trinh_dao_tao(self):
         lop = LopHanhChinh.objects.create(ma_lop='CNTT1', ten_lop='CNTT K1', ma_nganh=self.nganh, ma_co_van=self.co_van)
         sinh_vien = tao_sinh_vien('SV001', lop)
         ket_qua = tinh_tien_do(sinh_vien)
         self.assertFalse(ket_qua['co_chuong_trinh'])
 
+    @tag('don_vi')
     def test_da_dat_het_bat_buoc(self):
         chuong_trinh = ChuongTrinhDaoTao.objects.create(nganh=self.nganh, ten_chuong_trinh='CNTT chuẩn', khoa_hoc='Khóa 1')
         ChiTietChuongTrinh.objects.create(chuong_trinh=chuong_trinh, hoc_phan=self.csdl, hoc_ky_du_kien=1, bat_buoc=True)
@@ -89,6 +91,7 @@ class TinhTienDoTest(TestCase):
         self.assertEqual(ket_qua['phan_tram_hoan_thanh'], 100)
         self.assertEqual(ket_qua['con_thieu_bat_buoc'], [])
 
+    @tag('don_vi')
     def test_con_thieu_mot_so_hoc_phan(self):
         chuong_trinh = ChuongTrinhDaoTao.objects.create(nganh=self.nganh, ten_chuong_trinh='CNTT chuẩn', khoa_hoc='Khóa 1')
         ChiTietChuongTrinh.objects.create(chuong_trinh=chuong_trinh, hoc_phan=self.csdl, hoc_ky_du_kien=1, bat_buoc=True)
@@ -113,6 +116,7 @@ class TinhTienDoTest(TestCase):
         self.assertEqual([ct.hoc_phan_id for ct in ket_qua['con_thieu_tu_chon']], ['TUCHON'])
         self.assertEqual([ct.hoc_phan_id for ct in ket_qua['da_dat_bat_buoc']], ['CSDL'])
 
+    @tag('tich_hop')
     def test_thanh_tien_do_dung_dau_cham_khi_phan_tram_khong_tron(self):
         # LANGUAGE_CODE='vi' in số thập phân bằng dấu phẩy ("33,3"), không hợp lệ trong CSS
         # "width: ...%" — phải dùng |unlocalize để thanh tiến độ không bị rỗng.
@@ -140,6 +144,7 @@ class TinhTienDoTest(TestCase):
         # Chữ hiển thị cho người đọc vẫn theo kiểu Việt Nam (dấu phẩy).
         self.assertContains(response, '33,3%')
 
+    @tag('don_vi')
     def test_chi_tinh_dang_ky_con_hieu_luc(self):
         chuong_trinh = ChuongTrinhDaoTao.objects.create(nganh=self.nganh, ten_chuong_trinh='CNTT chuẩn', khoa_hoc='Khóa 1')
         ChiTietChuongTrinh.objects.create(chuong_trinh=chuong_trinh, hoc_phan=self.csdl, hoc_ky_du_kien=1, bat_buoc=True)
@@ -163,6 +168,7 @@ class TinhTienDoTest(TestCase):
         self.assertEqual([ct.hoc_phan_id for ct in ket_qua['con_thieu_bat_buoc']], ['CSDL'])
 
 
+@tag('tich_hop')
 class TienDoViewTest(TestCase):
     def setUp(self):
         self.nganh = NganhHoc.objects.create(ma_nganh='CNTT', ten_nganh='Công nghệ thông tin')
@@ -240,27 +246,32 @@ class TienDoChiDiemDaCongBoTest(TestCase):
         # Điểm đạt nhưng CHƯA công bố (da_cong_bo mặc định False).
         dang_ky_va_cham_diem(self.sinh_vien, lop_csdl, Decimal('8'), Decimal('8'))
 
+    @tag('don_vi')
     def test_sinh_vien_tu_xem_khong_tinh_diem_chua_cong_bo_la_da_dat(self):
         ket_qua = tinh_tien_do(self.sinh_vien, chi_diem_da_cong_bo=True)
         self.assertEqual(ket_qua['so_bat_buoc_da_dat'], 0)
         self.assertEqual([ct.hoc_phan_id for ct in ket_qua['con_thieu_bat_buoc']], ['CSDL'])
 
+    @tag('don_vi')
     def test_co_van_van_thay_diem_that_du_chua_cong_bo(self):
         ket_qua = tinh_tien_do(self.sinh_vien)
         self.assertEqual(ket_qua['so_bat_buoc_da_dat'], 1)
         self.assertEqual(ket_qua['con_thieu_bat_buoc'], [])
 
+    @tag('tich_hop')
     def test_view_sinh_vien_tu_xem_khong_tinh_da_dat(self):
         self.client.force_login(self.sinh_vien.ma_tai_khoan)
         response = self.client.get(reverse('tien_do_hoc_tap:cua_toi'))
         self.assertEqual(response.context['ket_qua']['so_bat_buoc_da_dat'], 0)
 
+    @tag('tich_hop')
     def test_view_co_van_thay_da_dat_that(self):
         self.client.force_login(self.co_van.ma_tai_khoan)
         response = self.client.get(reverse('tien_do_hoc_tap:co_van'), {'ma_sinh_vien': self.sinh_vien.pk})
         self.assertEqual(response.context['ket_qua']['so_bat_buoc_da_dat'], 1)
 
 
+@tag('tich_hop')
 class TienDoGiaoDienTest(TestCase):
     """Giao diện trang Tiến độ học tập (lượt giao diện 3/3): thanh tiến độ tổng, hai nhóm
     "Đã đạt"/"Còn thiếu" gom theo học kỳ dự kiến, nhãn Bắt buộc/Tự chọn."""

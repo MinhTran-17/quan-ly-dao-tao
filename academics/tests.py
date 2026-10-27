@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.urls import reverse
 from django.utils import timezone
 
@@ -16,6 +16,7 @@ TaiKhoan = get_user_model()
 MAT_KHAU = 'MatKhauManh123'
 
 
+@tag('tich_hop')
 class NganhHocHocPhanCrudTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -45,6 +46,7 @@ class NganhHocHocPhanCrudTest(TestCase):
         self.assertFalse(HocPhan.objects.filter(pk='CSDL2').exists())
 
 
+@tag('tich_hop')
 class XoaHocPhanTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -117,6 +119,7 @@ class XoaHocPhanTest(TestCase):
         self.assertTrue(HocPhan.objects.filter(pk='HP_XOA').exists())
 
 
+@tag('tich_hop')
 class XoaNganhHocTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -178,6 +181,7 @@ class XoaNganhHocTest(TestCase):
         self.assertTrue(NganhHoc.objects.filter(pk='NGANH_XOA').exists())
 
 
+@tag('tich_hop')
 class DieuKienTienQuyetTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -237,6 +241,7 @@ class DieuKienTienQuyetTest(TestCase):
         self.assertEqual(len(tim('')), 2)
 
 
+@tag('tich_hop')
 class XoaDieuKienTienQuyetTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -287,6 +292,7 @@ class XoaDieuKienTienQuyetTest(TestCase):
         self.assertTrue(DieuKienTienQuyet.objects.filter(pk=self.dieu_kien.pk).exists())
 
 
+@tag('tich_hop')
 class LopHanhChinhTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -319,6 +325,7 @@ class LopHanhChinhTest(TestCase):
         self.assertNotContains(response, 'KTPM1')
 
 
+@tag('tich_hop')
 class HocKyCrudTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -411,6 +418,7 @@ def _ngay_gio_aware(chuoi):
     return timezone.make_aware(datetime.strptime(chuoi, '%Y-%m-%d %H:%M'))
 
 
+@tag('tich_hop')
 class DotDangKyCrudTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -516,6 +524,7 @@ class DotDangKyCrudTest(TestCase):
         self.assertTrue(DotDangKy.objects.filter(pk=dot.pk).exists())
 
 
+@tag('tich_hop')
 class PhanQuyenAcademicsTest(TestCase):
     def setUp(self):
         self.giang_vien_tk = TaiKhoan.objects.create_user(
@@ -547,6 +556,7 @@ class PhanQuyenAcademicsTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@tag('tich_hop')
 class XoaChuongTrinhDaoTaoTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -624,6 +634,7 @@ class XoaChuongTrinhDaoTaoTest(TestCase):
         self.assertTrue(ChuongTrinhDaoTao.objects.filter(pk=self.chuong_trinh.pk).exists())
 
 
+@tag('tich_hop')
 class ChuongTrinhDaoTaoCrudTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -657,6 +668,7 @@ class ChuongTrinhDaoTaoCrudTest(TestCase):
         self.assertEqual(ct.ten_chuong_trinh, 'CNTT chuẩn (đã cập nhật)')
 
 
+@tag('tich_hop')
 class ChiTietChuongTrinhCrudTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -735,6 +747,7 @@ class ChiTietChuongTrinhCrudTest(TestCase):
         self.assertFalse(ChiTietChuongTrinh.objects.filter(pk=ct.pk).exists())
 
 
+@tag('tich_hop')
 class GanChuongTrinhChoLopHanhChinhTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -783,3 +796,77 @@ class GanChuongTrinhChoLopHanhChinhTest(TestCase):
         self.assertRedirects(response, reverse('academics:lop_hanh_chinh_danh_sach'))
         self.lop.refresh_from_db()
         self.assertIsNone(self.lop.chuong_trinh_dao_tao)
+
+
+@tag('tich_hop')
+class MaHocPhanKhongPhanBietHoaThuongTest(TestCase):
+    def setUp(self):
+        self.client.force_login(TaiKhoan.objects.create_user(
+            ten_dang_nhap='pdt_hp', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU,
+        ))
+
+    def _tao(self, ma):
+        return self.client.post(reverse('academics:hoc_phan_tao'), {'ma_hoc_phan': ma, 'ten_hoc_phan': 'Toán', 'so_tin_chi': 3})
+
+    def test_ma_tu_chuyen_ve_chu_in_hoa_khi_luu(self):
+        response = self._tao('  toan1 ')
+        self.assertRedirects(response, reverse('academics:hoc_phan_danh_sach'))
+        self.assertEqual(list(HocPhan.objects.values_list('ma_hoc_phan', flat=True)), ['TOAN1'])
+
+    def test_trung_ma_khac_hoa_thuong_bi_bao_loi(self):
+        self._tao('TOAN')
+        for ma in ('toan', 'Toan', 'TOAN'):
+            response = self._tao(ma)
+            self.assertEqual(response.status_code, 200, ma)
+            self.assertContains(response, 'Mã học phần &quot;TOAN&quot; đã tồn tại')
+        self.assertEqual(HocPhan.objects.count(), 1)
+
+    def test_du_lieu_cu_viet_thuong_van_chan_ma_in_hoa_trung(self):
+        HocPhan.objects.create(ma_hoc_phan='ctdl', ten_hoc_phan='Cấu trúc dữ liệu', so_tin_chi=3)
+        response = self._tao('CTDL')
+        self.assertContains(response, 'đã có &quot;ctdl&quot;')
+        self.assertEqual(HocPhan.objects.count(), 1)
+
+
+def kiem_tra_dinh_dang_excel(test, noi_dung_tep):
+    """Mọi sheet của file xuất: tiêu đề in đậm, cố định dòng 1, cột giãn theo nội dung dài nhất (tối đa 60)."""
+    from io import BytesIO as _BytesIO
+
+    from openpyxl import load_workbook as _load_workbook
+    from openpyxl.utils import get_column_letter as _cot
+    workbook = _load_workbook(_BytesIO(noi_dung_tep))
+    for sheet in workbook.worksheets:
+        test.assertEqual(sheet.freeze_panes, 'A2', sheet.title)
+        test.assertTrue(all(cell.font.bold for cell in sheet[1] if cell.value is not None), sheet.title)
+        for chi_so, cot in enumerate(sheet.iter_cols(values_only=True), start=1):
+            dai_nhat = max(len(str(v)) for v in cot if v is not None)
+            test.assertEqual(sheet.column_dimensions[_cot(chi_so)].width, min(max(dai_nhat + 2, 8), 60), (sheet.title, chi_so))
+    return workbook
+
+
+@tag('don_vi')
+class DinhDangExcelTest(TestCase):
+    def test_gian_cot_theo_noi_dung_toi_da_60_in_dam_va_co_dinh_tieu_de(self):
+        from datetime import date
+
+        from .excel_utils import tao_workbook_excel
+        workbook = tao_workbook_excel('Thu', ['Mã', 'Ghi chú', 'Ngày'], [
+            ['SV1', 'x' * 200, date(2026, 10, 27)],
+            ['SV0000000002', 'dòng ngắn\ndòng thứ hai dài hơn', None],
+        ])
+        sheet = workbook.active
+        self.assertEqual(sheet.freeze_panes, 'A2')
+        self.assertTrue(all(cell.font.bold for cell in sheet[1]))
+        self.assertEqual(sheet.column_dimensions['A'].width, len('SV0000000002') + 2)
+        self.assertEqual(sheet.column_dimensions['B'].width, 60)              # 200 ký tự -> chặn ở 60
+        self.assertEqual(sheet.column_dimensions['C'].width, len('2026-10-27') + 2)
+
+    def test_cot_ngan_van_rong_toi_thieu_va_sheet_them_sau_cung_duoc_dinh_dang(self):
+        from .excel_utils import phan_hoi_excel, tao_workbook_excel
+        workbook = tao_workbook_excel('Thu', ['A'], [[1]])
+        self.assertEqual(workbook.active.column_dimensions['A'].width, 8)
+        sheet2 = workbook.create_sheet('Them')
+        sheet2.append(['Tiêu đề sheet thêm', 'B'])
+        sheet2.append(['giá trị', 'b' * 30])
+        response = phan_hoi_excel(workbook, 'thu.xlsx')
+        kiem_tra_dinh_dang_excel(self, response.content)

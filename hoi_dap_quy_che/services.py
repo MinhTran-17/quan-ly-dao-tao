@@ -7,6 +7,7 @@ from ai_core.clients import lay_client_ai
 from ai_core.dinh_dang import dinh_dang_ket_qua
 from ai_core.exceptions import LoiAI
 from ai_core.prompts import nap_prompt
+from ai_core.theo_doi import goi_ai_co_ghi_log
 
 from .chi_muc import truy_hoi
 
@@ -175,7 +176,7 @@ def hoi_dap_quy_che(cau_hoi):
     client = None
     try:
         client = lay_client_ai()
-        phan_hoi_tho = client.sinh_noi_dung(he_thong=he_thong, nguoi_dung=nguoi_dung)
+        phan_hoi_tho = goi_ai_co_ghi_log('hoi_dap_quy_che', client, he_thong=he_thong, nguoi_dung=nguoi_dung)
     except LoiAI as loi:
         ket_qua.loi_ai = str(loi)
         ket_qua.loai_loi_ai = type(loi).__name__

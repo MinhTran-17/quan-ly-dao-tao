@@ -1,0 +1,4 @@
+# Giữ LF cho tệp chạy trong container Linux / GitHub Actions (tránh CRLF làm hỏng lệnh nhiều dòng)
+Dockerfile text eol=lf
+*.yml text eol=lf
+.dockerignore text eol=lf

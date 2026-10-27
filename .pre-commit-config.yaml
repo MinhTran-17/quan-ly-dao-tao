@@ -1,0 +1,28 @@
+# Rào chắn ở mức git, chạy trước mỗi lần commit, không phụ thuộc công cụ AI nào.
+# Cài một lần (trong venv của dự án):
+#   pip install pre-commit
+#   pre-commit install
+# Chạy thử trên toàn repo: pre-commit run --all-files
+# Các hook dùng `python` trong PATH: hãy commit từ terminal đã kích hoạt venv (venv\Scripts\activate)
+# để hook `django-check` tìm thấy Django.
+repos:
+  - repo: local
+    hooks:
+      - id: chan-commit-env
+        name: Chặn commit tệp .env (mật khẩu CSDL, API key)
+        language: fail
+        entry: "Không được commit tệp .env; chỉ commit .env.example. Gỡ khỏi stage bằng: git restore --staged <tệp>"
+        files: '(^|/)\.env(\.(?!example$)[^/]*)?$'
+
+      - id: quet-khoa-api
+        name: Quét chuỗi giống khóa API (AIza..., sk-..., GEMINI_API_KEY=..., private key)
+        language: system
+        entry: python -m nha_may_agent.quet_khoa
+        types: [text]
+
+      - id: django-check
+        name: python manage.py check
+        language: system
+        entry: python manage.py check
+        pass_filenames: false
+        files: '\.(py|html|txt)$'

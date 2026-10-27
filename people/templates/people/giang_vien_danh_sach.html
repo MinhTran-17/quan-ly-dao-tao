@@ -32,8 +32,10 @@
         <td>{{ gv.ho_ten }}</td>
         <td>{{ gv.email }}</td>
         <td>
+            {% if gv.ma_dung_duoc_trong_url %}
             <a class="nut nut-nhe nut-nho" href="{% url 'people:giang_vien_sua' gv.pk %}">Sửa</a>
             <a class="nut nut-nguy-hiem nut-nho" href="{% url 'people:giang_vien_xoa' gv.pk %}">Xóa</a>
+            {% else %}<span class="gia-tri-trong" title="Mã chứa ký tự không hợp lệ, chạy python manage.py kiem_tra_ma_ho_so để xem danh sách">Mã không hợp lệ</span>{% endif %}
         </td>
     </tr>
     {% empty %}

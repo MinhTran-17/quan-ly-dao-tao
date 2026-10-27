@@ -1,0 +1,45 @@
+# Chạy toàn bộ hệ thống bằng Docker: web (Django) + db (MySQL 8.0).
+#   docker compose up -d --build      khởi động (lần đầu tự tạo CSDL và chạy migrate)
+#   docker compose ps                 xem trạng thái, cột STATUS hiện (healthy) khi /health/ trả 200
+#   docker compose logs -f web        xem log máy chủ
+#   docker compose down               dừng (giữ dữ liệu); thêm -v để xóa cả dữ liệu
+# Mọi cấu hình đọc từ .env (sao chép từ .env.example). Bắt buộc có DB_PASSWORD (mật khẩu root MySQL
+# trong container). DB_HOST/DB_USER/DB_PORT trong .env bị ghi đè để web nối tới container db.
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-qldt}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?Cần đặt DB_PASSWORD trong .env để chạy bằng Docker}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - du_lieu_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: root
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - tep_tai_len:/app/media
+      - nhat_ky:/app/logs
+
+volumes:
+  du_lieu_mysql:
+  tep_tai_len:
+  nhat_ky:

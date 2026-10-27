@@ -2,7 +2,7 @@ from decimal import Decimal
 from io import BytesIO
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, tag
 from django.urls import reverse
 from django.utils import timezone
 from openpyxl import load_workbook
@@ -42,6 +42,7 @@ def tao_lop_hanh_chinh(ma='CNTT1'):
     return LopHanhChinh.objects.create(ma_lop=ma, ten_lop=f'Lớp {ma}', ma_nganh=nganh, ma_co_van=co_van)
 
 
+@tag('tich_hop')
 class ThongKeReportTest(TestCase):
     def setUp(self):
         self.phong_dao_tao = TaiKhoan.objects.create_user(
@@ -145,6 +146,7 @@ class ThongKeReportTest(TestCase):
         self.assertEqual(response.status_code, 302)
 
 
+@tag('tich_hop')
 class XuatExcelTest(ThongKeReportTest):
     def test_xuat_excel_si_so_theo_lop_giu_bo_loc(self):
         response = self.client.get(reverse('reports:si_so_theo_lop_xuat_excel'), {'hoc_ky': '2'})
@@ -178,3 +180,30 @@ class XuatExcelTest(ThongKeReportTest):
         self.client.force_login(giang_vien_khac)
         response = self.client.get(reverse('reports:si_so_theo_lop_xuat_excel'))
         self.assertEqual(response.status_code, 403)
+
+
+def kiem_tra_dinh_dang_excel(test, noi_dung_tep):
+    """Mọi sheet của file xuất: tiêu đề in đậm, cố định dòng 1, cột giãn theo nội dung dài nhất (tối đa 60)."""
+    from io import BytesIO as _BytesIO
+
+    from openpyxl import load_workbook as _load_workbook
+    from openpyxl.utils import get_column_letter as _cot
+    workbook = _load_workbook(_BytesIO(noi_dung_tep))
+    for sheet in workbook.worksheets:
+        test.assertEqual(sheet.freeze_panes, 'A2', sheet.title)
+        test.assertTrue(all(cell.font.bold for cell in sheet[1] if cell.value is not None), sheet.title)
+        for chi_so, cot in enumerate(sheet.iter_cols(values_only=True), start=1):
+            dai_nhat = max(len(str(v)) for v in cot if v is not None)
+            test.assertEqual(sheet.column_dimensions[_cot(chi_so)].width, min(max(dai_nhat + 2, 8), 60), (sheet.title, chi_so))
+    return workbook
+
+
+@tag('tich_hop')
+class DinhDangFileExcelBaoCaoTest(ThongKeReportTest):
+    def test_ca_ba_bao_cao_xuat_excel_gian_cot_in_dam_co_dinh_tieu_de(self):
+        for ten_url in ('reports:si_so_theo_lop_xuat_excel', 'reports:hoc_phan_nhieu_dang_ky_xuat_excel',
+                        'reports:ket_qua_hoc_tap_xuat_excel'):
+            response = self.client.get(reverse(ten_url))
+            self.assertEqual(response.status_code, 200, ten_url)
+            workbook = kiem_tra_dinh_dang_excel(self, response.content)
+            self.assertGreaterEqual(len(workbook.worksheets), 1)
