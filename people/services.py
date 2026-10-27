@@ -124,7 +124,7 @@ def xu_ly_file_excel_sinh_vien(file_excel):
             so_dien_thoai = str(int(so_dien_thoai))
             if len(so_dien_thoai) == 9:
                 so_dien_thoai = '0' + so_dien_thoai
-        email, so_dien_thoai = str(email).strip(), chuan_hoa_so_dien_thoai(str(so_dien_thoai))
+        email, so_dien_thoai = str(email).strip().lower(), chuan_hoa_so_dien_thoai(str(so_dien_thoai))
         loi_dinh_dang = []
         try:
             validate_email(email)

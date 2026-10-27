@@ -105,6 +105,68 @@ python manage.py runserver
 
 Mở `http://127.0.0.1:8000/`.
 
+## Quên mật khẩu
+
+Trang đăng nhập có link **"Quên mật khẩu?"**. Sinh viên, giảng viên và cố vấn học tập nhập email trong hồ sơ của
+mình (không phân biệt hoa thường), hệ thống gửi thư có link đặt lại mật khẩu:
+
+- Link chỉ dùng được một lần và hết hạn sau 30 phút (`PASSWORD_RESET_TIMEOUT` trong `qldt/settings.py`).
+- Mật khẩu mới phải qua các ràng buộc mật khẩu hiện có và không được trùng mật khẩu cũ. Đặt lại xong thì tài
+  khoản không còn bị buộc đổi mật khẩu, số lần đăng nhập sai và trạng thái tạm chặn đăng nhập được xóa.
+- Không gửi thư khi email khớp nhiều hơn một hồ sơ, tài khoản bị khóa, hoặc là tài khoản Phòng Đào tạo (không có
+  hồ sơ email). Mọi trường hợp đều hiện cùng một thông báo, nên không đoán được email nào có trong hệ thống.
+- Mỗi email và mỗi IP gửi tối đa 3 yêu cầu trong 15 phút (dùng cache, không tạo bảng mới).
+
+Chức năng **Phòng Đào tạo đặt lại mật khẩu** (cấp mật khẩu tạm ở trang Tài khoản) vẫn giữ nguyên.
+
+### Cấu hình gửi thư qua Gmail
+
+1. Bật xác minh 2 bước cho tài khoản Gmail dùng để gửi thư.
+2. Vào https://myaccount.google.com/apppasswords, tạo **mật khẩu ứng dụng** (16 ký tự). Không dùng mật khẩu
+   đăng nhập Gmail.
+3. Điền vào `.env` (không commit tệp này):
+
+   ```
+   EMAIL_HOST_USER=ten.tai.khoan@gmail.com
+   EMAIL_HOST_PASSWORD=<mật khẩu ứng dụng 16 ký tự>
+   DEFAULT_FROM_EMAIL=Phòng Đào tạo <ten.tai.khoan@gmail.com>
+   ```
+
+4. Khởi động lại máy chủ (Docker: `docker compose up -d`).
+5. Gửi thư thử để kiểm tra cấu hình:
+
+   ```
+   python manage.py thu_gui_email dia.chi.cua.ban@gmail.com
+   docker compose exec web python manage.py thu_gui_email dia.chi.cua.ban@gmail.com
+   ```
+
+   (dòng 1 khi chạy bằng venv, dòng 2 khi chạy bằng Docker). Lệnh in cấu hình đang dùng (không in mật khẩu) và
+   kết quả: thành công, hoặc loại lỗi SMTP kèm gợi ý. Ví dụ `SMTPAuthenticationError (mã 535)` là sai
+   mật khẩu ứng dụng, `TimeoutError` là mạng chặn cổng 587.
+
+Thư được gửi trong luồng nền (trang chuyển ngay sau khi bấm Gửi), chờ máy chủ SMTP tối đa `EMAIL_TIMEOUT` = 10
+giây. Mỗi yêu cầu quên mật khẩu ghi một dòng log `qldt.email` vào `logs/app.log` và ra màn hình máy chủ: đã gửi,
+lỗi gửi (loại lỗi SMTP), hoặc lý do không gửi (không khớp hồ sơ, email trùng nhiều hồ sơ, tài khoản bị khóa, tài
+khoản Phòng Đào tạo, vượt giới hạn). Email trong log đã được che (`s***@gmail.com`), log không ghi link đặt lại.
+Xem nhanh bằng `docker compose logs web | grep qldt.email`.
+
+Chưa điền `EMAIL_HOST_USER`/`EMAIL_HOST_PASSWORD` thì hệ thống **không gửi thư thật** mà in thư ra màn hình
+của máy chủ (console backend). Lúc demo lấy link trong thư bằng cách xem cửa sổ đang chạy `runserver`, hoặc
+`docker compose logs web` nếu chạy bằng Docker. Thư có chứa link đặt lại mật khẩu, nên không gửi log này cho
+người khác.
+
+### Phòng Đào tạo quên mật khẩu
+
+Tài khoản Phòng Đào tạo không có hồ sơ email nên không dùng được "Quên mật khẩu?". Người quản trị máy chủ đặt lại
+bằng lệnh `changepassword` của Django (lệnh hỏi mật khẩu mới, không hiện ký tự khi gõ):
+
+```
+python manage.py changepassword pdt_admin
+```
+
+Chạy bằng Docker thì dùng `docker compose exec web python manage.py changepassword pdt_admin`. Một tài khoản
+Phòng Đào tạo khác cũng đặt lại được mật khẩu cho tài khoản này ở trang Tài khoản.
+
 ## Chạy test
 
 ```
@@ -172,6 +234,66 @@ khi build lại ảnh. `.env` không nằm trong ảnh (`.dockerignore`), chỉ 
 
 Khi chạy thật đặt `DJANGO_DEBUG=False`; lúc đó **bắt buộc** có `DJANGO_SECRET_KEY`, thiếu thì ứng dụng
 báo lỗi và dừng (không dùng khóa mặc định). Nhớ thêm tên miền/IP vào `DJANGO_ALLOWED_HOSTS`.
+
+### Khuyến nghị khi demo: `DJANGO_DEBUG=False`
+
+Khi demo nên đặt trong `.env`:
+
+```
+DJANGO_DEBUG=False
+DJANGO_SECRET_KEY=<chuỗi ngẫu nhiên dài>
+```
+
+Tạo khóa bằng `python -c "from django.core.management.utils import get_random_secret_key as k; print(k())"`.
+
+Lý do: với `DJANGO_DEBUG=True`, khi gặp lỗi Django hiện trang vàng kèm traceback, đường dẫn mã nguồn, cấu hình
+và danh sách URL. Với `DJANGO_DEBUG=False`, người dùng chỉ thấy trang lỗi của hệ thống:
+
+- 403 (`templates/403.html`): "Không có quyền truy cập", ví dụ sinh viên mở trang của Phòng Đào tạo.
+- 404 (`templates/404.html`): "Không tìm thấy trang".
+- 500 (`templates/500.html`): "Lỗi hệ thống", không lộ chi tiết lỗi; chi tiết chỉ ghi vào `logs/app.log`.
+
+Test `qldt.tests.TrangLoiKhiTatDebugTest` kiểm tra ba trang này. Docker chạy `runserver --insecure` nên CSS
+vẫn hiển thị khi `DJANGO_DEBUG=False`. Lệnh `nap_du_lieu_mau` chặn khi `DJANGO_DEBUG=False`: nạp dữ liệu mẫu
+trước (lúc còn `True`) hoặc thêm `--force` nếu chắc chắn đây là máy demo.
+
+## Truy cập từ điện thoại qua Cloudflare Tunnel
+
+Cloudflare Tunnel (bản nhanh, không cần tài khoản) tạo một địa chỉ `https://<tên-ngẫu-nhiên>.trycloudflare.com`
+trỏ về máy chủ đang chạy trên máy bạn, để mở được từ điện thoại hoặc máy khác.
+
+1. Cài `cloudflared`. Trên Windows: `winget install --id Cloudflare.cloudflared`.
+2. Thêm vào `.env`:
+
+   ```
+   DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,.trycloudflare.com
+   CSRF_TRUSTED_ORIGINS=https://*.trycloudflare.com
+   ```
+
+   - `DJANGO_ALLOWED_HOSTS` có `.trycloudflare.com` (dấu chấm đầu nghĩa là mọi tên miền con). Thiếu thì Django
+     báo 400 Bad Request.
+   - `CSRF_TRUSTED_ORIGINS` có `https://*.trycloudflare.com`: khai báo rõ origin được tin cho kiểm tra CSRF.
+     Lỗi 403 "CSRF verification failed. Origin checking failed" khi gửi form (đăng nhập, quên mật khẩu...) xảy ra
+     vì trình duyệt gửi Origin `https://...` trong khi máy chủ nhận request `http`. `SECURE_PROXY_SSL_HEADER`
+     (bên dưới) đã sửa phần lớn trường hợp; biến này giữ cho form vẫn gửi được nếu proxy không gửi header
+     `X-Forwarded-Proto`.
+   - Mỗi biến là danh sách cách nhau bởi dấu phẩy; khoảng trắng và giá trị rỗng được bỏ qua.
+
+3. Khởi động lại máy chủ để đọc `.env`. Docker: `docker compose up -d --force-recreate web`; venv: dừng và chạy
+   lại `python manage.py runserver`.
+4. Mở tunnel (giữ cửa sổ này chạy trong lúc dùng):
+
+   ```
+   cloudflared tunnel --url http://localhost:8000
+   ```
+
+   Lệnh in ra địa chỉ dạng `https://abc-xyz.trycloudflare.com`. Mở địa chỉ đó trên điện thoại. Mỗi lần chạy lại
+   lệnh thì địa chỉ đổi, nhưng không cần sửa `.env` vì đã dùng `*.trycloudflare.com`.
+
+Tunnel nhận HTTPS rồi chuyển tiếp vào máy chủ kèm header `X-Forwarded-Proto: https`. Nhờ
+`SECURE_PROXY_SSL_HEADER` trong `qldt/settings.py`, Django biết request gốc là HTTPS, nên link đặt lại mật khẩu
+trong email cũng dùng `https://...trycloudflare.com`. Lưu ý: ai có địa chỉ tunnel đều mở được trang đăng nhập,
+nên tắt tunnel (Ctrl+C) khi dùng xong và không dùng tài khoản demo mật khẩu chung khi tunnel đang mở cho người lạ.
 
 ## Vận hành và theo dõi
 

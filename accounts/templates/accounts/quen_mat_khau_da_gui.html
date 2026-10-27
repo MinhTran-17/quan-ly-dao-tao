@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Đã gửi yêu cầu{% endblock %}
+{% block lop_body %}trang-dang-nhap{% endblock %}
+{% block noi_dung %}
+<div class="the-dang-nhap">
+    <div class="the-dang-nhap__logo">{% include '_logo.html' %}</div>
+    <h1>Kiểm tra email</h1>
+    <p class="the-dang-nhap__noi-dung">Nếu email có trong hệ thống, bạn sẽ nhận được thư trong vài phút. Nếu không nhận được, hãy liên hệ Phòng Đào tạo.</p>
+    <p class="the-dang-nhap__noi-dung">Link trong thư chỉ dùng được một lần và hết hạn sau 30 phút. Nhớ kiểm tra cả thư mục Spam.</p>
+    <a class="nut nut-chinh nut-day-du nut-lon" href="{% url 'accounts:dang_nhap' %}">Quay lại đăng nhập</a>
+</div>
+<p class="chan-trang-dang-nhap">© {% now "Y" %} {{ TEN_TRUONG }}. {{ TEN_HE_THONG }}.</p>
+{% endblock %}

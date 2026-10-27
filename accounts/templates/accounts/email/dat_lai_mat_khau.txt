@@ -1,0 +1,14 @@
+{% autoescape off %}Xin chào,
+
+Hệ thống nhận được yêu cầu đặt lại mật khẩu cho tài khoản "{{ user.ten_dang_nhap }}".
+
+Bấm vào link dưới đây để đặt mật khẩu mới:
+{{ protocol }}://{{ domain }}{% url 'accounts:dat_lai_mat_khau_xac_nhan' uidb64=uid token=token %}
+
+Link chỉ dùng được một lần và hết hạn sau 30 phút.
+
+Nếu bạn không gửi yêu cầu này, hãy bỏ qua thư; mật khẩu hiện tại vẫn giữ nguyên.
+Cần hỗ trợ, vui lòng liên hệ Phòng Đào tạo.
+
+Thư gửi tự động, vui lòng không trả lời.
+{% endautoescape %}

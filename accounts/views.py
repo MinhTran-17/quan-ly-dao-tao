@@ -1,13 +1,21 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import (
+    LoginView, PasswordResetCompleteView, PasswordResetConfirmView, PasswordResetDoneView, PasswordResetView,
+)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
-from .forms import CapNhatTaiKhoanForm, DangNhapForm, DoiMatKhauForm, TaoTaiKhoanForm, ThongTinLienHeForm
+from .forms import (
+    CapNhatTaiKhoanForm, DangNhapForm, DatLaiMatKhauQuaEmailForm, DoiMatKhauForm, QuenMatKhauForm, TaoTaiKhoanForm,
+    ThongTinLienHeForm,
+)
+from .gioi_han_dang_nhap import cho_phep_yeu_cau_quen_mat_khau, lay_ip
+from .gui_email import che_email, logger as logger_email
 from .models import TaiKhoan, VaiTro
 from .permissions import YeuCauVaiTroMixin, yeu_cau_vai_tro
 from .services import tao_mat_khau_tam
@@ -26,6 +34,39 @@ class DangNhapView(LoginView):
         response = super().form_valid(form)
         messages.success(self.request, f'Xin chào, {self.request.user.ten_dang_nhap}.')
         return response
+
+
+class QuenMatKhauView(PasswordResetView):
+    """Bước 1: nhập email, gửi link đặt lại (link dùng một lần, hết hạn sau PASSWORD_RESET_TIMEOUT).
+    Mỗi email và mỗi IP tối đa 3 yêu cầu trong 15 phút (accounts/gioi_han_dang_nhap.py)."""
+    template_name = 'accounts/quen_mat_khau.html'
+    form_class = QuenMatKhauForm
+    subject_template_name = 'accounts/email/dat_lai_mat_khau_tieu_de.txt'
+    email_template_name = 'accounts/email/dat_lai_mat_khau.txt'
+    success_url = reverse_lazy('accounts:quen_mat_khau_da_gui')
+    extra_email_context = {'TEN_HE_THONG': settings.TEN_HE_THONG}
+
+    def form_valid(self, form):
+        if not cho_phep_yeu_cau_quen_mat_khau(form.cleaned_data['email'], lay_ip(self.request)):
+            logger_email.info('Quên mật khẩu: không gửi thư tới %s (vượt giới hạn 3 yêu cầu/15 phút).',
+                              che_email(form.cleaned_data['email']))
+            form.add_error(None, 'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau 15 phút.')
+            return self.form_invalid(form)
+        return super().form_valid(form)
+
+
+class QuenMatKhauDaGuiView(PasswordResetDoneView):
+    template_name = 'accounts/quen_mat_khau_da_gui.html'
+
+
+class DatLaiMatKhauXacNhanView(PasswordResetConfirmView):
+    template_name = 'accounts/dat_lai_mat_khau_xac_nhan.html'
+    form_class = DatLaiMatKhauQuaEmailForm
+    success_url = reverse_lazy('accounts:dat_lai_mat_khau_xong')
+
+
+class DatLaiMatKhauXongView(PasswordResetCompleteView):
+    template_name = 'accounts/dat_lai_mat_khau_xong.html'
 
 
 @require_POST

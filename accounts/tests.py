@@ -110,6 +110,68 @@ class DangNhapTest(TestCase):
 
 
 @tag('tich_hop')
+class GioiHanDangNhapSaiTest(TestCase):
+    """Sai 5 lần trong 15 phút (theo tên đăng nhập hoặc theo IP) thì tạm chặn 15 phút (accounts/gioi_han_dang_nhap.py)."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.addCleanup(cache.clear)
+        TaiKhoan.objects.create_user(ten_dang_nhap='sv_gh', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU_HOP_LE)
+        TaiKhoan.objects.create_user(ten_dang_nhap='sv_gh2', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU_HOP_LE)
+
+    def _dang_nhap(self, ten, mat_khau, ip='10.0.0.1'):
+        return self.client.post(reverse('accounts:dang_nhap'), {'username': ten, 'password': mat_khau}, REMOTE_ADDR=ip)
+
+    def _sai_5_lan(self, ten, ip='10.0.0.1'):
+        for _ in range(5):
+            response = self._dang_nhap(ten, 'mat_khau_sai', ip)
+            self.assertContains(response, 'Tên đăng nhập hoặc mật khẩu không đúng.')
+
+    def test_sai_5_lan_thi_mat_khau_dung_cung_bi_tam_chan(self):
+        self._sai_5_lan('sv_gh')
+        response = self._dang_nhap('sv_gh', MAT_KHAU_HOP_LE)
+        self.assertContains(response, 'Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.')
+        self.assertFalse(response.context['user'].is_authenticated)
+        # Chặn theo tên đăng nhập: đổi IP vẫn bị chặn; hoa thường như nhau.
+        self.assertContains(self._dang_nhap('SV_GH', MAT_KHAU_HOP_LE, ip='10.0.0.9'), 'Đăng nhập sai quá nhiều lần')
+
+    def test_4_lan_sai_chua_chan(self):
+        for _ in range(4):
+            self._dang_nhap('sv_gh', 'mat_khau_sai')
+        self.assertRedirects(self._dang_nhap('sv_gh', MAT_KHAU_HOP_LE), reverse('accounts:trang_chu'))
+
+    def test_ten_khong_ton_tai_bao_giong_het_ten_co_that(self):
+        self._sai_5_lan('sv_gh', ip='10.0.0.1')
+        self._sai_5_lan('khong_ton_tai', ip='10.0.0.2')
+        co_that = self._dang_nhap('sv_gh', 'mat_khau_sai', ip='10.0.0.1')
+        khong_co = self._dang_nhap('khong_ton_tai', 'mat_khau_sai', ip='10.0.0.2')
+        self.assertEqual(co_that.context['form'].non_field_errors(), khong_co.context['form'].non_field_errors())
+
+    def test_chan_theo_ip_khi_thu_nhieu_ten_khac_nhau(self):
+        for i in range(5):
+            self._dang_nhap(f'thu_{i}', 'mat_khau_sai', ip='10.0.0.3')
+        self.assertContains(self._dang_nhap('sv_gh2', MAT_KHAU_HOP_LE, ip='10.0.0.3'), 'Đăng nhập sai quá nhiều lần')
+        self.assertRedirects(self._dang_nhap('sv_gh2', MAT_KHAU_HOP_LE, ip='10.0.0.4'), reverse('accounts:trang_chu'))
+
+    def test_dang_nhap_dung_xoa_dem_sai_cua_ten_dang_nhap(self):
+        for _ in range(4):
+            self._dang_nhap('sv_gh', 'mat_khau_sai', ip='10.0.0.5')
+        self.assertRedirects(self._dang_nhap('sv_gh', MAT_KHAU_HOP_LE, ip='10.0.0.5'), reverse('accounts:trang_chu'))
+        self.client.logout()
+        for _ in range(4):
+            self._dang_nhap('sv_gh', 'mat_khau_sai', ip='10.0.0.6')
+        self.assertRedirects(self._dang_nhap('sv_gh', MAT_KHAU_HOP_LE, ip='10.0.0.6'), reverse('accounts:trang_chu'))
+
+    def test_het_15_phut_thi_dang_nhap_lai_duoc(self):
+        import time as _time
+        self._sai_5_lan('sv_gh')
+        bay_gio = _time.time()
+        with mock.patch('django.core.cache.backends.locmem.time.time', return_value=bay_gio + 15 * 60 + 1):
+            self.assertRedirects(self._dang_nhap('sv_gh', MAT_KHAU_HOP_LE, ip='10.0.0.7'), reverse('accounts:trang_chu'))
+
+
+@tag('tich_hop')
 class MoKhoaVaXoaTaiKhoanTest(TestCase):
     def setUp(self):
         self.pdt = TaiKhoan.objects.create_user(ten_dang_nhap='pdt_mk', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU_HOP_LE)
@@ -600,6 +662,26 @@ class ThongTinCaNhanTest(TestCase):
             'email': 'sv_moi@test.local', 'so_dien_thoai': '12345',
         })
         self.assertEqual(response.status_code, 200)
+        self.sinh_vien.refresh_from_db()
+        self.assertEqual(self.sinh_vien.so_dien_thoai, '0900000001')
+
+    def test_so_dien_thoai_co_dau_cach_cham_gach_duoc_chuan_hoa(self):
+        self.client.force_login(self.tk_sv)
+        response = self.client.post(reverse('accounts:thong_tin_ca_nhan'), {
+            'email': ' SV_Moi@Test.Local ', 'so_dien_thoai': '0912 345.67-8',
+        })
+        self.assertRedirects(response, reverse('accounts:thong_tin_ca_nhan'))
+        self.sinh_vien.refresh_from_db()
+        self.assertEqual(self.sinh_vien.so_dien_thoai, '0912345678')
+        self.assertEqual(self.sinh_vien.email, 'sv_moi@test.local')
+
+    def test_so_dien_thoai_khong_bat_dau_bang_0_hoac_co_chu_bi_chan(self):
+        self.client.force_login(self.tk_sv)
+        for sdt in ('1912345678', '09123abc78', '091234567', '09123456789'):
+            response = self.client.post(reverse('accounts:thong_tin_ca_nhan'), {
+                'email': 'sv_moi@test.local', 'so_dien_thoai': sdt,
+            })
+            self.assertContains(response, 'Số điện thoại phải gồm 10 chữ số', msg_prefix=sdt)
         self.sinh_vien.refresh_from_db()
         self.assertEqual(self.sinh_vien.so_dien_thoai, '0900000001')
 
@@ -3041,3 +3123,359 @@ class TenDangNhapKhongPhanBietHoaThuongTest(TestCase):
         })
         self.assertContains(response, 'Tên đăng nhập này đã tồn tại.')
         self.assertEqual(TaiKhoan.objects.filter(ten_dang_nhap__iexact='sv001').count(), 1)
+
+
+@tag('tich_hop')
+class QuenMatKhauTest(TestCase):
+    """Quên mật khẩu qua email (PasswordReset*View của Django, accounts/views.py), thư gửi bằng locmem backend."""
+
+    THONG_BAO_CHUNG = ('Nếu email có trong hệ thống, bạn sẽ nhận được thư trong vài phút. '
+                       'Nếu không nhận được, hãy liên hệ Phòng Đào tạo.')
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.addCleanup(cache.clear)
+        self.tk_gv = TaiKhoan.objects.create_user(
+            ten_dang_nhap='gv_quen', vai_tro=VaiTro.GIANG_VIEN, password=MAT_KHAU_HOP_LE, phai_doi_mat_khau=True,
+        )
+        GiangVien.objects.create(
+            ma_giang_vien='GVQMK', ho_ten='GV quên', email='gv.quen@gmail.com', so_dien_thoai='0919400001',
+            ma_tai_khoan=self.tk_gv,
+        )
+
+    def _yeu_cau(self, email, ip='10.1.0.1'):
+        return self.client.post(reverse('accounts:quen_mat_khau'), {'email': email}, REMOTE_ADDR=ip)
+
+    def _link_trong_thu(self):
+        from django.core import mail
+        self.assertEqual(len(mail.outbox), 1)
+        return re.search(r'http://testserver(/dat-lai-mat-khau/\S+/)', mail.outbox[0].body).group(1)
+
+    def _dat_mat_khau(self, link, moi, xac_nhan=None):
+        trang = self.client.get(link, follow=True)
+        return self.client.post(trang.redirect_chain[-1][0], {
+            'new_password1': moi, 'new_password2': moi if xac_nhan is None else xac_nhan,
+        })
+
+    def _tao_ho_so_gv(self, ten, vai_tro, email, sdt, **kwargs):
+        tk = TaiKhoan.objects.create_user(ten_dang_nhap=ten, vai_tro=vai_tro, password=MAT_KHAU_HOP_LE, **kwargs)
+        GiangVien.objects.create(ma_giang_vien=ten.upper().replace('_', ''), ho_ten='GV', email=email,
+                                 so_dien_thoai=sdt, ma_tai_khoan=tk)
+
+    def test_trang_dang_nhap_co_link_quen_mat_khau(self):
+        response = self.client.get(reverse('accounts:dang_nhap'))
+        self.assertContains(response, f'href="{reverse("accounts:quen_mat_khau")}">Quên mật khẩu?</a>')
+
+    def test_email_khop_mot_ho_so_gui_thu_tieng_viet_khong_phan_biet_hoa_thuong(self):
+        from django.core import mail
+        response = self._yeu_cau('  GV.Quen@Gmail.com ')
+        self.assertRedirects(response, reverse('accounts:quen_mat_khau_da_gui'))
+        self.assertContains(self.client.get(reverse('accounts:quen_mat_khau_da_gui')), self.THONG_BAO_CHUNG)
+        self.assertEqual(len(mail.outbox), 1)
+        thu = mail.outbox[0]
+        self.assertEqual(thu.to, ['gv.quen@gmail.com'])
+        self.assertIn('Đặt lại mật khẩu', thu.subject)
+        self.assertIn('gv_quen', thu.body)
+        self.assertIn('hết hạn sau 30 phút', thu.body)
+        self.assertIn('/dat-lai-mat-khau/', thu.body)
+
+    def test_khong_gui_thu_nhung_bao_cung_thong_bao(self):
+        from django.core import mail
+        # Email trùng hai hồ sơ (dữ liệu cũ, khác hoa thường).
+        tk_cv = TaiKhoan.objects.create_user(ten_dang_nhap='cv_trung', vai_tro=VaiTro.CO_VAN_HOC_TAP, password=MAT_KHAU_HOP_LE)
+        CoVanHocTap.objects.create(ma_co_van='CVTRUNG', ho_ten='CV', email='TRUNG@gmail.com',
+                                   so_dien_thoai='0919400002', ma_tai_khoan=tk_cv)
+        self._tao_ho_so_gv('gv_trung', VaiTro.GIANG_VIEN, 'trung@gmail.com', '0919400003')
+        # Tài khoản bị khóa.
+        self._tao_ho_so_gv('gv_khoa', VaiTro.GIANG_VIEN, 'khoa@gmail.com', '0919400004', is_active=False)
+        # Tài khoản Phòng Đào tạo (kể cả khi dữ liệu lỗi gắn nó vào một hồ sơ có email).
+        self._tao_ho_so_gv('pdt_quen', VaiTro.PHONG_DAO_TAO, 'pdt@gmail.com', '0919400005')
+        for i, email in enumerate(('trung@gmail.com', 'khoa@gmail.com', 'pdt@gmail.com', 'khong.co@gmail.com')):
+            response = self._yeu_cau(email, ip=f'10.1.1.{i}')
+            self.assertRedirects(response, reverse('accounts:quen_mat_khau_da_gui'), msg_prefix=email)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_email_sai_dinh_dang_bao_loi(self):
+        self.assertContains(self._yeu_cau('khong-phai-email'), 'Email không đúng định dạng')
+
+    def test_dat_lai_thanh_cong_tat_co_doi_mat_khau_va_go_tam_chan_dang_nhap(self):
+        for _ in range(5):
+            self.client.post(reverse('accounts:dang_nhap'), {'username': 'gv_quen', 'password': 'sai'}, REMOTE_ADDR='10.1.2.1')
+        self._yeu_cau('gv.quen@gmail.com')
+        response = self._dat_mat_khau(self._link_trong_thu(), 'MatKhauMoi456!')
+        self.assertRedirects(response, reverse('accounts:dat_lai_mat_khau_xong'))
+        self.tk_gv.refresh_from_db()
+        self.assertTrue(self.tk_gv.check_password('MatKhauMoi456!'))
+        self.assertFalse(self.tk_gv.phai_doi_mat_khau)
+        response = self.client.post(reverse('accounts:dang_nhap'),
+                                    {'username': 'gv_quen', 'password': 'MatKhauMoi456!'}, REMOTE_ADDR='10.1.2.2')
+        self.assertRedirects(response, reverse('accounts:trang_chu'))
+
+    def test_link_chi_dung_mot_lan(self):
+        self._yeu_cau('gv.quen@gmail.com')
+        link = self._link_trong_thu()
+        self._dat_mat_khau(link, 'MatKhauMoi456!')
+        response = self.client.get(link, follow=True)
+        self.assertContains(response, 'Link đặt lại mật khẩu không hợp lệ, đã được dùng hoặc đã hết hạn')
+
+    def test_link_het_han_sau_30_phut(self):
+        from datetime import datetime
+        self.assertEqual(settings.PASSWORD_RESET_TIMEOUT, 30 * 60)
+        self._yeu_cau('gv.quen@gmail.com')
+        link = self._link_trong_thu()
+        sau_31_phut = datetime.now() + timedelta(minutes=31)
+        with mock.patch('django.contrib.auth.tokens.PasswordResetTokenGenerator._now', return_value=sau_31_phut):
+            response = self.client.get(link, follow=True)
+        self.assertContains(response, 'đã hết hạn')
+        self.tk_gv.refresh_from_db()
+        self.assertTrue(self.tk_gv.check_password(MAT_KHAU_HOP_LE))
+
+    def test_mat_khau_moi_phai_qua_rang_buoc_va_khong_trung_mat_khau_cu(self):
+        self._yeu_cau('gv.quen@gmail.com')
+        link = self._link_trong_thu()
+        self.assertContains(self._dat_mat_khau(link, MAT_KHAU_HOP_LE), 'Mật khẩu mới không được trùng mật khẩu hiện tại.')
+        self.assertContains(self._dat_mat_khau(link, '12345678'), 'Mật khẩu không được chỉ gồm chữ số.')
+        self.assertContains(self._dat_mat_khau(link, 'MatKhauMoi456!', 'KhacNhau789!'), 'Xác nhận mật khẩu mới không khớp')
+        self.tk_gv.refresh_from_db()
+        self.assertTrue(self.tk_gv.check_password(MAT_KHAU_HOP_LE))
+
+    def test_gioi_han_3_yeu_cau_15_phut_theo_email_va_theo_ip(self):
+        from django.core import mail
+        for i in range(3):
+            self.assertRedirects(self._yeu_cau('gv.quen@gmail.com', ip=f'10.1.3.{i}'), reverse('accounts:quen_mat_khau_da_gui'))
+        response = self._yeu_cau('GV.QUEN@gmail.com', ip='10.1.3.9')
+        self.assertContains(response, 'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau 15 phút.')
+        self.assertEqual(len(mail.outbox), 3)
+        # Theo IP: email khác nhau từ cùng một IP.
+        for i in range(3):
+            self._yeu_cau(f'thu{i}@gmail.com', ip='10.1.4.1')
+        self.assertContains(self._yeu_cau('khac@gmail.com', ip='10.1.4.1'), 'Bạn đã gửi quá nhiều yêu cầu')
+
+    def test_phong_dao_tao_quen_mat_khau_dung_lenh_changepassword(self):
+        pdt = TaiKhoan.objects.create_user(ten_dang_nhap='pdt_cp', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU_HOP_LE)
+        with mock.patch('django.contrib.auth.management.commands.changepassword.Command._get_pass',
+                        return_value='MatKhauMoi456!'):
+            call_command('changepassword', 'pdt_cp', stdout=io.StringIO())
+        pdt.refresh_from_db()
+        self.assertTrue(pdt.check_password('MatKhauMoi456!'))
+
+    def test_phong_dao_tao_dat_lai_mat_khau_van_hoat_dong(self):
+        pdt = TaiKhoan.objects.create_user(ten_dang_nhap='pdt_dl', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU_HOP_LE)
+        self.client.force_login(pdt)
+        self.client.post(reverse('accounts:tai_khoan_dat_lai_mat_khau', args=[self.tk_gv.pk]))
+        self.tk_gv.refresh_from_db()
+        self.assertFalse(self.tk_gv.check_password(MAT_KHAU_HOP_LE))
+        self.assertTrue(self.tk_gv.phai_doi_mat_khau)
+
+
+@tag('don_vi')
+class GuiEmailTienIchTest(TestCase):
+    def test_che_email(self):
+        from accounts.gui_email import che_email
+        self.assertEqual(che_email('sinhvien@gmail.com'), 's***@gmail.com')
+        self.assertEqual(che_email('  A@x.vn '), 'A***@x.vn')
+        for sai in ('', None, 'khong-co-a-cong', '@gmail.com'):
+            self.assertEqual(che_email(sai), '***')
+
+    def test_mo_ta_loi_smtp(self):
+        import smtplib
+
+        from accounts.gui_email import mo_ta_loi_gui_thu
+        mo_ta = mo_ta_loi_gui_thu(smtplib.SMTPAuthenticationError(535, b'Username and Password not accepted'))
+        self.assertIn('SMTPAuthenticationError (mã 535)', mo_ta)
+        self.assertIn('mật khẩu ứng dụng Gmail', mo_ta)
+        self.assertIn('Hết thời gian chờ', mo_ta_loi_gui_thu(TimeoutError()))
+        self.assertIn('SMTPServerDisconnected', mo_ta_loi_gui_thu(smtplib.SMTPServerDisconnected('x')))
+
+    def test_email_timeout_10_giay(self):
+        self.assertEqual(settings.EMAIL_TIMEOUT, 10)
+
+
+@tag('tich_hop')
+class LenhThuGuiEmailTest(TestCase):
+    MAT_KHAU_SMTP = 'matkhau-ung-dung-khong-duoc-in'
+
+    def _chay(self, *tham_so):
+        dau_ra = io.StringIO()
+        call_command('thu_gui_email', *tham_so, stdout=dau_ra)
+        return dau_ra.getvalue()
+
+    def test_gui_thanh_cong_khong_in_mat_khau(self):
+        from django.core import mail
+        with self.settings(EMAIL_HOST_USER='nguoi.gui@gmail.com', EMAIL_HOST_PASSWORD=self.MAT_KHAU_SMTP):
+            dau_ra = self._chay('nhan.thu@gmail.com')
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['nhan.thu@gmail.com'])
+        self.assertIn('Máy chủ SMTP đã nhận thư', dau_ra)
+        self.assertIn('(đã đặt, không hiển thị)', dau_ra)
+        self.assertNotIn(self.MAT_KHAU_SMTP, dau_ra)
+
+    def test_loi_smtp_bao_loai_loi_khong_in_mat_khau(self):
+        import smtplib
+        loi = smtplib.SMTPAuthenticationError(535, b'5.7.8 Username and Password not accepted')
+        with self.settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend',
+                           EMAIL_HOST_USER='nguoi.gui@gmail.com', EMAIL_HOST_PASSWORD=self.MAT_KHAU_SMTP), \
+                mock.patch('django.core.mail.backends.smtp.EmailBackend.send_messages', side_effect=loi), \
+                self.assertLogs('qldt.email', level='WARNING') as nhat_ky:
+            dau_ra = io.StringIO()
+            with self.assertRaisesMessage(CommandError, 'SMTPAuthenticationError (mã 535)') as ngu_canh:
+                call_command('thu_gui_email', 'nhan.thu@gmail.com', stdout=dau_ra)
+        tat_ca = dau_ra.getvalue() + str(ngu_canh.exception) + '\n'.join(nhat_ky.output)
+        self.assertNotIn(self.MAT_KHAU_SMTP, tat_ca)
+        self.assertIn('n***@gmail.com', '\n'.join(nhat_ky.output))
+        self.assertNotIn('nhan.thu@gmail.com', '\n'.join(nhat_ky.output))
+
+    def test_console_backend_canh_bao_chua_cau_hinh(self):
+        with self.settings(EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend'), \
+                mock.patch('sys.stdout', new_callable=io.StringIO):
+            dau_ra = self._chay('nhan.thu@gmail.com')
+        self.assertIn('thư KHÔNG được gửi thật', dau_ra)
+
+    def test_dia_chi_sai_dinh_dang(self):
+        with self.assertRaisesMessage(CommandError, 'không đúng định dạng email'):
+            self._chay('khong-phai-email')
+
+
+@tag('tich_hop')
+class NhatKyQuenMatKhauTest(TestCase):
+    """Mỗi yêu cầu quên mật khẩu ghi một dòng log qldt.email (email đã che, không có link)."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.addCleanup(cache.clear)
+        self.tk = TaiKhoan.objects.create_user(ten_dang_nhap='gv_log', vai_tro=VaiTro.GIANG_VIEN, password=MAT_KHAU_HOP_LE)
+        GiangVien.objects.create(ma_giang_vien='GVLOG', ho_ten='GV', email='gv.log@gmail.com',
+                                 so_dien_thoai='0919500001', ma_tai_khoan=self.tk)
+
+    def _yeu_cau(self, email, ip='10.2.0.1'):
+        with self.assertLogs('qldt.email', level='INFO') as nhat_ky:
+            response = self.client.post(reverse('accounts:quen_mat_khau'), {'email': email}, REMOTE_ADDR=ip)
+        noi_dung = '\n'.join(nhat_ky.output)
+        self.assertNotIn('/dat-lai-mat-khau/', noi_dung)
+        self.assertNotIn(email.strip().lower(), noi_dung.lower())
+        return response, noi_dung
+
+    def _tao_gv(self, ten, vai_tro, email, sdt, **kwargs):
+        tk = TaiKhoan.objects.create_user(ten_dang_nhap=ten, vai_tro=vai_tro, password=MAT_KHAU_HOP_LE, **kwargs)
+        GiangVien.objects.create(ma_giang_vien=ten.upper().replace('_', ''), ho_ten='GV', email=email,
+                                 so_dien_thoai=sdt, ma_tai_khoan=tk)
+
+    def test_da_gui(self):
+        _, noi_dung = self._yeu_cau('gv.log@gmail.com')
+        self.assertIn('INFO:qldt.email:Quên mật khẩu: đã gửi thư tới g***@gmail.com.', noi_dung)
+
+    def test_ly_do_khong_gui(self):
+        self._tao_gv('gv_trung1', VaiTro.GIANG_VIEN, 'trung.log@gmail.com', '0919500002')
+        self._tao_gv('gv_trung2', VaiTro.GIANG_VIEN, 'TRUNG.LOG@gmail.com', '0919500003')
+        self._tao_gv('gv_khoa_log', VaiTro.GIANG_VIEN, 'khoa.log@gmail.com', '0919500004', is_active=False)
+        self._tao_gv('pdt_log', VaiTro.PHONG_DAO_TAO, 'pdt.log@gmail.com', '0919500005')
+        for i, (email, ly_do) in enumerate((
+            ('khong.co@gmail.com', 'k***@gmail.com (không khớp hồ sơ nào)'),
+            ('trung.log@gmail.com', 't***@gmail.com (email trùng 2 hồ sơ)'),
+            ('khoa.log@gmail.com', 'k***@gmail.com (tài khoản bị khóa)'),
+            ('pdt.log@gmail.com', 'p***@gmail.com (tài khoản Phòng Đào tạo)'),
+        )):
+            _, noi_dung = self._yeu_cau(email, ip=f'10.2.1.{i}')
+            self.assertIn(f'Quên mật khẩu: không gửi thư tới {ly_do}.', noi_dung)
+
+    def test_vuot_gioi_han(self):
+        for _ in range(3):
+            self._yeu_cau('gv.log@gmail.com')
+        response, noi_dung = self._yeu_cau('gv.log@gmail.com')
+        self.assertContains(response, 'Bạn đã gửi quá nhiều yêu cầu')
+        self.assertIn('không gửi thư tới g***@gmail.com (vượt giới hạn 3 yêu cầu/15 phút)', noi_dung)
+
+    def test_loi_gui_van_chuyen_trang_va_ghi_loai_loi(self):
+        import smtplib
+        with mock.patch('django.core.mail.backends.locmem.EmailBackend.send_messages',
+                        side_effect=smtplib.SMTPServerDisconnected('Connection unexpectedly closed')):
+            response, noi_dung = self._yeu_cau('gv.log@gmail.com')
+        self.assertRedirects(response, reverse('accounts:quen_mat_khau_da_gui'))
+        self.assertIn('WARNING:qldt.email:Quên mật khẩu: lỗi gửi thư tới g***@gmail.com: SMTPServerDisconnected', noi_dung)
+
+    def test_gui_trong_luong_nen_trang_chuyen_ngay(self):
+        import threading
+        bat_dau, cho_phep_xong = threading.Event(), threading.Event()
+
+        def gui_cham(*args, **kwargs):
+            bat_dau.set()
+            cho_phep_xong.wait(5)
+            return 1
+
+        with self.settings(EMAIL_GUI_NEN=True), \
+                mock.patch('django.core.mail.EmailMultiAlternatives.send', side_effect=gui_cham):
+            response = self.client.post(reverse('accounts:quen_mat_khau'), {'email': 'gv.log@gmail.com'},
+                                        REMOTE_ADDR='10.2.2.1')
+            # Trang đã chuyển trong khi việc gửi thư vẫn đang chờ máy chủ SMTP.
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(bat_dau.wait(5))
+            self.assertFalse(cho_phep_xong.is_set())
+            with self.assertLogs('qldt.email', level='INFO') as nhat_ky:
+                cho_phep_xong.set()
+                for luong in threading.enumerate():
+                    if luong.name == 'gui-email':
+                        luong.join(5)
+        self.assertIn('đã gửi thư tới g***@gmail.com', '\n'.join(nhat_ky.output))
+
+
+@tag('tich_hop')
+class NutHienMatKhauTest(TestCase):
+    """Mọi ô mật khẩu có nút con mắt dùng chung (templates/_o_mat_khau.html, JavaScript cuối base.html)."""
+
+    def setUp(self):
+        self.pdt = TaiKhoan.objects.create_user(ten_dang_nhap='pdt_mat', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU_HOP_LE)
+
+    def _kiem_tra_nut(self, response, cac_o):
+        """Mỗi ô mật khẩu (theo id) có đúng một nút type=button, aria-label "Hiện mật khẩu", aria-controls trỏ vào ô."""
+        html = response.content.decode()
+        self.assertEqual(html.count('class="nut-hien-mat-khau"'), len(cac_o))
+        self.assertEqual(len(re.findall(r'<input type="password"', html)), len(cac_o))
+        for id_o in cac_o:
+            self.assertIn(f'id="{id_o}"', html)
+            self.assertIn(
+                f'<button type="button" class="nut-hien-mat-khau" aria-label="Hiện mật khẩu" aria-controls="{id_o}">', html,
+            )
+        self.assertIn("nut.setAttribute('aria-label', dangAn ? 'Ẩn mật khẩu' : 'Hiện mật khẩu')", html)
+
+    def test_trang_dang_nhap(self):
+        self._kiem_tra_nut(self.client.get(reverse('accounts:dang_nhap')), ['id_password'])
+
+    def test_trang_doi_mat_khau(self):
+        self.client.force_login(self.pdt)
+        self._kiem_tra_nut(self.client.get(reverse('accounts:doi_mat_khau')),
+                           ['id_mat_khau_cu', 'id_mat_khau_moi', 'id_mat_khau_moi_xac_nhan'])
+
+    def test_trang_tao_tai_khoan(self):
+        self.client.force_login(self.pdt)
+        self._kiem_tra_nut(self.client.get(reverse('accounts:tai_khoan_tao')), ['id_mat_khau'])
+
+    def test_trang_dat_lai_mat_khau_qua_email(self):
+        from django.contrib.auth.tokens import default_token_generator
+        from django.utils.encoding import force_bytes
+        from django.utils.http import urlsafe_base64_encode
+        sv = TaiKhoan.objects.create_user(ten_dang_nhap='sv_mat', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU_HOP_LE)
+        link = reverse('accounts:dat_lai_mat_khau_xac_nhan', kwargs={
+            'uidb64': urlsafe_base64_encode(force_bytes(sv.pk)), 'token': default_token_generator.make_token(sv),
+        })
+        response = self.client.get(link, follow=True)
+        self.assertTrue(response.context['validlink'])
+        self._kiem_tra_nut(response, ['id_new_password1', 'id_new_password2'])
+
+    def test_trang_khong_co_o_mat_khau_thi_khong_co_nut(self):
+        self.client.force_login(self.pdt)
+        response = self.client.get(reverse('accounts:tai_khoan_danh_sach'))
+        self.assertNotContains(response, 'class="nut-hien-mat-khau"')
+
+    def test_moi_o_mat_khau_trong_form_deu_qua_partial(self):
+        """Mọi form của dự án có ô PasswordInput đều nằm trong danh sách trang đã kiểm tra ở trên."""
+        from django import forms as django_forms
+
+        from accounts import forms as forms_tai_khoan
+        co_o_mat_khau = sorted(
+            ten for ten, lop in vars(forms_tai_khoan).items()
+            if isinstance(lop, type) and issubclass(lop, django_forms.BaseForm) and lop.__module__ == forms_tai_khoan.__name__
+            and any(isinstance(truong.widget, django_forms.PasswordInput) for truong in lop.base_fields.values())
+        )
+        self.assertEqual(co_o_mat_khau, ['DangNhapForm', 'DatLaiMatKhauQuaEmailForm', 'DoiMatKhauForm', 'TaoTaiKhoanForm'])

@@ -740,3 +740,84 @@ class NhapExcelDinhDangLienHeTest(TestCase):
         self.assertIn('Số điện thoại "12ab" không hợp lệ', loi[3])
         self.assertEqual(SinhVien.objects.get(pk='SVDX3').so_dien_thoai, '0919100003')
         self.assertEqual(SinhVien.objects.get(pk='SVDX4').so_dien_thoai, '0919100004')
+
+
+@tag('tich_hop')
+class EmailLuuChuThuongTest(TestCase):
+    def setUp(self):
+        self.client.force_login(TaiKhoan.objects.create_user(ten_dang_nhap='pdt_ct', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU))
+        self.lop = _tao_lop_hanh_chinh('LOPCT')
+
+    def test_form_ho_so_luu_email_chu_thuong_bo_khoang_trang(self):
+        tk = TaiKhoan.objects.create_user(ten_dang_nhap='gv_ct', vai_tro=VaiTro.GIANG_VIEN, password=MAT_KHAU)
+        response = self.client.post(reverse('people:giang_vien_tao'), {
+            'ma_giang_vien': 'GVCT', 'ho_ten': 'GV', 'email': '  Ten.GV@Gmail.COM ', 'so_dien_thoai': '0919200001',
+            'ma_tai_khoan': tk.pk,
+        })
+        self.assertRedirects(response, reverse('people:giang_vien_danh_sach'))
+        self.assertEqual(GiangVien.objects.get(pk='GVCT').email, 'ten.gv@gmail.com')
+
+    def test_email_khac_hoa_thuong_van_tinh_la_trung(self):
+        tk1 = TaiKhoan.objects.create_user(ten_dang_nhap='gv_ct1', vai_tro=VaiTro.GIANG_VIEN, password=MAT_KHAU)
+        tk2 = TaiKhoan.objects.create_user(ten_dang_nhap='gv_ct2', vai_tro=VaiTro.GIANG_VIEN, password=MAT_KHAU)
+        GiangVien.objects.create(ma_giang_vien='GVCT1', ho_ten='A', email='trung@gmail.com', so_dien_thoai='0919200002', ma_tai_khoan=tk1)
+        response = self.client.post(reverse('people:giang_vien_tao'), {
+            'ma_giang_vien': 'GVCT2', 'ho_ten': 'B', 'email': 'TRUNG@gmail.com', 'so_dien_thoai': '0919200003',
+            'ma_tai_khoan': tk2.pk,
+        })
+        self.assertContains(response, 'đã được dùng cho')
+        self.assertFalse(GiangVien.objects.filter(pk='GVCT2').exists())
+
+    def test_nhap_excel_luu_email_chu_thuong_va_bao_loi_theo_dong(self):
+        file_excel = _tao_file_excel([
+            ['SVCT1', 'A', '2004-05-01', ' An.Nguyen@Gmail.com ', '0919200011', self.lop.pk, ''],
+            ['SVCT2', 'B', '2004-05-01', 'khong-co-a-cong', '0919200012', self.lop.pk, ''],
+            ['SVCT3', 'C', '2004-05-01', 'AN.NGUYEN@gmail.com', '0919200013', self.lop.pk, ''],
+        ])
+        ket_qua = self.client.post(reverse('people:sinh_vien_nhap_excel'), {'file_excel': file_excel}).context['ket_qua']
+        loi = {l['dong']: l['loi'] for l in ket_qua['loi']}
+        self.assertEqual(sorted(loi), [3, 4])
+        self.assertIn('không đúng định dạng', loi[3])
+        self.assertIn('trùng', loi[4])
+        self.assertEqual(SinhVien.objects.get(pk='SVCT1').email, 'an.nguyen@gmail.com')
+
+
+@tag('don_vi')
+class LenhKiemTraLienHeTest(TestCase):
+    def _tao_gv(self, ma, email, sdt):
+        tk = TaiKhoan.objects.create_user(ten_dang_nhap=f'tk_{ma.lower()}', vai_tro=VaiTro.GIANG_VIEN, password=MAT_KHAU)
+        return GiangVien.objects.create(ma_giang_vien=ma, ho_ten=f'GV {ma}', email=email, so_dien_thoai=sdt, ma_tai_khoan=tk)
+
+    def _chay(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+        dau_ra = StringIO()
+        call_command('kiem_tra_lien_he', stdout=dau_ra)
+        return dau_ra.getvalue()
+
+    def test_bao_email_sdt_sai_va_trung_khong_sua_du_lieu(self):
+        from django.core.management.base import CommandError
+        self._tao_gv('GVLH1', 'gmail', '12ab')
+        self._tao_gv('GVLH2', 'trung@gmail.com', '0919300001')
+        self._tao_gv('GVLH3', 'TRUNG@gmail.com', '0919 300 001')
+        self._tao_gv('GVLH4', 'ok@gmail.com', '0919300004')
+        from io import StringIO
+
+        from django.core.management import call_command
+        dau_ra = StringIO()
+        with self.assertRaisesMessage(CommandError, 'Có 4 vấn đề'):
+            call_command('kiem_tra_lien_he', stdout=dau_ra)
+        noi_dung = dau_ra.getvalue()
+        self.assertIn("Giảng viên GVLH1 (GV GVLH1): email 'gmail'", noi_dung)
+        self.assertIn("Giảng viên GVLH1 (GV GVLH1): số điện thoại '12ab'", noi_dung)
+        self.assertIn('trung@gmail.com: Giảng viên GVLH2 (GV GVLH2), Giảng viên GVLH3 (GV GVLH3)', noi_dung)
+        self.assertIn('0919300001: Giảng viên GVLH2 (GV GVLH2), Giảng viên GVLH3 (GV GVLH3)', noi_dung)
+        self.assertNotIn('GVLH4', noi_dung)
+        # Chỉ đọc: dữ liệu giữ nguyên.
+        self.assertEqual(GiangVien.objects.get(pk='GVLH1').email, 'gmail')
+        self.assertEqual(GiangVien.objects.get(pk='GVLH3').so_dien_thoai, '0919 300 001')
+
+    def test_du_lieu_sach(self):
+        self._tao_gv('GVLH5', 'a@gmail.com', '0919300005')
+        self.assertIn('Mọi email và số điện thoại đều hợp lệ', self._chay())

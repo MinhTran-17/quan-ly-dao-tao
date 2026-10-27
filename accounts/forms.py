@@ -1,12 +1,16 @@
 import re
 
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.mail import EmailMultiAlternatives
 from django.core.validators import RegexValidator
+from django.template import loader
 
-from .models import TaiKhoan
+from .gioi_han_dang_nhap import dang_bi_chan, ghi_nhan_sai, lay_ip, xoa_dem_sai
+from .gui_email import che_email, gui_thu, logger as logger_email
+from .models import TaiKhoan, VaiTro
 
 # Thông điệp tiếng Việt cho các validator mật khẩu mặc định của Django (bản dịch "vi" của Django không đủ, có thông
 # báo còn bằng tiếng Anh). Khóa là mã lỗi của validator; mã lạ thì giữ nguyên thông điệp gốc.
@@ -79,7 +83,22 @@ class DangNhapForm(AuthenticationForm):
     error_messages = {
         'invalid_login': 'Tên đăng nhập hoặc mật khẩu không đúng.',
         'inactive': 'Tài khoản đã bị khóa.',
+        'tam_chan': 'Đăng nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.',
     }
+
+    def clean(self):
+        # Đang bị tạm chặn thì không thử mật khẩu (kể cả mật khẩu đúng). Thông báo như nhau dù tên đăng nhập có
+        # tồn tại hay không (accounts/gioi_han_dang_nhap.py đếm cả tên không tồn tại).
+        ten_dang_nhap, ip = self.cleaned_data.get('username') or '', lay_ip(self.request)
+        if dang_bi_chan(ten_dang_nhap, ip):
+            raise ValidationError(self.error_messages['tam_chan'], code='tam_chan')
+        try:
+            cleaned_data = super().clean()
+        except ValidationError:
+            ghi_nhan_sai(ten_dang_nhap, ip)
+            raise
+        xoa_dem_sai(ten_dang_nhap)
+        return cleaned_data
 
 
 class TaoTaiKhoanForm(forms.ModelForm):
@@ -148,11 +167,21 @@ class ThongTinLienHeForm(forms.Form):
     tra định dạng ở tầng model — kiểm tra định dạng thực hiện ở đây, không sửa 3 model đó)."""
 
     email = forms.EmailField(label='Email', max_length=100)
-    so_dien_thoai = forms.CharField(label='Số điện thoại', max_length=15, validators=[validate_so_dien_thoai])
+    so_dien_thoai = forms.CharField(label='Số điện thoại', max_length=15)
 
     def __init__(self, *args, ho_so, **kwargs):
         self.ho_so = ho_so
         super().__init__(*args, **kwargs)
+
+    def clean_email(self):
+        return self.cleaned_data['email'].strip().lower()
+
+    def clean_so_dien_thoai(self):
+        # Cùng quy tắc form hồ sơ của Phòng Đào tạo: "0912 345.678" -> "0912345678" rồi mới kiểm tra định dạng.
+        from people.lien_he import chuan_hoa_so_dien_thoai
+        so_dien_thoai = chuan_hoa_so_dien_thoai(self.cleaned_data['so_dien_thoai'])
+        validate_so_dien_thoai(so_dien_thoai)
+        return so_dien_thoai
 
     def clean(self):
         # Không trùng email/số điện thoại của hồ sơ khác; thông báo chung, không nêu hồ sơ nào (tránh lộ thông tin người khác).
@@ -191,3 +220,84 @@ class DoiMatKhauForm(forms.Form):
         elif moi:
             kiem_tra_mat_khau(moi, user=self.tai_khoan)
         return cleaned_data
+
+
+class QuenMatKhauForm(PasswordResetForm):
+    """Tìm tài khoản theo email trong hồ sơ sinh viên/giảng viên/cố vấn (không phân biệt hoa thường). Không gửi thư
+    khi email khớp nhiều hơn một hồ sơ, tài khoản bị khóa, hoặc là tài khoản Phòng Đào tạo; mọi trường hợp người
+    dùng đều thấy cùng một thông báo (accounts/quen_mat_khau_da_gui.html)."""
+
+    email = forms.EmailField(
+        label='Email', max_length=254,
+        widget=forms.EmailInput(attrs={'autocomplete': 'email', 'autofocus': True}),
+        error_messages={'invalid': 'Email không đúng định dạng (ví dụ: ten@gmail.com).'},
+    )
+
+    @staticmethod
+    def tim_tai_khoan(email):
+        """(tài khoản được gửi thư, '') hoặc (None, lý do không gửi)."""
+        from people.models import CoVanHocTap, GiangVien, SinhVien
+        email = (email or '').strip()
+        ho_so = [
+            hs for model in (SinhVien, GiangVien, CoVanHocTap)
+            for hs in model.objects.filter(email__iexact=email).select_related('ma_tai_khoan')
+        ]
+        if not ho_so:
+            return None, 'không khớp hồ sơ nào'
+        if len(ho_so) > 1:
+            return None, f'email trùng {len(ho_so)} hồ sơ'
+        tai_khoan = ho_so[0].ma_tai_khoan
+        if tai_khoan.vai_tro == VaiTro.PHONG_DAO_TAO:
+            return None, 'tài khoản Phòng Đào tạo'
+        if not tai_khoan.is_active:
+            return None, 'tài khoản bị khóa'
+        if not tai_khoan.has_usable_password():
+            return None, 'tài khoản không có mật khẩu dùng được'
+        return tai_khoan, ''
+
+    def get_users(self, email):
+        tai_khoan, ly_do = self.tim_tai_khoan(email)
+        if tai_khoan is None:
+            logger_email.info('Quên mật khẩu: không gửi thư tới %s (%s).', che_email(email), ly_do)
+            return []
+        return [tai_khoan]
+
+    def send_mail(self, subject_template_name, email_template_name, context, from_email, to_email,
+                  html_email_template_name=None):
+        # Dựng thư ngay trong request, gửi trong luồng nền (accounts/gui_email.py): trang chuyển ngay sau khi bấm Gửi.
+        tieu_de = ''.join(loader.render_to_string(subject_template_name, context).splitlines())
+        noi_dung = loader.render_to_string(email_template_name, context)
+        gui_thu(EmailMultiAlternatives(tieu_de, noi_dung, from_email, [to_email]), 'Quên mật khẩu')
+
+
+class DatLaiMatKhauQuaEmailForm(SetPasswordForm):
+    """Đặt mật khẩu mới từ link trong thư: cùng ràng buộc mật khẩu hiện có (kiem_tra_mat_khau) và không trùng mật
+    khẩu cũ. Lưu xong thì tắt cờ phai_doi_mat_khau và xóa số lần đăng nhập sai của tài khoản."""
+
+    error_messages = {'password_mismatch': 'Xác nhận mật khẩu mới không khớp với mật khẩu mới.'}
+    new_password1 = forms.CharField(
+        label='Mật khẩu mới', strip=False, widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
+    )
+    new_password2 = forms.CharField(
+        label='Xác nhận mật khẩu mới', strip=False, widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
+    )
+
+    def clean(self):
+        self.validate_passwords('new_password1', 'new_password2')
+        moi = self.cleaned_data.get('new_password1')
+        if moi and self.user.check_password(moi):
+            self.add_error('new_password1', 'Mật khẩu mới không được trùng mật khẩu hiện tại.')
+        elif moi:
+            try:
+                kiem_tra_mat_khau(moi, user=self.user)
+            except ValidationError as loi:
+                self.add_error('new_password1', loi)
+        return self.cleaned_data
+
+    def save(self, commit=True):
+        tai_khoan = super().save(commit=False)
+        tai_khoan.phai_doi_mat_khau = False
+        if commit:
+            tai_khoan.save()
+            xoa_dem_sai(tai_khoan.ten_dang_nhap)
+        return tai_khoan

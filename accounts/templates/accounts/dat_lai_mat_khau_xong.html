@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Đã đặt lại mật khẩu{% endblock %}
+{% block lop_body %}trang-dang-nhap{% endblock %}
+{% block noi_dung %}
+<div class="the-dang-nhap">
+    <div class="the-dang-nhap__logo">{% include '_logo.html' %}</div>
+    <h1>Đã đặt lại mật khẩu</h1>
+    <p class="the-dang-nhap__noi-dung">Mật khẩu mới đã được lưu. Bạn có thể đăng nhập bằng mật khẩu mới.</p>
+    <a class="nut nut-chinh nut-day-du nut-lon" href="{% url 'accounts:dang_nhap' %}">Đăng nhập</a>
+</div>
+<p class="chan-trang-dang-nhap">© {% now "Y" %} {{ TEN_TRUONG }}. {{ TEN_HE_THONG }}.</p>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Đặt lại mật khẩu{% endblock %}
+{% block lop_body %}trang-dang-nhap{% endblock %}
+{% block noi_dung %}
+<div class="the-dang-nhap">
+    <div class="the-dang-nhap__logo">{% include '_logo.html' %}</div>
+    <h1>Đặt lại mật khẩu</h1>
+    {% if validlink %}
+    <p class="the-dang-nhap__phu-de">Nhập mật khẩu mới cho tài khoản <strong>{{ form.user.ten_dang_nhap }}</strong>.</p>
+
+    {% if form.non_field_errors %}
+    <p class="thong-bao--error">{{ form.non_field_errors.0 }}</p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {% for truong in form %}
+        <div class="truong-dang-nhap">
+            <label for="{{ truong.id_for_label }}">{{ truong.label }} <span class="dau-bat-buoc">*</span></label>
+            {% include '_o_mat_khau.html' %}
+            {% for loi in truong.errors %}<span class="loi-truong">{{ loi }}</span>{% endfor %}
+        </div>
+        {% endfor %}
+        <p class="the-dang-nhap__goi-y">Ít nhất 8 ký tự, không chỉ gồm chữ số, không quá phổ biến, không giống tên đăng nhập, không trùng mật khẩu cũ.</p>
+        <button type="submit" class="nut nut-chinh nut-day-du nut-lon">Lưu mật khẩu mới</button>
+    </form>
+    {% else %}
+    <p class="thong-bao--error">Link đặt lại mật khẩu không hợp lệ, đã được dùng hoặc đã hết hạn (30 phút).</p>
+    <a class="nut nut-chinh nut-day-du nut-lon" href="{% url 'accounts:quen_mat_khau' %}">Gửi lại link mới</a>
+    {% endif %}
+    <p class="lien-ket-dang-nhap"><a href="{% url 'accounts:dang_nhap' %}">Quay lại đăng nhập</a></p>
+</div>
+<p class="chan-trang-dang-nhap">© {% now "Y" %} {{ TEN_TRUONG }}. {{ TEN_HE_THONG }}.</p>
+{% endblock %}

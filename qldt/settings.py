@@ -42,7 +42,20 @@ if not SECRET_KEY:
         )
     SECRET_KEY = 'django-insecure-chi-dung-khi-phat-trien'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+
+def doc_danh_sach(gia_tri):
+    """'a, b,,c ' -> ['a', 'b', 'c']: tách theo dấu phẩy, bỏ khoảng trắng và giá trị rỗng."""
+    return [phan.strip() for phan in (gia_tri or '').split(',') if phan.strip()]
+
+
+ALLOWED_HOSTS = doc_danh_sach(os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1'))
+
+# Truy cập qua HTTPS phía sau proxy/tunnel (ví dụ Cloudflare Tunnel, README mục "Truy cập từ điện thoại qua
+# Cloudflare Tunnel"): khai báo origin được tin cho kiểm tra CSRF, ví dụ https://*.trycloudflare.com.
+CSRF_TRUSTED_ORIGINS = doc_danh_sach(os.environ.get('CSRF_TRUSTED_ORIGINS', ''))
+# Tunnel nhận HTTPS rồi chuyển tiếp HTTP vào máy chủ kèm header X-Forwarded-Proto: https. Header này giúp Django
+# biết request gốc là HTTPS (request.is_secure()), nên link đặt lại mật khẩu trong email dùng https.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
@@ -86,6 +99,28 @@ AUTH_USER_MODEL = 'accounts.TaiKhoan'
 
 LOGIN_URL = 'accounts:dang_nhap'
 LOGIN_REDIRECT_URL = 'accounts:trang_chu'
+
+# Quên mật khẩu: link đặt lại dùng một lần, hết hạn sau 30 phút.
+PASSWORD_RESET_TIMEOUT = 30 * 60
+
+# Gửi thư qua Gmail SMTP khi .env có EMAIL_HOST_USER và EMAIL_HOST_PASSWORD (mật khẩu ứng dụng Gmail, không
+# phải mật khẩu đăng nhập Gmail). Chưa cấu hình thì in thư ra màn hình/log của máy chủ (console backend).
+# Khi chạy test, Django tự thay bằng locmem backend (không gửi thư thật).
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_TIMEOUT = 10
+# Thư quên mật khẩu gửi trong luồng nền (accounts/gui_email.py) để trang chuyển ngay sau khi bấm Gửi. Khi chạy
+# test thì gửi đồng bộ, để kiểm tra mail.outbox ngay sau request.
+DANG_CHAY_TEST = len(sys.argv) > 1 and sys.argv[1] == 'test'
+EMAIL_GUI_NEN = not DANG_CHAY_TEST
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or EMAIL_HOST_USER or 'webmaster@localhost'
 
 # Tên trường/hệ thống hiển thị ở logo (trang đăng nhập, thanh menu trên) — đọc từ .env để
 # đổi được không cần sửa code, đưa vào mọi template qua qldt.context_processors.
@@ -265,6 +300,10 @@ LOGGING = {
         },
     },
     'handlers': {
+        'man_hinh': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'chuan',
+        },
         'tep_xoay_vong': {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOG_DIR / 'app.log',
@@ -289,6 +328,13 @@ LOGGING = {
             'handlers': ['tep_xoay_vong'],
             'level': 'WARNING',
             'propagate': False,
+        },
+        # Kết quả yêu cầu quên mật khẩu/gửi thư: ghi vào app.log (truyền lên logger qldt) và in ra màn hình máy
+        # chủ để xem bằng docker compose logs web (khi chạy test thì không in, tránh nhiễu kết quả test).
+        'qldt.email': {
+            'handlers': [] if DANG_CHAY_TEST else ['man_hinh'],
+            'level': 'INFO',
+            'propagate': True,
         },
     },
 }

@@ -390,18 +390,23 @@
     .truong-dang-nhap label { font-size: 14px; }
     .dau-bat-buoc { color: var(--mau-do); }
     .the-dang-nhap input[type="text"],
+    .the-dang-nhap input[type="email"],
     .the-dang-nhap input[type="password"] {
         height: 48px;
         font-size: 16px;
         border-radius: 8px;
     }
+    /* Ô mật khẩu có nút con mắt (templates/_o_mat_khau.html), dùng ở mọi form có ô mật khẩu. Nút cao bằng ô
+       nhập (top/bottom 0) nên vừa ô 48px ở trang đăng nhập lẫn ô 40px ở các form khác. */
     .o-mat-khau { position: relative; }
     .o-mat-khau input { padding-right: 44px; }
+    /* Ẩn nút hiện mật khẩu riêng của Edge để không có hai con mắt. */
+    .o-mat-khau input::-ms-reveal, .o-mat-khau input::-ms-clear { display: none; }
     .nut-hien-mat-khau {
         position: absolute;
         top: 0;
+        bottom: 0;
         right: 0;
-        height: 48px;
         width: 44px;
         display: flex;
         align-items: center;
@@ -415,6 +420,10 @@
     .nut-hien-mat-khau:focus-visible { outline: 2px solid var(--mau-xanh-chinh); outline-offset: -2px; }
     .the-dang-nhap .nut-lon { height: 48px; font-size: 16px; margin-top: 8px; }
     .the-dang-nhap .nut-lon:disabled { opacity: .7; cursor: default; }
+    .lien-ket-dang-nhap { text-align: center; font-size: 14px; margin: 16px 0 0; }
+    .the-dang-nhap__noi-dung { color: var(--mau-chu-phu); font-size: 14px; line-height: 1.5; margin: 0 0 16px; }
+    .the-dang-nhap__goi-y { color: var(--mau-chu-phu); font-size: 12px; margin: -4px 0 8px; }
+    .the-dang-nhap .nut-lon { display: flex; align-items: center; justify-content: center; }
     .chan-trang-dang-nhap { text-align: center; color: var(--mau-chu-phu); font-size: 12px; margin: 0; }
     @media (max-width: 480px) {
         .the-dang-nhap { padding: 24px; max-width: none; }
@@ -598,5 +607,25 @@
 {% if user.is_authenticated %}
 </div>
 {% endif %}
+<script>
+// Nút con mắt hiện/ẩn mật khẩu (templates/_o_mat_khau.html): đổi type ô nhập, biểu tượng và aria-label.
+document.querySelectorAll('.nut-hien-mat-khau').forEach(function (nut) {
+    var oMatKhau = document.getElementById(nut.getAttribute('aria-controls'));
+    var matMo = nut.querySelector('.icon-mat-mo');
+    var matDong = nut.querySelector('.icon-mat-dong');
+    if (!oMatKhau) { return; }
+    nut.addEventListener('click', function () {
+        var dangAn = oMatKhau.type === 'password';
+        oMatKhau.type = dangAn ? 'text' : 'password';
+        nut.setAttribute('aria-label', dangAn ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+        matMo.style.display = dangAn ? 'none' : '';
+        matDong.style.display = dangAn ? '' : 'none';
+    });
+    // Gửi form thì trả về type="password" để trình quản lý mật khẩu của trình duyệt nhận đúng ô mật khẩu.
+    if (oMatKhau.form) {
+        oMatKhau.form.addEventListener('submit', function () { oMatKhau.type = 'password'; });
+    }
+});
+</script>
 </body>
 </html>

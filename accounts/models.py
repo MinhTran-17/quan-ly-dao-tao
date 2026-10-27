@@ -46,6 +46,9 @@ class TaiKhoan(AbstractBaseUser):
 
     USERNAME_FIELD = 'ten_dang_nhap'
     REQUIRED_FIELDS = ['vai_tro']
+    # Bảng tai_khoan không có cột email (docs/erd.md): email nằm ở hồ sơ sinh viên/giảng viên/cố vấn. Chức năng quên
+    # mật khẩu của Django đọc email qua tên thuộc tính này (thuộc tính Python, không phải cột CSDL).
+    EMAIL_FIELD = 'email_ho_so'
 
     class Meta:
         db_table = 'tai_khoan'
@@ -58,3 +61,12 @@ class TaiKhoan(AbstractBaseUser):
 
     def __str__(self):
         return self.ten_dang_nhap
+
+    @property
+    def email_ho_so(self):
+        """Email của hồ sơ gắn với tài khoản; '' nếu không có hồ sơ (ví dụ tài khoản Phòng Đào tạo)."""
+        for ten in ('ho_so_sinh_vien', 'ho_so_giang_vien', 'ho_so_co_van'):
+            ho_so = getattr(self, ten, None)
+            if ho_so is not None:
+                return ho_so.email or ''
+        return ''

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Quên mật khẩu{% endblock %}
+{% block lop_body %}trang-dang-nhap{% endblock %}
+{% block noi_dung %}
+<div class="the-dang-nhap">
+    <div class="the-dang-nhap__logo">{% include '_logo.html' %}</div>
+    <h1>Quên mật khẩu</h1>
+    <p class="the-dang-nhap__phu-de">Nhập email trong hồ sơ của bạn, hệ thống sẽ gửi link đặt lại mật khẩu.</p>
+
+    {% if form.non_field_errors %}
+    <p class="thong-bao--error">{{ form.non_field_errors.0 }}</p>
+    {% endif %}
+
+    <form method="post" id="form-quen-mat-khau">
+        {% csrf_token %}
+        <div class="truong-dang-nhap">
+            <label for="{{ form.email.id_for_label }}">Email <span class="dau-bat-buoc">*</span></label>
+            {{ form.email }}
+            {% if form.email.errors %}<span class="loi-truong">{{ form.email.errors.0 }}</span>{% endif %}
+        </div>
+        <button type="submit" class="nut nut-chinh nut-day-du nut-lon" id="nut-gui">Gửi link đặt lại</button>
+    </form>
+    <p class="lien-ket-dang-nhap"><a href="{% url 'accounts:dang_nhap' %}">Quay lại đăng nhập</a></p>
+</div>
+<p class="chan-trang-dang-nhap">© {% now "Y" %} {{ TEN_TRUONG }}. {{ TEN_HE_THONG }}.</p>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('form-quen-mat-khau');
+    var nut = document.getElementById('nut-gui');
+    if (form && nut) {
+        form.addEventListener('submit', function () {
+            nut.disabled = true;
+            nut.textContent = 'Đang gửi...';
+        });
+    }
+});
+</script>
+{% endblock %}

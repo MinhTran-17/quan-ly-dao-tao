@@ -38,7 +38,7 @@ def _kiem_tra_ma_ho_so(form, truong, nhan):
 
 
 def _thay_doi(form, truong, gia_tri):
-    return not form.instance.pk or (gia_tri or '').strip() != (getattr(form.instance, truong) or '').strip()
+    return not form.instance.pk or (gia_tri or '').strip().lower() != (getattr(form.instance, truong) or '').strip().lower()
 
 
 class _ThongTinLienHeHoSoMixin:
@@ -47,7 +47,8 @@ class _ThongTinLienHeHoSoMixin:
     sai định dạng không chặn việc sửa các trường khác."""
 
     def clean_email(self):
-        email = (self.cleaned_data.get('email') or '').strip()
+        # Lưu ở dạng chữ thường, bỏ khoảng trắng (" Ten@Gmail.com " -> "ten@gmail.com").
+        email = (self.cleaned_data.get('email') or '').strip().lower()
         if _thay_doi(self, 'email', email):
             try:
                 validate_email(email)
