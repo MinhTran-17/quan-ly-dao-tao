@@ -262,8 +262,11 @@ class TaoTaiKhoanCoVanTest(TestCase):
         self.assertRedirects(response, reverse('people:co_van_danh_sach'))
         self.assertTrue(CoVanHocTap.objects.filter(pk='CVMOITK', ma_tai_khoan=tai_khoan).exists())
 
-    def test_ten_dang_nhap_co_dau_va_khoang_trang_van_tao_duoc(self):
-        self.assertRedirects(self._tao(ten='Cố vấn 1'), reverse('accounts:tai_khoan_danh_sach'))
+    def test_ten_dang_nhap_co_dau_va_khoang_trang_bi_tu_choi(self):
+        # Trước đây cho phép; người kiểm thử báo lỗi tên "...." tạo được, nay chỉ nhận chữ không dấu, số, "_".
+        loi = self._loi(self._tao(ten='Cố vấn 1'), 'ten_dang_nhap')
+        self.assertIn('chỉ được dùng chữ cái không dấu, chữ số và dấu gạch dưới', loi[0])
+        self.assertFalse(TaiKhoan.objects.filter(ten_dang_nhap='Cố vấn 1').exists())
 
     def test_mat_khau_yeu_bao_loi_bang_tieng_viet(self):
         loi = self._loi(self._tao(mat_khau='123456'), 'mat_khau')
@@ -2881,13 +2884,13 @@ class ThongBaoTuAnTest(TestCase):
     def test_noi_dung_thong_bao_do_nguoi_dung_nhap_van_duoc_escape(self):
         pdt = TaiKhoan.objects.create_user(ten_dang_nhap='pdt_esc', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU_HOP_LE)
         self.client.force_login(pdt)
-        response = self.client.post(reverse('accounts:tai_khoan_tao'), {
-            'ten_dang_nhap': '<i>x</i>', 'vai_tro': VaiTro.SINH_VIEN, 'is_active': 'on', 'mat_khau': MAT_KHAU_HOP_LE,
-        }, follow=True)
-        # Tên tài khoản (do người dùng nhập) nằm trong nội dung thông báo tự ẩn: phải bị escape.
+        # Form không còn cho tạo tên có "<", ">" nên dùng một tài khoản cũ có sẵn tên như vậy (dữ liệu trước khi có
+        # ràng buộc tên đăng nhập) rồi khóa nó: tên nằm trong nội dung thông báo tự ẩn, phải bị escape.
+        tai_khoan_cu = TaiKhoan.objects.create_user(ten_dang_nhap='<i>x</i>', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU_HOP_LE)
+        response = self.client.post(reverse('accounts:tai_khoan_khoa', args=[tai_khoan_cu.pk]), follow=True)
         self.assertContains(
             response,
-            '<span class="thong-bao__noi-dung">Đã tạo tài khoản &quot;&lt;i&gt;x&lt;/i&gt;&quot;.</span>',
+            '<span class="thong-bao__noi-dung">Đã khóa tài khoản &quot;&lt;i&gt;x&lt;/i&gt;&quot;.</span>',
         )
         self.assertNotContains(response, '<i>x</i>')
 
@@ -2946,3 +2949,83 @@ class MatKhauTamKhongTrungMatKhauHienTaiTest(TestCase):
         from .services import tao_mat_khau_tam
         mat_khau = tao_mat_khau_tam(TaiKhoan(ten_dang_nhap='moi_tinh', vai_tro=VaiTro.SINH_VIEN))
         self.assertEqual(len(mat_khau), 12)
+
+
+TEN_DANG_NHAP_KHONG_HOP_LE = ['....', '///', 'sv 01', 'nguyễn', 'a.b', 'a-b', 'sv@01', ']]]']
+
+
+@tag('don_vi')
+class QuyTacTenDangNhapTest(TestCase):
+    def test_chi_chu_khong_dau_chu_so_va_gach_duoi(self):
+        from .forms import ten_dang_nhap_hop_le
+        for ten in ('sv001', 'PDT', 'pdt_demo', 'gv_toan_2', '_'):
+            self.assertTrue(ten_dang_nhap_hop_le(ten), ten)
+        for ten in TEN_DANG_NHAP_KHONG_HOP_LE + ['', None, 'sv001\n']:
+            self.assertFalse(ten_dang_nhap_hop_le(ten), repr(ten))
+
+
+@tag('tich_hop')
+class TenDangNhapFormTest(TestCase):
+    def setUp(self):
+        self.client.force_login(TaiKhoan.objects.create_user(
+            ten_dang_nhap='pdt_tdn', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU_HOP_LE,
+        ))
+
+    def _tao(self, ten):
+        return self.client.post(reverse('accounts:tai_khoan_tao'), {
+            'ten_dang_nhap': ten, 'vai_tro': VaiTro.SINH_VIEN, 'is_active': 'on', 'mat_khau': 'MatKhauMoi456',
+        })
+
+    def test_tao_tai_khoan_ten_co_ky_tu_la_bi_bao_loi(self):
+        for ten in TEN_DANG_NHAP_KHONG_HOP_LE:
+            response = self._tao(ten)
+            self.assertEqual(response.status_code, 200, ten)
+            self.assertContains(response, 'chỉ được dùng chữ cái không dấu, chữ số và dấu gạch dưới')
+            self.assertFalse(TaiKhoan.objects.filter(ten_dang_nhap=ten).exists(), ten)
+
+    def test_tao_tai_khoan_ten_hop_le_thanh_cong(self):
+        self.assertRedirects(self._tao('sv_moi01'), reverse('accounts:tai_khoan_danh_sach'))
+        self.assertTrue(TaiKhoan.objects.filter(ten_dang_nhap='sv_moi01').exists())
+
+    def test_sua_tai_khoan_doi_sang_ten_la_bi_chan_giu_ten_cu_sai_van_sua_duoc(self):
+        tk = TaiKhoan.objects.create_user(ten_dang_nhap='ten.cu', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU_HOP_LE)
+        url = reverse('accounts:tai_khoan_sua', args=[tk.pk])
+        # Giữ nguyên tên cũ (sai quy tắc), chỉ khóa tài khoản: vẫn lưu được.
+        self.assertRedirects(self.client.post(url, {'ten_dang_nhap': 'ten.cu', 'vai_tro': VaiTro.SINH_VIEN}),
+                             reverse('accounts:tai_khoan_danh_sach'))
+        tk.refresh_from_db()
+        self.assertFalse(tk.is_active)
+        # Đổi sang tên sai quy tắc: bị chặn.
+        response = self.client.post(url, {'ten_dang_nhap': '....', 'vai_tro': VaiTro.SINH_VIEN, 'is_active': 'on'})
+        self.assertContains(response, 'Tên đăng nhập &quot;....&quot; không hợp lệ')
+        tk.refresh_from_db()
+        self.assertEqual(tk.ten_dang_nhap, 'ten.cu')
+        # Đổi sang tên hợp lệ: được.
+        self.client.post(url, {'ten_dang_nhap': 'ten_moi', 'vai_tro': VaiTro.SINH_VIEN, 'is_active': 'on'})
+        tk.refresh_from_db()
+        self.assertEqual(tk.ten_dang_nhap, 'ten_moi')
+
+
+@tag('don_vi')
+class LenhTenDangNhapTest(TestCase):
+    def test_lenh_kiem_tra_bao_ten_cu_sai_quy_tac(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+        TaiKhoan.objects.create_user(ten_dang_nhap='hop_le1', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU_HOP_LE)
+        ra = StringIO()
+        call_command('kiem_tra_ten_dang_nhap', stdout=ra)
+        self.assertIn('Mọi tên đăng nhập đều hợp lệ', ra.getvalue())
+        TaiKhoan.objects.create_user(ten_dang_nhap='....', vai_tro=VaiTro.SINH_VIEN, password=MAT_KHAU_HOP_LE)
+        ra = StringIO()
+        with self.assertRaisesMessage(CommandError, 'Có 1 tên đăng nhập không hợp lệ'):
+            call_command('kiem_tra_ten_dang_nhap', stdout=ra)
+        self.assertIn("'....'", ra.getvalue())
+
+    def test_lenh_tao_tai_khoan_phong_dao_tao_tu_choi_ten_la(self):
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+        with self.assertRaisesMessage(CommandError, 'không hợp lệ'):
+            call_command('tao_tai_khoan_phong_dao_tao', '....')
+        self.assertFalse(TaiKhoan.objects.filter(ten_dang_nhap='....').exists())

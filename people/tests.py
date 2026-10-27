@@ -653,3 +653,21 @@ class DinhDangFileMauNhapSinhVienTest(TestCase):
         sheet = kiem_tra_dinh_dang_excel(self, response.content).active
         for chi_so, tieu_de in enumerate(TIEU_DE_COT_MAU_SINH_VIEN, start=1):
             self.assertEqual(sheet.column_dimensions[get_column_letter(chi_so)].width, min(max(len(tieu_de) + 2, 8), 60))
+
+
+@tag('tich_hop')
+class NhapExcelTenDangNhapKhongHopLeTest(TestCase):
+    def setUp(self):
+        self.client.force_login(TaiKhoan.objects.create_user(ten_dang_nhap='pdt_tdnx', vai_tro=VaiTro.PHONG_DAO_TAO, password=MAT_KHAU))
+        self.lop = _tao_lop_hanh_chinh('LOPTDN')
+
+    def test_cot_ten_dang_nhap_sai_quy_tac_bao_loi_theo_dong(self):
+        file_excel = _tao_file_excel([
+            ['SVTDN1', 'A', '2004-05-01', 'tdn1@test.local', '0918000001', self.lop.pk, '....'],
+            ['SVTDN2', 'B', '2004-05-01', 'tdn2@test.local', '0918000002', self.lop.pk, 'sv_tdn2'],
+            ['SVTDN3', 'C', '2004-05-01', 'tdn3@test.local', '0918000003', self.lop.pk, ''],
+        ])
+        ket_qua = self.client.post(reverse('people:sinh_vien_nhap_excel'), {'file_excel': file_excel}).context['ket_qua']
+        self.assertEqual([l['dong'] for l in ket_qua['loi']], [2])
+        self.assertIn('Tên đăng nhập "...." không hợp lệ', ket_qua['loi'][0]['loi'])
+        self.assertEqual(sorted(t['ten_dang_nhap'] for t in ket_qua['tao_moi']), ['sv_tdn2', 'svtdn3'])

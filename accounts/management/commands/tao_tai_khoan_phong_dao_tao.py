@@ -4,6 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 
+from accounts.forms import ten_dang_nhap_hop_le, thong_bao_ten_dang_nhap_khong_hop_le
 from accounts.models import TaiKhoan, VaiTro
 
 
@@ -20,6 +21,8 @@ class Command(BaseCommand):
         ten_dang_nhap = options['ten_dang_nhap'].strip()
         if not ten_dang_nhap:
             raise CommandError('Tên đăng nhập không được để trống.')
+        if not ten_dang_nhap_hop_le(ten_dang_nhap):
+            raise CommandError(thong_bao_ten_dang_nhap_khong_hop_le(ten_dang_nhap))
         if TaiKhoan.objects.filter(ten_dang_nhap=ten_dang_nhap).exists():
             raise CommandError(f'Tên đăng nhập "{ten_dang_nhap}" đã tồn tại.')
 

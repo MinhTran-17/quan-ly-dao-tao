@@ -6,6 +6,7 @@ from openpyxl import load_workbook
 
 from academics.models import LopHanhChinh
 from accounts.models import VaiTro
+from accounts.forms import ten_dang_nhap_hop_le, thong_bao_ten_dang_nhap_khong_hop_le
 from accounts.services import tao_mat_khau_tam
 
 from .lien_he import chuan_hoa_so_dien_thoai, kiem_tra_lien_he
@@ -109,6 +110,9 @@ def xu_ly_file_excel_sinh_vien(file_excel):
             continue
 
         ten_dang_nhap = str(ten_dang_nhap).strip() if ten_dang_nhap else ma_sinh_vien.lower()
+        if not ten_dang_nhap_hop_le(ten_dang_nhap):
+            loi.append({'dong': so_dong, 'loi': thong_bao_ten_dang_nhap_khong_hop_le(ten_dang_nhap)})
+            continue
         if ten_dang_nhap in ten_dang_nhap_da_dung:
             loi.append({'dong': so_dong, 'loi': f'Tên đăng nhập "{ten_dang_nhap}" đã tồn tại.'})
             continue

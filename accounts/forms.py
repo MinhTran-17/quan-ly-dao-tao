@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.password_validation import validate_password
@@ -33,6 +35,30 @@ validate_so_dien_thoai = RegexValidator(
     message='Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0.',
 )
 
+# Tên đăng nhập: chữ cái không dấu, chữ số, dấu gạch dưới (chặn "....", "///", khoảng trắng, chữ có dấu).
+# Áp dụng khi tạo/đổi tên ở form và khi nhập sinh viên từ Excel; tài khoản cũ sai quy tắc vẫn đăng nhập được
+# (liệt kê bằng lệnh python manage.py kiem_tra_ten_dang_nhap).
+MAU_TEN_DANG_NHAP = re.compile(r'[A-Za-z0-9_]+')
+
+
+def ten_dang_nhap_hop_le(ten):
+    return isinstance(ten, str) and MAU_TEN_DANG_NHAP.fullmatch(ten) is not None
+
+
+def thong_bao_ten_dang_nhap_khong_hop_le(ten):
+    return (f'Tên đăng nhập "{ten}" không hợp lệ: chỉ được dùng chữ cái không dấu, chữ số và dấu gạch dưới (_), '
+            'không có khoảng trắng, dấu chấm hay ký tự đặc biệt.')
+
+
+def _kiem_tra_ten_dang_nhap(form):
+    ten = (form.cleaned_data.get('ten_dang_nhap') or '').strip()
+    # Khi sửa tài khoản mà giữ nguyên tên cũ (kể cả tên cũ sai quy tắc) thì không chặn việc sửa trường khác.
+    if form.instance.pk and ten == form.instance.ten_dang_nhap:
+        return ten
+    if not ten_dang_nhap_hop_le(ten):
+        raise forms.ValidationError(thong_bao_ten_dang_nhap_khong_hop_le(ten))
+    return ten
+
 
 class DangNhapForm(AuthenticationForm):
     username = forms.CharField(
@@ -63,6 +89,9 @@ class TaoTaiKhoanForm(forms.ModelForm):
         }
         error_messages = {'ten_dang_nhap': {'unique': 'Tên đăng nhập này đã tồn tại.'}}
 
+    def clean_ten_dang_nhap(self):
+        return _kiem_tra_ten_dang_nhap(self)
+
     def clean_mat_khau(self):
         mat_khau = self.cleaned_data['mat_khau']
         kiem_tra_mat_khau(mat_khau)
@@ -86,6 +115,9 @@ class CapNhatTaiKhoanForm(forms.ModelForm):
             'is_active': 'Kích hoạt tài khoản',
         }
         error_messages = {'ten_dang_nhap': {'unique': 'Tên đăng nhập này đã tồn tại.'}}
+
+    def clean_ten_dang_nhap(self):
+        return _kiem_tra_ten_dang_nhap(self)
 
     def clean_vai_tro(self):
         vai_tro_moi = self.cleaned_data['vai_tro']
