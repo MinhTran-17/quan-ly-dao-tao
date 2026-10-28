@@ -1,0 +1,76 @@
+=== Chạy lúc 2026-09-21 16:49:59 ===
+Phiên bản prompt (AI_PHIEN_BAN_QUY_CHE): v2
+Phiên bản truy hồi (AI_TRUY_HOI_PHIEN_BAN): v2
+Ngưỡng điểm truy hồi (AI_NGUONG_DIEM_TRUY_HOI): 10.0
+Model thực tế API trả về: gemini-3.8-flash
+Danh sách câu đã chạy: 1, 2
+
+Đọc được 10 câu hỏi từ "D:\UDTTNT\docs\ca_thu_ai\hoi_dap_quy_che.md".
+Ghi đè phiên bản prompt (chỉ lần chạy này): v2
+Chế độ --ai: dự kiến gọi AI thật cho 6/10 câu (có đoạn đạt ngưỡng điểm), tốn quota API (khoảng cách giữa các lần gọi: 15s).
+
+Câu 1: Sinh viên bị buộc thôi học khi nào?
+  - [16.438] Quy chế đào tạo trình độ đại học - Điều 18, khoản 3 (352 ký tự)
+  - [13.800] Quy chế đào tạo trình độ đại học - Điều 15, khoản 4 (889 ký tự)
+  - [13.561] Quy chế đào tạo trình độ đại học - Điều 14, khoản 3 (957 ký tự)
+  - [13.207] Quy chế đào tạo trình độ đại học - Điều 18, khoản 2 (616 ký tự)
+  - [11.810] Quy chế đào tạo trình độ đại học - Điều 14, khoản 2 (498 ký tự)
+  - [11.153] Quy chế đào tạo trình độ đại học - Điều 15, khoản 2 (607 ký tự)
+  Trả lời: Sinh viên bị buộc thôi học khi thời gian học tập vượt quá thời gian đào tạo tối đa, hoặc vi phạm điều kiện kết quả học tập theo từng hình thức đào tạo. Đối với đào tạo theo tín chỉ, sinh viên bị buộc thôi học nếu số lần hoặc mức cảnh báo học tập vượt quá giới hạn theo quy định của cơ sở đào tạo. Đối với đào tạo theo niên chế, sinh viên bị buộc thôi học khi điểm trung bình chung tích lũy các năm học không đạt quy định, hoặc đạt dưới 3,80 sau 2 năm học, dưới 4,00 sau 3 năm học và dưới 4,20 từ sau 4 năm học trở đi.
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+    Nguồn: Quy chế đào tạo trình độ đại học - Điều 14, khoản 2
+    Nguồn: Quy chế đào tạo trình độ đại học - Điều 15, khoản 2
+
+Câu 2: Sinh viên được học cải thiện điểm tối đa mấy lần?
+  - [24.825] Quy chế đào tạo trình độ đại học - Điều 12, khoản 5 (536 ký tự)
+  - [19.768] Quy chế đào tạo trình độ đại học - Điều 9, khoản 3 (412 ký tự)
+  - [17.611] Quy chế đào tạo trình độ đại học - Điều 12, khoản 6 (1443 ký tự)
+  - [16.335] Quy chế đào tạo trình độ đại học - Điều 9, khoản 2 (410 ký tự)
+  - [15.800] Quy chế đào tạo trình độ đại học - Điều 14, khoản 3 (957 ký tự)
+  - [11.693] Quy chế đào tạo trình độ đại học - Điều 21, khoản 3 (557 ký tự)
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+
+Đã hết hạn mức hôm nay, thử lại sau khi hạn mức được đặt lại — DỪNG HẲN, không chạy tiếp các câu còn lại.
+Đã chạy: 1, 2
+Chưa chạy: 3, 4, 5, 6, 7, 8, 9, 10
+
+Tổng kết:
+  Số câu có trả lời: 1
+  Số câu lỗi AI: 1
+  Số câu không gọi AI (không truy hồi được đoạn nào): 0
+
+Dừng sớm: đã hết hạn mức hôm nay, thử lại sau khi hạn mức được đặt lại.
+
+=== Chạy lúc 2026-09-21 18:48:59 ===
+Phiên bản prompt (AI_PHIEN_BAN_QUY_CHE): v2
+Phiên bản truy hồi (AI_TRUY_HOI_PHIEN_BAN): v2
+Ngưỡng điểm truy hồi (AI_NGUONG_DIEM_TRUY_HOI): 10.0
+Model thực tế API trả về: (không có)
+Danh sách câu đã chạy: 2
+
+Đọc được 10 câu hỏi từ "D:\UDTTNT\docs\ca_thu_ai\hoi_dap_quy_che.md".
+Chỉ chạy câu: 2, 4, 7, 8, 9.
+Ghi đè phiên bản prompt (chỉ lần chạy này): v2
+Chế độ --ai: dự kiến gọi AI thật cho 5/5 câu (có đoạn đạt ngưỡng điểm), tốn quota API (khoảng cách giữa các lần gọi: 15s).
+
+Câu 2: Sinh viên được học cải thiện điểm tối đa mấy lần?
+  - [24.825] Quy chế đào tạo trình độ đại học - Điều 12, khoản 5 (536 ký tự)
+  - [19.768] Quy chế đào tạo trình độ đại học - Điều 9, khoản 3 (412 ký tự)
+  - [17.611] Quy chế đào tạo trình độ đại học - Điều 12, khoản 6 (1443 ký tự)
+  - [16.335] Quy chế đào tạo trình độ đại học - Điều 9, khoản 2 (410 ký tự)
+  - [15.800] Quy chế đào tạo trình độ đại học - Điều 14, khoản 3 (957 ký tự)
+  - [11.693] Quy chế đào tạo trình độ đại học - Điều 21, khoản 3 (557 ký tự)
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+
+Đã hết hạn mức hôm nay, thử lại sau khi hạn mức được đặt lại — DỪNG HẲN, không chạy tiếp các câu còn lại.
+Đã chạy: 2
+Chưa chạy: 4, 7, 8, 9
+
+Tổng kết:
+  Số câu có trả lời: 0
+  Số câu lỗi AI: 1
+  Số câu không gọi AI (không truy hồi được đoạn nào): 0
+
+Dừng sớm: đã hết hạn mức hôm nay, thử lại sau khi hạn mức được đặt lại.
+
