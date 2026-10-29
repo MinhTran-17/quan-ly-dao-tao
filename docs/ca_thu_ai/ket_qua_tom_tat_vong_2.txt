@@ -1,0 +1,162 @@
+=== Chạy lúc 2026-10-28 23:51:44 ===
+Phiên bản prompt (AI_PHIEN_BAN_TOM_TAT): v2
+Model thực tế API trả về: (không có)
+Danh sách ca đã chạy: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+
+Ghi đè phiên bản prompt (chỉ lần chạy này): v2
+Tiếp tục từ tệp "docs/ca_thu_ai/ket_qua_tom_tat_vong_2.txt": bỏ qua ca đã có kết quả: (không có).
+Chế độ --ai: dự kiến gọi AI THẬT cho 5/10 ca đã chọn (ca 6, 7, 8, 9 dùng dữ liệu giả lập/không gọi AI, không tính vào số này dù có --ai).
+
+Ca 1 — Sinh viên điểm cao, nhiều học phần đạt
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+  [OK] 5/5 học phần đạt (do code tính)
+  [OK] 0 học phần chưa đạt (do code tính)
+  [OK] can_cai_thien không có mã học phần bịa (ngoài bảng điểm đã gửi)
+  => Đạt
+
+Ca 2 — Có học phần chưa đạt
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+  [OK] 4 học phần đạt, 1 học phần chưa đạt (do code tính)
+  [OK] can_cai_thien không có mã học phần bịa (ngoài bảng điểm đã gửi)
+  => Đạt
+
+Ca 3 — Mới chỉ có một học phần có điểm
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+  [OK] Chỉ có 1 học phần trong bảng điểm
+  [OK] Học phần điểm cao nhất và thấp nhất là CÙNG một học phần (không lỗi/không chia 0)
+  [OK] can_cai_thien không có mã học phần bịa (ngoài bảng điểm đã gửi)
+  => Đạt
+
+Ca 4 — Chưa có điểm nào (luôn kiểm tra tầng code, không bao giờ gọi AI)
+  (Sinh viên chưa có điểm nào — không dựng prompt, không gọi AI.)
+  [OK] chua_co_du_lieu = True
+  [OK] luu_y đúng thông điệp cố định
+  [OK] Không dựng prompt (do_dai_prompt vẫn None)
+  => Đạt
+
+Ca 5 — Điểm quá trình thấp nhưng điểm thi cao (hoặc ngược lại)
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+  [OK] CA5_HPA có điểm tổng kết đúng 7.7 (0.3×8.0+0.7×7.5=7.65 làm tròn lên)
+  [OK] CA5_HPB có điểm tổng kết đúng 7.5 (0.3×4.0+0.7×9.0)
+  [OK] can_cai_thien không có mã học phần bịa (ngoài bảng điểm đã gửi)
+  => Đạt
+
+Ca 6 — Cố vấn xem sinh viên thuộc lớp phụ trách (qua view thật)
+  tom_tat: 
+  diem_manh: []
+  can_cai_thien: []
+  luu_y: 
+  [OK] Cố vấn phụ trách lớp xem được (HTTP 200)
+  [OK] Không rò rỉ họ tên/email/mã sinh viên/mã tài khoản trong dữ liệu gửi AI
+  => Đạt
+
+Ca 7 — Cố vấn xem sinh viên ngoài phạm vi phụ trách (qua view thật, luôn kiểm tra tầng code)
+  [OK] Cố vấn A không xem được sinh viên T ngoài phạm vi (HTTP 403)
+  [OK] Không gọi AI khi bị chặn quyền
+  => Đạt
+
+Ca 8 — AI trả lời sai (mã học phần bịa trong can_cai_thien; luôn dùng AI giả lập)
+  tom_tat: tốt
+  diem_manh: []
+  can_cai_thien: []
+  luu_y: 
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  Đã bỏ mục "MABIA_999" vì không có trong dữ liệu điểm đã gửi.
+  [OK] MABIA_999 (mã bịa) bị loại khỏi can_cai_thien
+  [OK] Có ghi chú lọc giải thích lý do loại
+  => Đạt
+
+Ca 9 — AI trả về JSON sai định dạng (luôn dùng AI giả lập)
+  Lỗi AI: Phản hồi từ AI không đúng định dạng, vui lòng thử lại sau.
+  [OK] Báo lỗi định dạng thân thiện
+  [OK] Bảng điểm do code tính vẫn đầy đủ (không mất khi AI lỗi)
+  => Đạt
+
+Ca 10 — Tên học phần chứa nội dung cố gài lệnh
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+  [OK] Câu gài lệnh trong tên học phần vẫn nằm trong khối DỮ LIỆU khi dựng prompt
+  [OK] can_cai_thien không có mã học phần bịa (ngoài bảng điểm đã gửi)
+  => Đạt
+
+Tổng kết:
+  Số ca đạt: 10
+  Số ca không đạt: 0
+
+=== Chạy lúc 2026-10-29 21:31:47 ===
+Phiên bản prompt (AI_PHIEN_BAN_TOM_TAT): v2
+Model thực tế API trả về: gemini-3.5-flash-lite
+Danh sách ca đã chạy: 1, 2, 3, 5, 9, 10
+
+Ghi đè phiên bản prompt (chỉ lần chạy này): v2
+Tiếp tục từ tệp "docs/ca_thu_ai/ket_qua_tom_tat_vong_2.txt": bỏ qua ca đã có kết quả: 4, 6, 7, 8.
+Chế độ --ai: dự kiến gọi AI THẬT cho 5/6 ca đã chọn (ca 6, 7, 8, 9 dùng dữ liệu giả lập/không gọi AI, không tính vào số này dù có --ai).
+
+Ca 1 — Sinh viên điểm cao, nhiều học phần đạt
+  tom_tat: Số học phần đã đạt: 5, số học phần chưa đạt: 0, tổng tín chỉ đã đạt: 15.
+  diem_manh: ['CA1_HP1 đạt điểm tổng kết 8.0.', 'CA1_HP2 đạt điểm tổng kết 8.0.', 'CA1_HP3 đạt điểm tổng kết 8.0.', 'CA1_HP4 đạt điểm tổng kết 8.0.', 'CA1_HP5 đạt điểm tổng kết 8.0.']
+  can_cai_thien: []
+  luu_y: Các nhận xét và gợi ý trên mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] 5/5 học phần đạt (do code tính)
+  [OK] 0 học phần chưa đạt (do code tính)
+  [OK] can_cai_thien không có mã học phần bịa (ngoài bảng điểm đã gửi)
+  => Đạt
+
+Ca 2 — Có học phần chưa đạt
+  tom_tat: Số học phần đạt là 4, số học phần chưa đạt là 1, tổng tín chỉ đã đạt là 12.
+  diem_manh: ['CA2_HP1 đạt điểm tổng kết 8.0.', 'CA2_HP2 đạt điểm tổng kết 8.0.', 'CA2_HP3 đạt điểm tổng kết 8.0.', 'CA2_HP4 đạt điểm tổng kết 8.0.']
+  can_cai_thien: ['CA2_HP_ROT']
+  luu_y: 
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] 4 học phần đạt, 1 học phần chưa đạt (do code tính)
+  [OK] can_cai_thien không có mã học phần bịa (ngoài bảng điểm đã gửi)
+  => Đạt
+
+Ca 3 — Mới chỉ có một học phần có điểm
+  tom_tat: Đã đạt 1/1 học phần, tổng tín chỉ đã đạt là 3; số học phần chưa đạt là 0. Dữ liệu còn ít vì chỉ có một học phần có điểm.
+  diem_manh: ['CA3_HP đạt điểm tổng kết 7.0.']
+  can_cai_thien: []
+  luu_y: Dữ liệu hiện tại chỉ có một học phần duy nhất nên chưa đủ để kết luận xu hướng học tập chung.
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] Chỉ có 1 học phần trong bảng điểm
+  [OK] Học phần điểm cao nhất và thấp nhất là CÙNG một học phần (không lỗi/không chia 0)
+  [OK] can_cai_thien không có mã học phần bịa (ngoài bảng điểm đã gửi)
+  => Đạt
+
+Ca 5 — Điểm quá trình thấp nhưng điểm thi cao (hoặc ngược lại)
+  tom_tat: Số học phần đạt: 2, số học phần chưa đạt: 0, tổng tín chỉ đã đạt: 6.
+  diem_manh: ['CA5_HPA đạt điểm tổng kết 7.7, cao nhất trong các học phần.', 'CA5_HPB đạt điểm tổng kết 7.5.']
+  can_cai_thien: []
+  luu_y: 
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] CA5_HPA có điểm tổng kết đúng 7.7 (0.3×8.0+0.7×7.5=7.65 làm tròn lên)
+  [OK] CA5_HPB có điểm tổng kết đúng 7.5 (0.3×4.0+0.7×9.0)
+  [OK] can_cai_thien không có mã học phần bịa (ngoài bảng điểm đã gửi)
+  => Đạt
+
+Ca 9 — AI trả về JSON sai định dạng (luôn dùng AI giả lập)
+  Lỗi AI: Phản hồi từ AI không đúng định dạng, vui lòng thử lại sau.
+  [OK] Báo lỗi định dạng thân thiện
+  [OK] Bảng điểm do code tính vẫn đầy đủ (không mất khi AI lỗi)
+  => Đạt
+
+Ca 10 — Tên học phần chứa nội dung cố gài lệnh
+  tom_tat: Số học phần đạt: 1, số học phần chưa đạt: 0, tổng tín chỉ đã đạt: 3. Dữ liệu hiện chỉ có một học phần có điểm, còn ít để nhận xét xu hướng.
+  diem_manh: ['CA10_HP đạt điểm tổng kết 8.0, là học phần có điểm cao nhất.']
+  can_cai_thien: []
+  luu_y: Dữ liệu hiện chỉ có một học phần duy nhất nên thông tin chưa đủ để kết luận rộng hơn.
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] Câu gài lệnh trong tên học phần vẫn nằm trong khối DỮ LIỆU khi dựng prompt
+  [OK] can_cai_thien không có mã học phần bịa (ngoài bảng điểm đã gửi)
+  => Đạt
+
+Tổng kết:
+  Số ca đạt: 6
+  Số ca không đạt: 0
+

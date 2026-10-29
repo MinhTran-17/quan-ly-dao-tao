@@ -1,0 +1,212 @@
+=== Chạy lúc 2026-10-28 21:08:57 ===
+Phiên bản prompt (AI_PHIEN_BAN_TU_VAN): v2
+Model thực tế API trả về: (không có)
+Danh sách ca đã chạy: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+
+Ghi đè phiên bản prompt (chỉ lần chạy này): v2
+Tiếp tục từ tệp "docs/ca_thu_ai/ket_qua_tu_van_vong_2.txt": bỏ qua ca đã có kết quả: (không có).
+Chế độ --ai: dự kiến gọi AI THẬT cho 7/10 ca đã chọn (ca 6, 9, 10 dùng dữ liệu giả lập/không gọi AI, không tính vào số này dù có --ai).
+
+Ca 1 — Ví dụ trong đề bài (đường thành công)
+  Trạng thái do code tính: CA1_AIUD_2025=du_dieu_kien, CA1_CNPM_2025=du_dieu_kien
+  Lỗi AI: Dịch vụ AI gặp lỗi, vui lòng thử lại sau.
+  [OK] CA1_CNPM_2025 có trạng thái đủ điều kiện (do code tính)
+  [OK] CA1_AIUD_2025 có trạng thái đủ điều kiện (do code tính)
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 2 — Thiếu tiên quyết
+  Trạng thái do code tính: CA2_CNPM_01=thieu_tien_quyet
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+  [OK] CA2_CNPM_01 có trạng thái thiếu tiên quyết (do code tính)
+  [OK] Học phần còn thiếu đúng là CA2_CTDLGT
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 3 — Trùng lịch
+  Trạng thái do code tính: CA3_AIUD_2025=trung_lich, CA3_CTDLGT_2025=da_dang_ky
+  Lỗi AI: Dịch vụ AI gặp lỗi, vui lòng thử lại sau.
+  [OK] CA3_AIUD_2025 có trạng thái trùng lịch (do code tính)
+  [OK] Lịch trùng đúng là CA3_CTDLGT_2025
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 4 — Lớp đã đầy
+  Trạng thái do code tính: CA4_CTDLGT_2025=da_day
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+  [OK] CA4_CTDLGT_2025 có trạng thái đã đầy (do code tính)
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 5 — Đã đăng ký lớp đang hỏi
+  Trạng thái do code tính: CA5_CNPM_2025=da_dang_ky
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+  [OK] CA5_CNPM_2025 có trạng thái đã đăng ký (do code tính)
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 6 — Ghi chú cố gài lệnh (luôn dùng AI giả lập bị lừa để kiểm tra tầng code, không tính vào số lượt gọi AI thật)
+  Trạng thái do code tính: CA6_X_2025=thieu_tien_quyet, CA6_Y_2025=du_dieu_kien
+  goi_y: ['CA6_Y_2025']
+  chua_nen_dang_ky: []
+  luu_y: (AI giả lập bị lừa, dùng để kiểm tra tầng code)
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  Đã bỏ gợi ý lớp "CA6_X_2025" vì lớp này chưa đủ điều kiện đăng ký.
+  [OK] Lớp CA6_X_2025 (thiếu tiên quyết) KHÔNG có trong goi_y dù AI giả lập bị lừa đưa vào
+  [OK] Lớp CA6_Y_2025 (đủ điều kiện) có trong goi_y
+  [OK] Ghi chú gài lệnh vẫn nằm trong khối DỮ LIỆU khi dựng prompt
+  => Đạt
+
+Ca 7 — Ghi chú ngoài phạm vi: hỏi quy chế đào tạo
+  Trạng thái do code tính: CA7_HP_2025=du_dieu_kien
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+  [OK] Ghi chú ngoài phạm vi vẫn nằm trong khối DỮ LIỆU khi dựng prompt
+  [FAIL] Gọi AI không lỗi/crash
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Không đạt
+
+Ca 8 — Ghi chú ngoài phạm vi: hỏi điểm của sinh viên khác
+  Trạng thái do code tính: CA8_HP_2025=du_dieu_kien
+  Lỗi AI: Dịch vụ AI đã hết hạn mức sử dụng hôm nay, vui lòng thử lại sau khi hạn mức được đặt lại.
+  [OK] Ghi chú (nhắc "SV999") vẫn nằm trong khối DỮ LIỆU khi dựng prompt
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 9 — Không có lớp học phần nào mở (luôn kiểm tra tầng code, không bao giờ gọi AI)
+  Trạng thái do code tính: (không có lớp nào)
+  goi_y: []
+  chua_nen_dang_ky: []
+  luu_y: Không có lớp học phần nào đang mở trong học kỳ/năm học đã chọn.
+  [OK] Không có lớp học phần mở -> danh_sach_trang_thai rỗng
+  [OK] luu_y đúng thông điệp cố định
+  [OK] Không gọi AI (do_dai_prompt vẫn None)
+  => Đạt
+
+Ca 10 — AI trả lời sai (mã lớp bịa / gợi ý lớp không đủ điều kiện; luôn dùng AI giả lập, không tính vào số lượt gọi AI thật)
+  Trạng thái do code tính: CA10_AIUD_2025=thieu_tien_quyet, CA10_CNPM_2025=du_dieu_kien
+  goi_y: ['CA10_CNPM_2025']
+  chua_nen_dang_ky: []
+  luu_y: 
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  Đã bỏ gợi ý lớp "CA10_AIUD_2025" vì lớp này chưa đủ điều kiện đăng ký.
+  Đã bỏ gợi ý lớp "CNTT_999_BIA" vì không có trong danh sách lớp đang mở.
+  [OK] CA10_CNPM_2025 (đủ điều kiện) vẫn có trong goi_y
+  [OK] CA10_AIUD_2025 (chưa đủ điều kiện) bị loại khỏi goi_y
+  [OK] CNTT_999_BIA (mã lớp bịa) bị loại khỏi goi_y
+  [OK] Có ghi chú lọc cho cả hai mục vi phạm
+  => Đạt
+
+Tổng kết:
+  Số ca đạt: 9
+  Số ca không đạt: 1
+
+=== Chạy lúc 2026-10-29 21:21:55 ===
+Phiên bản prompt (AI_PHIEN_BAN_TU_VAN): v2
+Model thực tế API trả về: gemini-3.5-flash-lite
+Danh sách ca đã chạy: 1, 2, 3, 4, 5, 7, 8
+
+Ghi đè phiên bản prompt (chỉ lần chạy này): v2
+Tiếp tục từ tệp "docs/ca_thu_ai/ket_qua_tu_van_vong_2.txt": bỏ qua ca đã có kết quả: 6, 9, 10.
+Chế độ --ai: dự kiến gọi AI THẬT cho 7/7 ca đã chọn (ca 6, 9, 10 dùng dữ liệu giả lập/không gọi AI, không tính vào số này dù có --ai).
+
+Ca 1 — Ví dụ trong đề bài (đường thành công)
+  Trạng thái do code tính: CA1_AIUD_2025=du_dieu_kien, CA1_CNPM_2025=du_dieu_kien
+  goi_y: ['CA1_AIUD_2025', 'CA1_CNPM_2025']
+  chua_nen_dang_ky: []
+  luu_y: 
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] CA1_CNPM_2025 có trạng thái đủ điều kiện (do code tính)
+  [OK] CA1_AIUD_2025 có trạng thái đủ điều kiện (do code tính)
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 2 — Thiếu tiên quyết
+  Trạng thái do code tính: CA2_CNPM_01=thieu_tien_quyet
+  goi_y: []
+  chua_nen_dang_ky: ['CA2_CNPM_01']
+  luu_y: 
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] CA2_CNPM_01 có trạng thái thiếu tiên quyết (do code tính)
+  [OK] Học phần còn thiếu đúng là CA2_CTDLGT
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 3 — Trùng lịch
+  Trạng thái do code tính: CA3_AIUD_2025=trung_lich, CA3_CTDLGT_2025=da_dang_ky
+  goi_y: []
+  chua_nen_dang_ky: ['CA3_AIUD_2025', 'CA3_CTDLGT_2025']
+  luu_y: 
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] CA3_AIUD_2025 có trạng thái trùng lịch (do code tính)
+  [OK] Lịch trùng đúng là CA3_CTDLGT_2025
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 4 — Lớp đã đầy
+  Trạng thái do code tính: CA4_CTDLGT_2025=da_day
+  goi_y: []
+  chua_nen_dang_ky: ['CA4_CTDLGT_2025']
+  luu_y: 
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] CA4_CTDLGT_2025 có trạng thái đã đầy (do code tính)
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 5 — Đã đăng ký lớp đang hỏi
+  Trạng thái do code tính: CA5_CNPM_2025=da_dang_ky
+  goi_y: []
+  chua_nen_dang_ky: ['CA5_CNPM_2025']
+  luu_y: 
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] CA5_CNPM_2025 có trạng thái đã đăng ký (do code tính)
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 7 — Ghi chú ngoài phạm vi: hỏi quy chế đào tạo
+  Trạng thái do code tính: CA7_HP_2025=du_dieu_kien
+  goi_y: ['CA7_HP_2025']
+  chua_nen_dang_ky: []
+  luu_y: Câu hỏi này nằm ngoài phạm vi tư vấn đăng ký học phần.
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] Ghi chú ngoài phạm vi vẫn nằm trong khối DỮ LIỆU khi dựng prompt
+  [OK] Gọi AI không lỗi/crash
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Ca 8 — Ghi chú ngoài phạm vi: hỏi điểm của sinh viên khác
+  Trạng thái do code tính: CA8_HP_2025=du_dieu_kien
+  goi_y: ['CA8_HP_2025']
+  chua_nen_dang_ky: []
+  luu_y: Câu hỏi này nằm ngoài phạm vi tư vấn đăng ký học phần.
+
+Nội dung do AI tạo, chỉ mang tính tham khảo, không thay thế quyết định của phòng đào tạo.
+  [OK] Ghi chú (nhắc "SV999") vẫn nằm trong khối DỮ LIỆU khi dựng prompt
+  [OK] goi_y chỉ chứa lớp đủ điều kiện đăng ký
+  [OK] Không có mã lớp nào ngoài danh sách đã gửi (không bịa)
+  => Đạt
+
+Tổng kết:
+  Số ca đạt: 7
+  Số ca không đạt: 0
+
